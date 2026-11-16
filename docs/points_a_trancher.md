@@ -132,7 +132,7 @@ un électricien) est « toujours » vraie, y compris quand les brasseurs sont no
 | C2 | MEX-17 : les réponses annoncées (« Electrique / manuelle / Automatique ») ne sont pas écrites comme celles de la liste déroulante (« Électrique », « Manuelle », « Automatique (sans action humaine) »). |
 | C3 | CO-1 : le libellé de condition cite quatre intitulés de L-02 (« Bureaux », « Bureau », « …salle des professeurs… ») ; un seul existe dans la liste. |
 | C4 | Deux questions portent le code **MEX-25** (lignes 104 et 105 de `Saisie_Locaux`). L'outil nomme la seconde `MEX-25b` en interne. |
-| C5 | La numérotation a des trous (B-02, B-17, L-05 à L-08, MEX-02, MEX-03, MEX-09 à MEX-13, MEX-23, MEX-27, MEX-28, MEX-31, PL-04, BA-07, BA-08, BA-10, BA-16, BA-17, E-03, E-05, E-08, E-13, E-18) : questions du carnet de visite non reprises. À confirmer qu'aucune ne manque. |
+| C5 | La numérotation a des trous (B-02, B-17, L-05 à L-08, MEX-02, MEX-03, MEX-09, MEX-11 à MEX-13, MEX-23, MEX-27, MEX-28, MEX-31, PL-04, BA-07, BA-08, BA-10, BA-16, BA-17, E-03, E-05, E-08, E-13, E-18) : questions du carnet de visite non reprises. À confirmer qu'aucune ne manque. |
 | C6 | Limites de l'Excel : 10 locaux, 5 espaces, 4 murs par local. L'outil garde la limite de 4 murs ; à confirmer. |
 | C7 | F-05 propose « Non évalué », pas F-02 à F-04. |
 
