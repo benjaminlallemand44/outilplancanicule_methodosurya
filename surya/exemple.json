@@ -1,0 +1,325 @@
+{
+ "batiment": {
+  "B-01": "De 1948 à 1974",
+  "B-03": "Maçonnerie",
+  "B-04": "ITI (isolation par l'intérieur)",
+  "B-05": "Non",
+  "B-06": "Non",
+  "B-07": "Non",
+  "B-08": "Oui",
+  "B-09": "Non",
+  "B-18": "Toiture à pentes (tuiles, ardoises, zinc)",
+  "B-21": "Oui",
+  "B-22": "En comble perdu",
+  "B-23": [
+   "Tassée"
+  ],
+  "B-24": 15,
+  "B-25": "Oui",
+  "B-26": "Oui",
+  "B-27": "Non",
+  "B-28": [
+   "Aucun"
+  ]
+ },
+ "facades": {
+  "N": {
+   "F-01": true,
+   "F-02": "Oui",
+   "F-03": "Oui",
+   "F-04": "Non",
+   "F-05": "Non"
+  },
+  "S": {
+   "F-01": true,
+   "F-02": "Non",
+   "F-03": "Oui",
+   "F-04": "Non",
+   "F-05": "Non"
+  }
+ },
+ "locaux": [
+  {
+   "L-01": "Classe CM1 (étage)",
+   "L-02": "Classe",
+   "L-03": 54,
+   "L-04": 27,
+   "L-09": "Dernier niveau",
+   "L-10": [
+    "Aucun"
+   ],
+   "L-11": "Oui",
+   "MEX-14": "Non",
+   "MEX-25": "Non",
+   "MEX-26": "Maçonnerie",
+   "MEX-29": [
+    "Volets roulants"
+   ],
+   "MEX-30": "Oui (lames ajourables, toile ajourée)",
+   "MEX-32": "Aucun",
+   "MEX-34": "Oui",
+   "MEX-35": "Non, porte coupe-feu ou à fermeture automatique",
+   "MEX-36": [
+    "Aucun"
+   ],
+   "MEX-37": "Non",
+   "PL-01": "Faux plafond démontable (dalles sur ossature)",
+   "PL-02": 0.4,
+   "PL-03": 2.9,
+   "PL-05": "Béton",
+   "BA-01": "Présent et fonctionnel",
+   "BA-02": "Aucun",
+   "BA-04": "Aucun",
+   "BA-05": "Aucun",
+   "BA-19": [
+    "Aucun"
+   ],
+   "ECL-01": "Non LED (tubes fluorescents, halogène, incandescence)",
+   "ECL-02": [
+    "Encastré dans le faux plafond (dalle, spot)"
+   ],
+   "murs": [
+    {
+     "orientation": "S",
+     "MEX-04": "En tunnel",
+     "MEX-05": 22,
+     "MEX-06": "Usure normale, entretien à prévoir",
+     "MEX-07": "Aucun",
+     "baies": {
+      "Fenêtre à la française": 4
+     }
+    },
+    {
+     "orientation": "S",
+     "MEX-04": "En tunnel",
+     "MEX-05": 22,
+     "MEX-06": "Usure normale, entretien à prévoir",
+     "MEX-07": "Aucun",
+     "baies": {
+      "Fenêtre à la française": 4
+     }
+    },
+    {
+     "orientation": "S",
+     "MEX-04": "En tunnel",
+     "MEX-05": 22,
+     "MEX-06": "Usure normale, entretien à prévoir",
+     "MEX-07": "Aucun",
+     "baies": {
+      "Fenêtre à la française": 4
+     }
+    },
+    {
+     "orientation": "S",
+     "MEX-04": "En tunnel",
+     "MEX-05": 22,
+     "MEX-06": "Usure normale, entretien à prévoir",
+     "MEX-07": "Aucun",
+     "baies": {
+      "Fenêtre à la française": 4
+     }
+    }
+   ]
+  },
+  {
+   "L-01": "Salle de motricité",
+   "L-02": "Salle de motricité, de sport ou d'activité physique",
+   "L-03": 96,
+   "L-04": 30,
+   "L-09": "RDC",
+   "L-10": [
+    "Aucun"
+   ],
+   "L-11": "Non évalué",
+   "MEX-14": "Oui",
+   "MEX-15": [
+    "Lanterneau"
+   ],
+   "MEX-16": "Non",
+   "MEX-18": [
+    "Aucune"
+   ],
+   "MEX-25": "Oui",
+   "MEX-25b": [
+    "Issue de secours"
+   ],
+   "MEX-26": "Maçonnerie",
+   "MEX-29": [
+    "Aucune"
+   ],
+   "MEX-32": "Aucun",
+   "MEX-34": "Non",
+   "MEX-36": [
+    "Aucun"
+   ],
+   "MEX-37": "Oui",
+   "PL-01": "Sous-face de dalle ou de plancher béton apparente",
+   "PL-03": 3.4,
+   "PL-05": "Béton",
+   "BA-01": "Aucun",
+   "BA-02": "Aucun",
+   "BA-04": "Aucun",
+   "BA-05": "Présent et fonctionnel",
+   "BA-06": 2,
+   "BA-09": 132,
+   "BA-11": "Oui",
+   "BA-12": 280,
+   "BA-13": 180,
+   "BA-14": 300,
+   "BA-19": [
+    "Aucun"
+   ],
+   "ECL-01": "LED",
+   "ECL-02": [
+    "En saillie au plafond (plafonnier, réglette, hublot)"
+   ],
+   "murs": [
+    {
+     "orientation": "S",
+     "MEX-04": "Nu intérieur",
+     "MEX-05": 12,
+     "MEX-06": "Bon état",
+     "MEX-07": "Faible",
+     "baies": {
+      "Baie coulissante": 3,
+      "Vitrage fixe": 3,
+      "Porte extérieure": 1
+     }
+    },
+    {
+     "orientation": "S",
+     "MEX-04": "Nu intérieur",
+     "MEX-05": 12,
+     "MEX-06": "Bon état",
+     "MEX-07": "Faible",
+     "baies": {
+      "Baie coulissante": 3,
+      "Vitrage fixe": 3,
+      "Porte extérieure": 1
+     }
+    },
+    {
+     "orientation": "S",
+     "MEX-04": "Nu intérieur",
+     "MEX-05": 12,
+     "MEX-06": "Bon état",
+     "MEX-07": "Faible",
+     "baies": {
+      "Baie coulissante": 3,
+      "Vitrage fixe": 3,
+      "Porte extérieure": 1
+     }
+    },
+    {
+     "orientation": "S",
+     "MEX-04": "Nu intérieur",
+     "MEX-05": 12,
+     "MEX-06": "Bon état",
+     "MEX-07": "Faible",
+     "baies": {
+      "Baie coulissante": 3,
+      "Vitrage fixe": 3,
+      "Porte extérieure": 1
+     }
+    }
+   ]
+  },
+  {
+   "L-01": "Salle de classe",
+   "L-02": "Classe",
+   "L-03": 60,
+   "L-04": 25,
+   "L-09": "Étage intermédiaire",
+   "L-10": [
+    "Aucun"
+   ],
+   "L-11": "Oui",
+   "MEX-14": "Oui",
+   "MEX-15": [
+    "Fenêtre de toit (type Velux)"
+   ],
+   "MEX-16": "Oui",
+   "MEX-17": "Manuelle",
+   "MEX-18": [
+    "Aucune"
+   ],
+   "MEX-20": "Marque et modèle identifiables",
+   "MEX-25": "Non",
+   "MEX-29": [
+    "Aucune"
+   ],
+   "MEX-32": "Aucun",
+   "MEX-36": [
+    "Aucun"
+   ],
+   "MEX-37": "Non",
+   "PL-01": "Faux plafond démontable (dalles sur ossature)",
+   "PL-02": 0.7,
+   "PL-03": 2.6,
+   "PL-05": "Béton",
+   "BA-01": "Aucun",
+   "BA-02": "Aucun",
+   "BA-04": "Aucun",
+   "BA-05": "Aucun",
+   "BA-19": [
+    "Aucun"
+   ],
+   "ECL-01": "LED",
+   "ECL-02": [
+    "Encastré dans le faux plafond (dalle, spot)"
+   ],
+   "murs": [
+    {
+     "orientation": "S",
+     "MEX-04": "Nu intérieur",
+     "MEX-05": 20,
+     "MEX-06": "Bon état",
+     "MEX-07": "Faible",
+     "baies": {
+      "Fenêtre à la française": 2
+     }
+    }
+   ]
+  }
+ ],
+ "espaces": [
+  {
+   "E-01": "Cour principale",
+   "E-02": [
+    "Cour de récréation",
+    "Préau"
+   ],
+   "E-04": [
+    "Maternelle"
+   ],
+   "E-06": 140,
+   "E-07": 2,
+   "E-09": "Entre 0 et 25 %",
+   "E-10": [
+    "Arbres",
+    "Préau, auvent"
+   ],
+   "E-11": 3,
+   "E-12": "Moyen",
+   "E-14": 90,
+   "E-15": "Aucune structure",
+   "E-16": "Oui",
+   "E-17": "Non",
+   "E-19": "Non",
+   "E-20": [
+    "S"
+   ],
+   "E-21": "Aucune",
+   "E-22": "Béton ou maçonnerie pleine",
+   "E-23": "Non",
+   "E-24": "Mâts, poteaux ou élément solide existants (mur, préau, bâtiment voisin)",
+   "E-25": "Oui",
+   "E-26": "Bac acier ou tôle, non isolé",
+   "E-28": "Moyenne",
+   "E-29": 2.7,
+   "E-30": 1,
+   "E-31": "Non",
+   "E-32": "Pleine terre ou sol fondable"
+  }
+ ]
+}

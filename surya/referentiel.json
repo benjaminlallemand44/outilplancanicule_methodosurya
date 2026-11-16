@@ -1,0 +1,2412 @@
+{
+ "version": "Règles de faisabilité - locaux (version du 27/10/2026)",
+ "batiment": [
+  {
+   "titre": "Identification et données de préparation",
+   "questions": [
+    {
+     "code": "B-01",
+     "libelle": "Période de construction du bâtiment",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Avant 1948",
+      "De 1948 à 1974",
+      "De 1975 à 1997",
+      "Après 1997",
+      "Non renseigné"
+     ]
+    },
+    {
+     "code": "B-03",
+     "libelle": "Type de structure",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Maçonnerie",
+      "Ossature légère",
+      "Autre"
+     ]
+    },
+    {
+     "code": "B-04",
+     "libelle": "Type d'isolation des murs verticaux",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "ITI (isolation par l'intérieur)",
+      "ITE (isolation par l'extérieur)",
+      "Répartie",
+      "Entre ossature",
+      "Pas d'isolation"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Protections réglementaires et patrimoniales",
+   "questions": [
+    {
+     "code": "B-05",
+     "libelle": "Le bâtiment est-il classé ou inscrit au titre des monuments historiques ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-06",
+     "libelle": "Le bâtiment est-il situé dans un périmètre de protection (abords de monument historique, site patrimonial remarquable) ou repéré au règlement local pour son intérêt patrimonial ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Exploitation",
+   "questions": [
+    {
+     "code": "B-07",
+     "libelle": "Existe-t-il un local ou un espace de repli déjà plus frais ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "B-08",
+     "libelle": "Le bâtiment est-il équipé d'une alarme anti-intrusion ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Ventilation mécanique",
+   "questions": [
+    {
+     "code": "B-09",
+     "libelle": "Présence d'une ventilation mécanique",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-10",
+     "libelle": "Type de ventilation mécanique",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Double flux",
+      "Simple flux",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-11",
+     "libelle": "By-pass ou arrêt de la roue de récupération possible",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-12",
+     "libelle": "By-pass activé (ou roue arrêtée) en été",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-13",
+     "libelle": "État de l'installation de ventilation",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "En fonctionnement",
+      "À l'arrêt ou hors service",
+      "Filtres encrassés",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-14",
+     "libelle": "Possibilité d'augmenter le débit (grande vitesse, variateur)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-15",
+     "libelle": "Programmation horaire possible (horloge, GTB)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-16",
+     "libelle": "Surventilation nocturne programmée en été",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Inertie et combles",
+   "questions": [
+    {
+     "code": "B-18",
+     "libelle": "Type de toiture au-dessus du dernier niveau",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Toiture-terrasse",
+      "Toiture à pentes (tuiles, ardoises, zinc)",
+      "Bac acier ou fibro-ciment",
+      "Autre"
+     ]
+    },
+    {
+     "code": "B-19",
+     "libelle": "Isolation de la toiture",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Isolée",
+      "Non isolée",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-20",
+     "libelle": "Épaisseur d'isolant de la toiture",
+     "info": false,
+     "type": "nombre",
+     "unite": "cm"
+    },
+    {
+     "code": "B-21",
+     "libelle": "Le plancher haut contient des combles ou un espace non aménagé",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-22",
+     "libelle": "Isolation des combles",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "En comble perdu",
+      "Sous pente",
+      "Autre"
+     ]
+    },
+    {
+     "code": "B-23",
+     "libelle": "État de l'isolation des combles",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Bon état (épaisseur régulière et continue)",
+      "Tassée",
+      "Discontinue ou partiellement déplacée",
+      "Dégradée (humidité, nuisibles, souillures)",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-24",
+     "libelle": "Épaisseur moyenne de l'isolant (combles ou rampants)",
+     "info": false,
+     "type": "nombre",
+     "unite": "cm"
+    },
+    {
+     "code": "B-25",
+     "libelle": "Combles largement ventilés",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-26",
+     "libelle": "Combles accessibles (trappe)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "B-27",
+     "libelle": "Traces d'humidité ou d'infiltration en sous-face de couverture",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "B-28",
+     "libelle": "Éléments à risque dans les combles",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Spots encastrés",
+      "Conduits de fumée",
+      "Gaines électriques non protégées",
+      "Matériaux suspects d'amiante",
+      "Aucun",
+      "Non évalué"
+     ]
+    }
+   ]
+  }
+ ],
+ "facades": [
+  {
+   "code": "F-01",
+   "libelle": "Façade décrite (porte des baies visitées ou borde un espace extérieur)",
+   "options": []
+  },
+  {
+   "code": "F-02",
+   "libelle": "Façade à l'alignement du domaine public, sans recul",
+   "options": [
+    "Oui",
+    "Non"
+   ]
+  },
+  {
+   "code": "F-03",
+   "libelle": "Accès à la façade pour un moyen d'élévation",
+   "options": [
+    "Oui",
+    "Non"
+   ]
+  },
+  {
+   "code": "F-04",
+   "libelle": "Obstacle à proximité de la façade (arbres, structures, balcon…)",
+   "options": [
+    "Oui",
+    "Non"
+   ]
+  },
+  {
+   "code": "F-05",
+   "libelle": "Désordre visible du support à proximité des baies",
+   "options": [
+    "Oui",
+    "Non",
+    "Non évalué"
+   ]
+  }
+ ],
+ "orientations": [
+  "N",
+  "NE",
+  "E",
+  "SE",
+  "S",
+  "SO",
+  "O",
+  "NO"
+ ],
+ "mur": [
+  {
+   "code": "orientation",
+   "libelle": "Orientation du mur",
+   "info": false,
+   "type": "choix",
+   "options": [
+    "N",
+    "NE",
+    "E",
+    "SE",
+    "S",
+    "SO",
+    "O",
+    "NO"
+   ]
+  },
+  {
+   "code": "MEX-04",
+   "libelle": "Positionnement des baies en façade",
+   "info": false,
+   "type": "choix",
+   "options": [
+    "Nu intérieur",
+    "Nu extérieur",
+    "En tunnel",
+    "Non évalué"
+   ]
+  },
+  {
+   "code": "MEX-05",
+   "libelle": "Distance entre le nu extérieur du vitrage et le nu extérieur de la façade",
+   "info": false,
+   "type": "nombre",
+   "unite": "cm"
+  },
+  {
+   "code": "MEX-06",
+   "libelle": "État général des menuiseries",
+   "info": false,
+   "type": "choix",
+   "options": [
+    "Bon état",
+    "Usure normale, entretien à prévoir",
+    "Dégradé (manœuvre difficile, pièces cassées, pourriture ou corrosion)",
+    "Très dégradé, remplacement à envisager",
+    "Non évalué"
+   ]
+  },
+  {
+   "code": "MEX-07",
+   "libelle": "Importance du débord au-dessus des baies (balcon, coursive, casquette, débord de toiture)",
+   "info": false,
+   "type": "choix",
+   "options": [
+    "Aucun",
+    "Faible",
+    "Important"
+   ]
+  },
+  {
+   "code": "MEX-08",
+   "libelle": "types de baie présents : nombre de baies (MEX-10), ou x si non compté",
+   "info": false,
+   "type": "baies",
+   "options": [
+    "Fenêtre à la française",
+    "Fenêtre oscillo-battante",
+    "Imposte en soufflet",
+    "Baie coulissante",
+    "Vitrage fixe",
+    "Façade vitrée continue (mur-rideau)",
+    "Porte extérieure",
+    "Autre"
+   ]
+  }
+ ],
+ "locaux": [
+  {
+   "titre": "Identification et usages",
+   "questions": [
+    {
+     "code": "L-01",
+     "libelle": "Nom de la pièce",
+     "info": true,
+     "type": "texte"
+    },
+    {
+     "code": "L-02",
+     "libelle": "Type de local",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Classe",
+      "Dortoir ou salle de repos",
+      "Restauration, cuisine, office",
+      "Salle de motricité, de sport ou d'activité physique",
+      "Bureau, salle des maîtres, salle de réunion",
+      "Circulation, hall",
+      "Sanitaires",
+      "Salle polyvalente",
+      "BCD",
+      "Autre"
+     ]
+    },
+    {
+     "code": "L-03",
+     "libelle": "Surface au sol",
+     "info": false,
+     "type": "nombre",
+     "unite": "m²"
+    },
+    {
+     "code": "L-04",
+     "libelle": "Effectif maximal habituel",
+     "info": false,
+     "type": "nombre",
+     "unite": "pers."
+    },
+    {
+     "code": "L-09",
+     "libelle": "Niveau du local",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Sous-sol",
+      "RDC",
+      "Étage intermédiaire",
+      "Dernier niveau",
+      "RDC et dernier niveau (plain-pied)"
+     ]
+    },
+    {
+     "code": "L-10",
+     "libelle": "Équipements à forte dissipation présents",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Copieurs, imprimantes",
+      "Baies informatiques, serveurs",
+      "Appareils de cuisson",
+      "Aucun",
+      "Autre"
+     ]
+    },
+    {
+     "code": "L-11",
+     "libelle": "Postes et écrans éteints ou en veille hors occupation",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Ouvertures en plafond",
+   "questions": [
+    {
+     "code": "MEX-14",
+     "libelle": "Y a-t-il des baies en plafond ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "MEX-15",
+     "libelle": "Type de baie en plafond",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Fenêtre de toit (type Velux)",
+      "Lanterneau",
+      "Verrière",
+      "Véranda",
+      "Puits de lumière, atrium",
+      "Voûte",
+      "Autre"
+     ]
+    },
+    {
+     "code": "MEX-16",
+     "libelle": "Les baies en plafond sont-elles ouvrantes ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "MEX-17",
+     "libelle": "Type de commande",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Électrique",
+      "Manuelle",
+      "Automatique (sans action humaine)"
+     ]
+    },
+    {
+     "code": "MEX-18",
+     "libelle": "Quelle est la protection des baies en plafond ?",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Volet extérieur",
+      "Store extérieur",
+      "Store intérieur",
+      "Aucune",
+      "Autre"
+     ]
+    },
+    {
+     "code": "MEX-19",
+     "libelle": "État des protections des baies en plafond",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Bon état",
+      "Hors service ou dégradée",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "MEX-20",
+     "libelle": "Identification de la fenêtre de toit",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Marque et modèle identifiables",
+      "Non identifiables",
+      "Fenêtre très ancienne"
+     ]
+    },
+    {
+     "code": "MEX-21",
+     "libelle": "Fenêtres de toit atteignables à la main depuis le sol",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "MEX-22",
+     "libelle": "Toiture vitrée accessible en sécurité (passerelle, ligne de vie, toiture circulable)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "MEX-24",
+     "libelle": "Séparation fermable entre la véranda et le local",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Baies en façade",
+   "questions": [
+    {
+     "code": "MEX-01",
+     "libelle": "Aucune baie en façade : mettre x (sinon, renseigner les murs ci-dessous, un bloc par orientation, 4 au maximum)",
+     "info": false,
+     "type": "case"
+    }
+   ]
+  },
+  {
+   "titre": "Ensemble des baies du local",
+   "questions": [
+    {
+     "code": "MEX-25",
+     "libelle": "Baie ou ouvrant servant d'issue de secours, d'exutoire de désenfumage ou d'accès des secours",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "MEX-25b",
+     "libelle": "Fonction de la baie ou de l'ouvrant",
+     "info": true,
+     "type": "multi",
+     "options": [
+      "Issue de secours",
+      "Désenfumage",
+      "Accès des secours",
+      "Autre"
+     ]
+    },
+    {
+     "code": "MEX-26",
+     "libelle": "Nature du support de fixation autour de la baie",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Maçonnerie",
+      "Ossature légère avec bardage ou vêture",
+      "Isolation par l'extérieur (enduit sur isolant, bardage ventilé)",
+      "Mur-rideau ou façade légère vitrée",
+      "Non identifiable"
+     ]
+    },
+    {
+     "code": "MEX-29",
+     "libelle": "Protections extérieures des baies présentes",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Volets roulants",
+      "Stores",
+      "Persiennes",
+      "Volets battants",
+      "Stores bannes",
+      "Casquette",
+      "Débord de toiture",
+      "Balcon",
+      "Aucune",
+      "Autre"
+     ]
+    },
+    {
+     "code": "MEX-30",
+     "libelle": "Les volets roulants ou stores extérieurs laissent-ils passer l'air une fois fermés ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui (lames ajourables, toile ajourée)",
+      "Non (pleins)",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "MEX-32",
+     "libelle": "Présence de film solaire",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Sur toutes les baies",
+      "Sur une partie des baies",
+      "Aucun",
+      "Pas d'information"
+     ]
+    },
+    {
+     "code": "MEX-33",
+     "libelle": "État des films solaires",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Bon état",
+      "État détérioré",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "MEX-34",
+     "libelle": "La porte du local donne-t-elle sur un local ou une circulation directement adjacent disposant d'une baie extérieure ouvrante ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "MEX-35",
+     "libelle": "Cette porte peut-elle rester ouverte la nuit ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui, porte standard",
+      "Oui, porte coupe-feu avec ventouse asservie à la détection incendie",
+      "Non, porte coupe-feu ou à fermeture automatique",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "MEX-36",
+     "libelle": "Éléments supplémentaires sur les baies",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Grilles",
+      "Moustiquaire",
+      "Ventelles",
+      "Aucun",
+      "Autre"
+     ]
+    },
+    {
+     "code": "MEX-37",
+     "libelle": "L'armement nocturne de l'alarme empêche-t-il de laisser les baies du local ouvertes ? (détecteurs d'ouverture ou détection volumétrique dans le local)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Plafond",
+   "questions": [
+    {
+     "code": "PL-01",
+     "libelle": "Type de plafond",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Sous-face de dalle ou de plancher béton apparente",
+      "Faux plafond démontable (dalles sur ossature)",
+      "Faux plafond fixe (plaques de plâtre, enduit)",
+      "Plafond bois, lambris, rampants ou charpente apparente",
+      "Autre"
+     ]
+    },
+    {
+     "code": "PL-02",
+     "libelle": "Hauteur de plénum",
+     "info": false,
+     "type": "nombre",
+     "unite": "m"
+    },
+    {
+     "code": "PL-03",
+     "libelle": "Hauteur libre sous plafond ou faux plafond",
+     "info": false,
+     "type": "nombre",
+     "unite": "m"
+    },
+    {
+     "code": "PL-05",
+     "libelle": "Structure porteuse (visible ou sous faux plafond)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Béton",
+      "Plafond bois horizontal",
+      "Charpente en pente ou combles (bois ou métal)",
+      "Bac acier horizontal",
+      "Brique (ex. voûtain)",
+      "Non évalué",
+      "Autre"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Équipements de rafraîchissement",
+   "questions": [
+    {
+     "code": "BA-01",
+     "libelle": "Ventilateur sur pied existant",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Aucun",
+      "Présent et fonctionnel",
+      "Présent, hors service"
+     ]
+    },
+    {
+     "code": "BA-02",
+     "libelle": "Climatisation mobile existante",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Aucun",
+      "Présent et fonctionnel",
+      "Présent, hors service"
+     ]
+    },
+    {
+     "code": "BA-03",
+     "libelle": "Évacuation de la climatisation mobile",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Sortie vers l'extérieur propre",
+      "Sortie vers l'extérieur via une ouverture"
+     ]
+    },
+    {
+     "code": "BA-04",
+     "libelle": "Climatisation fixe existante",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Aucun",
+      "Présent et fonctionnel",
+      "Présent, hors service"
+     ]
+    },
+    {
+     "code": "BA-05",
+     "libelle": "Brasseur d'air plafonnier existant",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Aucun",
+      "Présent et fonctionnel",
+      "Présent, hors service"
+     ]
+    },
+    {
+     "code": "BA-06",
+     "libelle": "Nombre de brasseurs",
+     "info": false,
+     "type": "nombre",
+     "unite": ""
+    },
+    {
+     "code": "BA-09",
+     "libelle": "Diamètre des brasseurs",
+     "info": false,
+     "type": "nombre",
+     "unite": "cm"
+    },
+    {
+     "code": "BA-11",
+     "libelle": "Commande des brasseurs fonctionnelle",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "BA-12",
+     "libelle": "Hauteur des pales au-dessus du sol",
+     "info": false,
+     "type": "nombre",
+     "unite": "cm"
+    },
+    {
+     "code": "BA-13",
+     "libelle": "Distance minimale entre le centre d'un brasseur et le mur le plus proche",
+     "info": false,
+     "type": "nombre",
+     "unite": "cm"
+    },
+    {
+     "code": "BA-14",
+     "libelle": "Distance minimale entre les centres de deux brasseurs adjacents",
+     "info": false,
+     "type": "nombre",
+     "unite": "cm"
+    },
+    {
+     "code": "BA-15",
+     "libelle": "Le local est-il desservi par la ventilation mécanique ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "BA-19",
+     "libelle": "Éléments présents en plafond (hors éclairage)",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Baffles acoustiques",
+      "Gaines de ventilation",
+      "Décoration",
+      "Aucun",
+      "Autre"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Éclairage",
+   "questions": [
+    {
+     "code": "ECL-01",
+     "libelle": "Technologie des luminaires",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "LED",
+      "Non LED (tubes fluorescents, halogène, incandescence)",
+      "Mixte (LED et non LED)",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "ECL-02",
+     "libelle": "Pose des luminaires",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Encastré dans le faux plafond (dalle, spot)",
+      "En saillie au plafond (plafonnier, réglette, hublot)",
+      "Suspendu",
+      "En applique murale",
+      "Autre"
+     ]
+    }
+   ]
+  }
+ ],
+ "espaces": [
+  {
+   "titre": "Identification et usages",
+   "questions": [
+    {
+     "code": "E-01",
+     "libelle": "Nom de l'espace",
+     "info": true,
+     "type": "texte"
+    },
+    {
+     "code": "E-02",
+     "libelle": "Types d'espace présents",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Cour de récréation",
+      "Préau",
+      "Jardin, espace vert",
+      "Parvis, accès",
+      "Terrain de sport",
+      "Parking",
+      "Autre"
+     ]
+    },
+    {
+     "code": "E-04",
+     "libelle": "Public accueilli",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Maternelle",
+      "Élémentaire",
+      "Adultes",
+      "Accueil de loisirs ou périscolaire"
+     ]
+    },
+    {
+     "code": "E-06",
+     "libelle": "Effectif maximal présent simultanément dans l'espace",
+     "info": false,
+     "type": "nombre",
+     "unite": "pers."
+    },
+    {
+     "code": "E-07",
+     "libelle": "Nombre de classes de maternelle",
+     "info": false,
+     "type": "nombre",
+     "unite": ""
+    }
+   ]
+  },
+  {
+   "titre": "Ombrage et végétation",
+   "questions": [
+    {
+     "code": "E-09",
+     "libelle": "Part de la surface à l'ombre en milieu de journée l'été",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "0 %",
+      "Entre 0 et 25 %",
+      "Entre 25 et 50 %",
+      "Entre 50 et 75 %",
+      "Entre 75 et 100 %",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "E-10",
+     "libelle": "Sources d'ombre",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "Arbres",
+      "Préau, auvent",
+      "Voiles d'ombrage",
+      "Pergola ou treille végétalisée",
+      "Ombre portée des bâtiments",
+      "Aucune",
+      "Autre"
+     ]
+    },
+    {
+     "code": "E-11",
+     "libelle": "Nombre d'arbres de haute tige",
+     "info": true,
+     "type": "nombre",
+     "unite": ""
+    },
+    {
+     "code": "E-12",
+     "libelle": "État apparent des arbres",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Bon",
+      "Moyen",
+      "Dégradé",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "E-14",
+     "libelle": "Surface d'ombrage hors végétaux (préau, voiles, pergolas, auvents)",
+     "info": false,
+     "type": "nombre",
+     "unite": "m²"
+    },
+    {
+     "code": "E-15",
+     "libelle": "État des structures d'ombrage de la cour (voiles, pergolas, tonnelles)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Bon état",
+      "Hors service ou dégradé",
+      "Aucune structure"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Eau et confort d’été",
+   "questions": [
+    {
+     "code": "E-16",
+     "libelle": "Point d'eau potable accessible (fontaine)",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "E-17",
+     "libelle": "Dispositif de rafraîchissement par l'eau (brumisateur, jeux d'eau)",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "E-19",
+     "libelle": "Gestion des eaux pluviales à ciel ouvert (noue, jardin de pluie, pleine terre)",
+     "info": true,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Ombrage adossé au bâtiment",
+   "questions": [
+    {
+     "code": "E-20",
+     "libelle": "Orientation des façades du bâtiment bordant l'espace",
+     "info": false,
+     "type": "multi",
+     "options": [
+      "N",
+      "NE",
+      "E",
+      "SE",
+      "S",
+      "SO",
+      "O",
+      "NO",
+      "Aucune"
+     ]
+    },
+    {
+     "code": "E-21",
+     "libelle": "Structure d’ombrage adossée au bâtiment existante",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Aucune",
+      "En bon état, couvre l'essentiel de la zone d'usage",
+      "En bon état, couvre une partie de la zone d'usage",
+      "Hors service ou dégradée"
+     ]
+    },
+    {
+     "code": "E-22",
+     "libelle": "Support de façade au droit de l'espace",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Béton ou maçonnerie pleine",
+      "Maçonnerie ancienne ou dégradée",
+      "Bardage",
+      "Isolation par l'extérieur",
+      "Ossature légère",
+      "Non identifiable"
+     ]
+    },
+    {
+     "code": "E-23",
+     "libelle": "Une baie au droit de l'espace sert-elle d'issue de secours ou d'exutoire de désenfumage ?",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "E-24",
+     "libelle": "Autres points d'ancrage disponibles",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Mâts, poteaux ou élément solide existants (mur, préau, bâtiment voisin)",
+      "Aucun existant, mâts ou poteaux à créer",
+      "Aucun possible"
+     ]
+    },
+    {
+     "code": "E-25",
+     "libelle": "Espace dégagé devant la façade (sans circulation ni stationnement)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    }
+   ]
+  },
+  {
+   "titre": "Préau",
+   "questions": [
+    {
+     "code": "E-26",
+     "libelle": "Matériau de couverture du préau",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Tuiles",
+      "Bac acier ou tôle, non isolé",
+      "Bac acier ou tôle, isolé",
+      "Fibrociment",
+      "Polycarbonate ou verrière",
+      "Autre"
+     ]
+    },
+    {
+     "code": "E-27",
+     "libelle": "Occultation complémentaire sous la couverture translucide",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non"
+     ]
+    },
+    {
+     "code": "E-28",
+     "libelle": "Teinte de la couverture du préau",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Claire",
+      "Moyenne",
+      "Foncée"
+     ]
+    },
+    {
+     "code": "E-29",
+     "libelle": "Hauteur libre sous le préau",
+     "info": false,
+     "type": "nombre",
+     "unite": "m"
+    },
+    {
+     "code": "E-30",
+     "libelle": "Nombre de côtés du préau fermés par une paroi pleine ou vitrée sans ouverture",
+     "info": false,
+     "type": "nombre",
+     "unite": "0 à 4"
+    }
+   ]
+  },
+  {
+   "titre": "Contraintes de transformation",
+   "questions": [
+    {
+     "code": "E-31",
+     "libelle": "Contraintes d'accès ou de sécurité (pompiers, livraisons, sécurité)",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Oui",
+      "Non",
+      "Non évalué"
+     ]
+    },
+    {
+     "code": "E-32",
+     "libelle": "Nature du sol de la cour",
+     "info": false,
+     "type": "choix",
+     "options": [
+      "Pleine terre ou sol fondable",
+      "Dalle sur ouvrage ou parking souterrain",
+      "Faible épaisseur de terre",
+      "Non évalué"
+     ]
+    }
+   ]
+  }
+ ],
+ "parametres": [
+  {
+   "nom": "P_HSP_MIN",
+   "valeur": 2.4,
+   "unite": "m",
+   "signification": "Hauteur sous plafond en dessous de laquelle un brasseur est non recommandé",
+   "regles": "BS-1, BS-3"
+  },
+  {
+   "nom": "P_HSP_CONF",
+   "valeur": 2.6,
+   "unite": "m",
+   "signification": "Hauteur sous plafond à partir de laquelle un brasseur ne pose plus de réserve",
+   "regles": "BS-3"
+  },
+  {
+   "nom": "P_PLENUM",
+   "valeur": 0.7,
+   "unite": "m",
+   "signification": "Hauteur de plénum au-delà de laquelle la fixation pose question",
+   "regles": "BS-4"
+  },
+  {
+   "nom": "P_PALE_PLAFOND",
+   "valeur": 0.15,
+   "unite": "",
+   "signification": "Ratio maximal distance pale-plafond / diamètre",
+   "regles": "BP-3"
+  },
+  {
+   "nom": "P_DIAM_MIN",
+   "valeur": 0.2,
+   "unite": "",
+   "signification": "Borne basse du rapport diamètre / (√surface / nombre de brasseurs)",
+   "regles": "BP-4"
+  },
+  {
+   "nom": "P_DIAM_MAX",
+   "valeur": 0.4,
+   "unite": "",
+   "signification": "Borne haute du même rapport",
+   "regles": "BP-4"
+  },
+  {
+   "nom": "P_ENTRAXE",
+   "valeur": 2.5,
+   "unite": "× diamètre",
+   "signification": "Entraxe minimal entre brasseurs",
+   "regles": "BP-4"
+  },
+  {
+   "nom": "P_VOL_H",
+   "valeur": 2,
+   "unite": "vol/h",
+   "signification": "Débit minimal de surventilation nocturne",
+   "regles": "VM-7, VM-10"
+  },
+  {
+   "nom": "P_TABLEAU",
+   "valeur": 16,
+   "unite": "cm",
+   "signification": "Distance vitrage-façade minimale pour une protection posée en tableau",
+   "regles": "PV-2"
+  },
+  {
+   "nom": "P_ISOL_TOIT",
+   "valeur": 30,
+   "unite": "cm",
+   "signification": "Épaisseur d’isolant de toiture terrasse jugée suffisante (R ≈ 7,5)",
+   "regles": "TT-2, TT-3"
+  },
+  {
+   "nom": "P_ISOL_COMBLE",
+   "valeur": 30,
+   "unite": "cm",
+   "signification": "Épaisseur d’isolant de combles perdus jugée suffisante (R ≈ 7,5)",
+   "regles": "CP-3"
+  },
+  {
+   "nom": "P_ISOL_RAMPANT",
+   "valeur": 20,
+   "unite": "cm",
+   "signification": "Épaisseur d’isolant des rampants jugée suffisante (R ≈ 5)",
+   "regles": "CA-2, CA-3"
+  },
+  {
+   "nom": "P_BUREAU_M2",
+   "valeur": 6,
+   "unite": "m²/pers.",
+   "signification": "Surface minimale par occupant d’un bureau",
+   "regles": "CO-1"
+  },
+  {
+   "nom": "P_CLASSE_M2",
+   "valeur": 1.5,
+   "unite": "m²/élève",
+   "signification": "Surface minimale par élève d’une classe",
+   "regles": "CO-2"
+  },
+  {
+   "nom": "P_OMBRE_ELEM",
+   "valeur": 0.8,
+   "unite": "m²/enfant",
+   "signification": "Surface d’ombrage minimale par enfant (élémentaire)",
+   "regles": "EX-AL"
+  },
+  {
+   "nom": "P_OMBRE_MAT_CL",
+   "valeur": 5,
+   "unite": "classes",
+   "signification": "Nombre de classes de maternelle séparant les deux seuils",
+   "regles": "EX-AL"
+  },
+  {
+   "nom": "P_OMBRE_MAT_1",
+   "valeur": 100,
+   "unite": "m²",
+   "signification": "Surface d’ombrage minimale jusqu’à ce nombre de classes",
+   "regles": "EX-AL"
+  },
+  {
+   "nom": "P_OMBRE_MAT_2",
+   "valeur": 150,
+   "unite": "m²",
+   "signification": "Surface d’ombrage minimale au-delà",
+   "regles": "EX-AL"
+  },
+  {
+   "nom": "P_PREAU_H",
+   "valeur": 3,
+   "unite": "m",
+   "signification": "Hauteur sous un préau métallique non isolé en dessous de laquelle il surchauffe",
+   "regles": "PR-5"
+  },
+  {
+   "nom": "P_PREAU_FERME",
+   "valeur": 2,
+   "unite": "côtés",
+   "signification": "Nombre de côtés fermés à partir duquel le préau est à optimiser",
+   "regles": "PR-3"
+  },
+  {
+   "nom": "P_PREAU_OUVERT",
+   "valeur": 1,
+   "unite": "côtés",
+   "signification": "Nombre maximal de côtés fermés pour un préau « ouvert »",
+   "regles": "PR-6"
+  }
+ ],
+ "regles": {
+  "BP-1": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Les brasseurs sont en place mais hors service",
+   "condition": "BA-05 = Présent, hors service",
+   "questions": "BA-05"
+  },
+  "BP-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "La commande de brasseur n'est pas fonctionnelle",
+   "condition": "BA-11 = Non",
+   "questions": "BA-11"
+  },
+  "BP-3": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Brasseurs trop proches du plafond (ratio distance pale-plafond / diamètre ≤ 0,15)",
+   "condition": "(PL-03 × 100 − BA-12) / BA-09 ≤ 0,15",
+   "questions": "PL-03, BA-12, BA-09"
+  },
+  "BP-4": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Brasseurs installés et l'équation 1 n'est pas vérifiée, ou l'assertion 1 n'est pas vérifiée, ou l'assertion 2 n'est pas vérifiée. Équation 1 : 0,2 < diamètre / (√surface de la pièce / nombre de brasseurs) < 0,4. Assertion 1 : distance entre le centre du brasseur et les murs > diamètre. Assertion 2 : distance entre les centres de deux brasseurs adjacents > 2,5 × diamètre.",
+   "condition": "non [0,2 < (BA-09 / 100) / (√L-03 / BA-06) < 0,4] ou BA-13 ≤ BA-09 ou BA-14 ≤ 2,5 × BA-09",
+   "questions": "BA-09, L-03, BA-06, BA-13, BA-14"
+  },
+  "BP-5": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "BS-1": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Plafond ou faux plafond à moins de 2,40 m",
+   "condition": "PL-03 < 2,40",
+   "questions": "PL-03"
+  },
+  "BS-2": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Plafond avec baffles acoustiques, gaines techniques, éclairage suspendu ou décoration",
+   "condition": "BA-19 contient Baffles acoustiques, Gaines de ventilation ou Décoration, ou ECL-02 contient Suspendu",
+   "questions": "BA-19, ECL-02"
+  },
+  "BS-3": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Plafond ou faux plafond entre 2,40 m (inclus) et 2,60 m (exclu)",
+   "condition": "2,40 ≤ PL-03 < 2,60",
+   "questions": "PL-03"
+  },
+  "BS-4": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Faux plafond, plénum supérieur à 70 cm, structure béton",
+   "condition": "PL-01 = Faux plafond démontable ou Faux plafond fixe et PL-02 > 0,70 et PL-05 = Béton",
+   "questions": "PL-01, PL-02, PL-05"
+  },
+  "BS-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Faux plafond, structure porteuse autre que béton, quel que soit le plénum",
+   "condition": "PL-01 = Faux plafond démontable ou Faux plafond fixe et PL-05 ≠ Béton",
+   "questions": "PL-01, PL-05"
+  },
+  "BS-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Plafond bois, lambris, rampants, charpente apparente ou autre (hors dalle béton apparente)",
+   "condition": "PL-01 = Plafond bois, lambris, rampants ou charpente apparente, ou Autre",
+   "questions": "PL-01"
+  },
+  "BS-7": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent (plafond ≥ 2,60 m et dalle béton apparente, ou faux plafond avec plénum ≤ 70 cm sur structure béton)",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "BR-AL": {
+   "statut": null,
+   "alerte": true,
+   "regle": "L'installation électrique devra être validée par un électricien et la capacité de la structure à porter les brasseurs vérifiée par un professionnel qualifié",
+   "condition": "Toujours",
+   "questions": ""
+  },
+  "VN-1": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Le local n'a aucune baie",
+   "condition": "MEX-01 = Aucune baie et MEX-14 = Non",
+   "questions": "MEX-01, MEX-14"
+  },
+  "VN-2": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Le local n'a que des baies fixes",
+   "condition": "Tous les MEX-08 ne contiennent que Vitrage fixe ou Façade vitrée continue (mur-rideau), et MEX-16 ≠ Oui",
+   "questions": "MEX-08, MEX-16"
+  },
+  "VN-3": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Volets roulants ou stores extérieurs non ajourés",
+   "condition": "MEX-30 = Non (pleins)",
+   "questions": "MEX-29, MEX-30"
+  },
+  "VN-4": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Alarme dont l'armement nocturne empêche de laisser les baies ouvertes",
+   "condition": "B-08 = Oui et MEX-37 = Oui",
+   "questions": "B-08, MEX-37"
+  },
+  "VN-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Au moins une baie dégradée ou très dégradée",
+   "condition": "Au moins un MEX-06 = Dégradé ou Très dégradé",
+   "questions": "MEX-06"
+  },
+  "VN-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Uniquement des ouvrants oscillo-battants ou à soufflet",
+   "condition": "Les ouvrants de MEX-08 sont uniquement Fenêtre oscillo-battante ou Imposte en soufflet",
+   "questions": "MEX-08"
+  },
+  "VN-7": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Baies ouvrantes sur au moins deux murs extérieurs d'orientations différentes (opposées ou adjacentes)",
+   "condition": "Au moins deux orientations MEX-01 différentes ont chacune un type de baie MEX-08 autre que Vitrage fixe ou Façade vitrée continue (mur-rideau)",
+   "questions": "MEX-01, MEX-08"
+  },
+  "VN-8": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Au moins une baie ouvrante en façade et au moins un ouvrant en toiture (fenêtre de toit, lanterneau ou verrière ouvrants)",
+   "condition": "Au moins une orientation MEX-01 a un type de baie MEX-08 autre que Vitrage fixe ou Façade vitrée continue (mur-rideau) et MEX-16 = Oui",
+   "questions": "MEX-01, MEX-08, MEX-16"
+  },
+  "VN-9": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Au moins une baie ouvrante, porte donnant sur un local directement adjacent qui possède une baie extérieure ouvrante, et porte pouvant rester ouverte la nuit (porte non coupe-feu, ou coupe-feu maintenue ouverte par une ventouse asservie à la détection incendie)",
+   "condition": "Au moins un type de baie MEX-08 autre que Vitrage fixe ou Façade vitrée continue (mur-rideau) et MEX-34 = Oui et MEX-35 = Oui, porte standard ou Oui, porte coupe-feu avec ventouse asservie",
+   "questions": "MEX-08, MEX-34, MEX-35"
+  },
+  "VN-10": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Aucun cas précédent (baies ouvrantes sur une seule orientation, sans ouvrant en toiture ni local adjacent ouvrant)",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "VN-AL1": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Pas de grilles ni de ventelles : une ventilation nocturne sécurisée nécessite ces dispositifs",
+   "condition": "MEX-36 ne contient ni Grilles ni Ventelles (et statut VN ≠ Non recommandé)",
+   "questions": "MEX-36"
+  },
+  "VN-AL2": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Solution recommandée : une réponse à la protection contre la pluie doit être proposée (équipement spécifique, protocole de prise de décision, etc.)",
+   "condition": "Statut VN = Recommandé",
+   "questions": ""
+  },
+  "VM-1": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Le local n'est desservi par aucune ventilation mécanique",
+   "condition": "B-09 = Non ou BA-15 = Non",
+   "questions": "B-09, BA-15"
+  },
+  "VM-2": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "VMC simple flux sans possibilité d'augmenter le débit",
+   "condition": "B-10 = Simple flux et B-14 = Non",
+   "questions": "B-10, B-14"
+  },
+  "VM-3": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Installation à l'arrêt, hors service ou avec des filtres encrassés",
+   "condition": "B-13 = À l'arrêt ou hors service, ou Filtres encrassés",
+   "questions": "B-13"
+  },
+  "VM-4": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Double flux, by-pass existant mais non activé en été (ou roue non arrêtée)",
+   "condition": "B-10 = Double flux et B-11 = Oui et B-12 = Non",
+   "questions": "B-10, B-11, B-12"
+  },
+  "VM-5": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Régulation sans programmation nocturne possible (pas d'horloge ni de GTB)",
+   "condition": "B-15 = Non",
+   "questions": "B-15"
+  },
+  "VM-6": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Mode nocturne existant mais non programmé l'été",
+   "condition": "B-15 = Oui et B-16 = Non",
+   "questions": "B-15, B-16"
+  },
+  "VM-7": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Surventilation nocturne programmée l'été, by-pass actif en double flux, débit ≥ 2 vol/h",
+   "condition": "B-16 = Oui et (B-10 ≠ Double flux ou B-12 = Oui) et BA-18 / (L-03 × PL-03) ≥ 2",
+   "questions": "B-16, B-10, B-12, BA-18, L-03, PL-03"
+  },
+  "VM-8": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Double flux sans by-pass ni roue arrêtable",
+   "condition": "B-10 = Double flux et B-11 = Non",
+   "questions": "B-10, B-11"
+  },
+  "VM-9": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Débit maximal de l'installation inconnu",
+   "condition": "BA-18 = Non connu",
+   "questions": "BA-18"
+  },
+  "VM-10": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Débit maximal rapporté au volume du local inférieur à 2 vol/h",
+   "condition": "BA-18 / (L-03 × PL-03) < 2",
+   "questions": "BA-18, L-03, PL-03"
+  },
+  "VM-11": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "PV-0": {
+   "statut": "Non concerné",
+   "alerte": false,
+   "regle": "Aucune baie en façade",
+   "condition": "MEX-01 = Aucune baie",
+   "questions": "MEX-01"
+  },
+  "PV-1": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Au moins une baie au nu extérieur sans débord",
+   "condition": "Au moins une orientation avec MEX-04 = Nu extérieur et MEX-07 = Aucun",
+   "questions": "MEX-04, MEX-07"
+  },
+  "PV-2": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Baies en tunnel ou au nu intérieur, distance vitrage-façade < 16 cm",
+   "condition": "MEX-04 = Nu intérieur ou En tunnel et MEX-05 < 16",
+   "questions": "MEX-04, MEX-05"
+  },
+  "PV-3": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Monument historique, périmètre de protection ou intérêt patrimonial",
+   "condition": "B-05 = Oui ou B-06 = Oui",
+   "questions": "B-05, B-06"
+  },
+  "PV-4": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Au moins une façade isolée par l'extérieur ou en ossature légère",
+   "condition": "MEX-26 = Ossature légère avec bardage ou vêture ou Isolation par l'extérieur (à défaut : B-03 = Ossature légère ou B-04 = ITE)",
+   "questions": "MEX-26, B-03, B-04"
+  },
+  "PV-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Local hors RDC et au moins une baie sur une façade sans accès pour un moyen d'élévation",
+   "condition": "L-09 ≠ RDC et ≠ RDC et dernier niveau (plain-pied) et F-03 = Non (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "L-09, F-03, MEX-01"
+  },
+  "PV-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Obstacle à proximité de la façade (arbres, structures, balcon…)",
+   "condition": "F-04 = Oui (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "F-04, MEX-01"
+  },
+  "PV-7": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Désordre visible du support à proximité des baies",
+   "condition": "F-05 = Oui (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "F-05, MEX-01"
+  },
+  "PV-8": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent (tunnel ou nu intérieur, distance ≥ 16 cm)",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "PH-0": {
+   "statut": "Non concerné",
+   "alerte": false,
+   "regle": "Aucune baie en façade",
+   "condition": "MEX-01 = Aucune baie",
+   "questions": "MEX-01"
+  },
+  "PH-1": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Débord important au-dessus des baies orientées S, SE ou SO",
+   "condition": "MEX-07 = Important pour une orientation S, SE ou SO",
+   "questions": "MEX-07, MEX-01"
+  },
+  "PH-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Débord faible au-dessus des baies orientées S, SE ou SO",
+   "condition": "MEX-07 = Faible pour une orientation S, SE ou SO",
+   "questions": "MEX-07, MEX-01"
+  },
+  "PH-3": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Aucun mur extérieur orienté S, SE ou SO",
+   "condition": "Aucun MEX-01 = S, SE ou SO",
+   "questions": "MEX-01"
+  },
+  "PH-4": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Local au RDC et façade à l'alignement du domaine public, sans recul",
+   "condition": "L-09 = RDC ou RDC et dernier niveau (plain-pied) et F-02 = Oui (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "L-09, F-02, MEX-01"
+  },
+  "PH-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Monument historique, périmètre de protection ou intérêt patrimonial",
+   "condition": "B-05 = Oui ou B-06 = Oui",
+   "questions": "B-05, B-06"
+  },
+  "PH-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Local hors RDC et façade à l'alignement du domaine public, sans recul",
+   "condition": "L-09 ≠ RDC et ≠ RDC et dernier niveau (plain-pied) et F-02 = Oui (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "L-09, F-02, MEX-01"
+  },
+  "PH-7": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Au moins une façade isolée par l'extérieur ou en ossature légère",
+   "condition": "MEX-26 = Ossature légère avec bardage ou vêture ou Isolation par l'extérieur (à défaut : B-03 = Ossature légère ou B-04 = ITE)",
+   "questions": "MEX-26, B-03, B-04"
+  },
+  "PH-8": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Local hors RDC et au moins une baie sur une façade sans accès pour un moyen d'élévation",
+   "condition": "L-09 ≠ RDC et ≠ RDC et dernier niveau (plain-pied) et F-03 = Non (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "L-09, F-03, MEX-01"
+  },
+  "PH-9": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Autre obstacle à proximité de la façade (arbres, structures…)",
+   "condition": "F-04 = Oui (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "F-04, MEX-01"
+  },
+  "PH-10": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Désordre visible du support à proximité des baies",
+   "condition": "F-05 = Oui (façade de même orientation qu'un MEX-01 du local)",
+   "questions": "F-05, MEX-01"
+  },
+  "PH-11": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "FS-0": {
+   "statut": "Non concerné",
+   "alerte": false,
+   "regle": "Aucune baie (ni en façade ni en plafond)",
+   "condition": "MEX-01 = Aucune baie et MEX-14 = Non",
+   "questions": "MEX-01, MEX-14"
+  },
+  "FS-1": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Au moins une baie avec un film solaire dégradé, quel que soit l'état des autres baies",
+   "condition": "MEX-33 = État détérioré",
+   "questions": "MEX-32, MEX-33"
+  },
+  "FS-2": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Toutes les baies ont un film solaire (intérieur ou extérieur) en bon état",
+   "condition": "MEX-32 = Sur toutes les baies et MEX-33 = Bon état",
+   "questions": "MEX-32, MEX-33"
+  },
+  "FS-3": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent (au moins une baie sans film solaire)",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "FT-1": {
+   "statut": "Non concerné",
+   "alerte": false,
+   "regle": "Le local n'a aucune fenêtre de toit, ni lanterneau, ni voûte translucide",
+   "condition": "MEX-14 = Non, ou MEX-15 ne contient ni fenêtre de toit, ni lanterneau, ni voûte, ni autre (ajusté au texte de la règle)",
+   "questions": "MEX-14, MEX-15"
+  },
+  "FT-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Protection extérieure hors service ou dégradée sur au moins une fenêtre de toit",
+   "condition": "MEX-18 contient Volet extérieur ou Store extérieur et MEX-19 = Hors service ou dégradée",
+   "questions": "MEX-18, MEX-19"
+  },
+  "FT-3": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Protection intérieure seule",
+   "condition": "MEX-18 = Store intérieur seul",
+   "questions": "MEX-18"
+  },
+  "FT-4": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Protection extérieure en bon état sur toutes les fenêtres de toit",
+   "condition": "MEX-18 contient Volet extérieur ou Store extérieur et MEX-19 = Bon état",
+   "questions": "MEX-18, MEX-19"
+  },
+  "FT-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Monument historique, périmètre de protection ou intérêt patrimonial",
+   "condition": "B-05 = Oui ou B-06 = Oui",
+   "questions": "B-05, B-06"
+  },
+  "FT-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Marque ou modèle non identifiable, ou fenêtre très ancienne",
+   "condition": "MEX-20 = Non identifiables ou Fenêtre très ancienne",
+   "questions": "MEX-20"
+  },
+  "FT-7": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Fenêtre hors d'atteinte depuis le sol et sans commande à distance",
+   "condition": "MEX-21 = Non et MEX-17 ne contient ni Électrique ni Automatique",
+   "questions": "MEX-21, MEX-17"
+  },
+  "FT-8": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "FT-AL": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Fenêtre de toit ouvrante : excellent ouvrant haut pour la ventilation naturelle par tirage thermique",
+   "condition": "MEX-16 = Oui",
+   "questions": "MEX-16"
+  },
+  "VV-1": {
+   "statut": "Non concerné",
+   "alerte": false,
+   "regle": "Ni véranda ni verrière (toiture vitrée, atrium, puits de lumière)",
+   "condition": "MEX-14 = Non ou MEX-15 ne contient ni Verrière, ni Véranda, ni Puits de lumière, atrium",
+   "questions": "MEX-14, MEX-15"
+  },
+  "VV-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Protections extérieures existantes (stores, toiles d'ombrage) hors service ou dégradées",
+   "condition": "MEX-18 contient Volet extérieur ou Store extérieur et MEX-19 = Hors service ou dégradée",
+   "questions": "MEX-18, MEX-19"
+  },
+  "VV-3": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Protection intérieure seule",
+   "condition": "MEX-18 = Store intérieur seul",
+   "questions": "MEX-18"
+  },
+  "VV-4": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Aucun ouvrant en partie haute",
+   "condition": "MEX-16 = Non",
+   "questions": "MEX-16"
+  },
+  "VV-5": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Protection extérieure en bon état et ouvrants en partie haute",
+   "condition": "MEX-18 contient Volet extérieur ou Store extérieur et MEX-19 = Bon état et MEX-16 = Oui",
+   "questions": "MEX-18, MEX-19, MEX-16"
+  },
+  "VV-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Monument historique, périmètre de protection ou intérêt patrimonial",
+   "condition": "B-05 = Oui ou B-06 = Oui",
+   "questions": "B-05, B-06"
+  },
+  "VV-7": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Toiture vitrée non accessible en sécurité (pas de passerelle ni de ligne de vie, toiture non circulable)",
+   "condition": "MEX-22 = Non",
+   "questions": "MEX-22"
+  },
+  "VV-8": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Véranda communiquant avec les locaux sans séparation fermable",
+   "condition": "MEX-24 = Non",
+   "questions": "MEX-24"
+  },
+  "VV-9": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "VV-AL": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Dans tous les cas, la tenue structurelle de la véranda ou de la verrière doit être étudiée",
+   "condition": "Toujours (si véranda ou verrière)",
+   "questions": ""
+  },
+  "TO-0": {
+   "statut": "Non concerné",
+   "alerte": false,
+   "regle": "Local hors dernier niveau : la toiture ne le concerne pas",
+   "condition": "L-09 ≠ Dernier niveau et ≠ RDC et dernier niveau",
+   "questions": "L-09"
+  },
+  "TT-1": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Toiture non isolée",
+   "condition": "B-19 = Non isolée",
+   "questions": "B-18, B-19, L-09"
+  },
+  "TT-2": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Toiture isolée avec R ≥ 7,5 m².K/W environ (soit 30 cm)",
+   "condition": "B-19 = Isolée et B-20 ≥ 30 cm",
+   "questions": "B-19, B-20"
+  },
+  "TT-3": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Toiture isolée avec R < 7,5 m².K/W environ (soit 30 cm)",
+   "condition": "B-19 = Isolée et B-20 < 30 cm",
+   "questions": "B-19, B-20"
+  },
+  "CP-1": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Isolant tassé, humide, dégradé ou incomplet (zones non couvertes)",
+   "condition": "B-23 contient Tassée, Discontinue ou partiellement déplacée, ou Dégradée",
+   "questions": "B-23"
+  },
+  "CP-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Combles non ventilés (pas de chatières, de closoirs ventilés ni de grilles en pignon)",
+   "condition": "B-25 = Non",
+   "questions": "B-25"
+  },
+  "CP-3": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Isolant d'au moins 30 cm (soit R ≥ 7,5 m².K/W environ) en bon état",
+   "condition": "B-24 ≥ 30 et B-23 = Bon état",
+   "questions": "B-24, B-23"
+  },
+  "CP-4": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Combles non accessibles",
+   "condition": "B-26 = Non",
+   "questions": "B-26"
+  },
+  "CP-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Traces d'humidité ou d'infiltration en sous-face de couverture",
+   "condition": "B-27 = Oui",
+   "questions": "B-27"
+  },
+  "CP-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Spots encastrés, conduits de fumée, gaines électriques non protégées ou suspicion d'amiante",
+   "condition": "B-28 contient un élément (hors Aucun et Non évalué)",
+   "questions": "B-28, B-01"
+  },
+  "CP-7": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent (isolant absent ou de moins de 30 cm)",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "CA-1": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Isolation des rampants non visible et épaisseur inconnue",
+   "condition": "B-24 = « inconnu »",
+   "questions": "B-24"
+  },
+  "CA-2": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Isolation des rampants de moins de 20 cm environ (soit R < 5 m².K/W)",
+   "condition": "B-24 < 20",
+   "questions": "B-24"
+  },
+  "CA-3": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Isolation des rampants d'au moins 20 cm (soit R ≥ 5 m².K/W)",
+   "condition": "B-24 ≥ 20",
+   "questions": "B-24"
+  },
+  "CO-1": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Bureau occupé en continu, surface inférieure à 6 m² par occupant",
+   "condition": "L-02 = Bureaux, Bureau, « Bureau, salle des maîtres, salle de réunion » ou « Bureau, salle des professeurs, salle de réunion » et L-03 / L-04 < 6",
+   "questions": "L-02, L-03, L-04"
+  },
+  "CO-2": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Salle de classe, surface inférieure à 1,5 m² par élève",
+   "condition": "L-02 = Classe et L-03 / L-04 < 1,5",
+   "questions": "L-02, L-03, L-04"
+  },
+  "CO-3": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "CE-1": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Éclairage non LED",
+   "condition": "ECL-01 = Non LED ou Mixte",
+   "questions": "ECL-01"
+  },
+  "CE-2": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "CQ-1": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Équipements à forte dissipation (copieurs, baies informatiques, réfrigérateurs, appareils de cuisson) dans un local occupé",
+   "condition": "L-10 contient un équipement (hors Aucun) et L-04 > 0",
+   "questions": "L-10, L-04"
+  },
+  "CQ-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Postes et écrans allumés hors occupation (pas de mise en veille programmée)",
+   "condition": "L-11 = Non",
+   "questions": "L-11"
+  },
+  "CQ-3": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "EX-AL": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Surface d'ombrage (hors végétaux) inférieure à 0,8 m² par enfant présent simultanément (élémentaire), ou inférieure à 100 m² pour 5 classes ou moins, ou à 150 m² pour 6 classes ou plus (maternelle) : préau insuffisant au regard des effectifs, à compléter par un ombrage de la cour ou un ombrage adossé",
+   "condition": "(E-04 contient Élémentaire et E-14 / E-06 < 0,8) ou (E-04 contient Maternelle et ((E-07 ≤ 5 et E-14 < 100) ou (E-07 ≥ 6 et E-14 < 150)))",
+   "questions": "E-04, E-14, E-06, E-07"
+  },
+  "OA-1": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "Aucune façade du RDC bordant l'espace n'est exposée au sud, au sud-est, au sud-ouest, à l'est ou à l'ouest",
+   "condition": "Aucune orientation de E-20 parmi S, SE, SO, E, O",
+   "questions": "E-20"
+  },
+  "OA-2": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Une structure adossée existe en bon état sur les façades exposées concernées et couvre l'essentiel de la zone d'usage",
+   "condition": "E-21 = En bon état, couvre l'essentiel de la zone d'usage",
+   "questions": "E-21"
+  },
+  "OA-3": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Une structure adossée existe mais est hors service, dégradée ou ne couvre qu'une partie de la zone d'usage",
+   "condition": "E-21 = En bon état, couvre une partie de la zone d'usage, ou Hors service ou dégradée",
+   "questions": "E-21"
+  },
+  "OA-4": {
+   "statut": "Non recommandé ou non adapté",
+   "alerte": false,
+   "regle": "La façade est à l'alignement du domaine public sans recul",
+   "condition": "F-02 = Oui (façade d'une orientation listée en E-20)",
+   "questions": "F-02, E-20"
+  },
+  "OA-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Monument historique, périmètre de protection ou intérêt patrimonial",
+   "condition": "B-05 = Oui ou B-06 = Oui",
+   "questions": "B-05, B-06"
+  },
+  "OA-6": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Support de façade ancien, fragile ou de nature incertaine (maçonnerie dégradée, bardage ancien), isolé par l'extérieur ou en ossature légère",
+   "condition": "E-22 = Maçonnerie ancienne ou dégradée, Bardage, Isolation par l'extérieur, Ossature légère ou Non identifiable",
+   "questions": "E-22"
+  },
+  "OA-7": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "L'espace devant la façade sert de voie d'accès des secours, ou une baie au droit de la structure sert d'issue de secours ou d'exutoire de désenfumage",
+   "condition": "E-31 = Oui ou E-23 = Oui",
+   "questions": "E-31, E-23"
+  },
+  "OA-8": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Les autres points d'ancrage demandent des mâts ou poteaux fondés au sol, non existants",
+   "condition": "E-24 = Aucun existant, mâts ou poteaux à créer",
+   "questions": "E-24"
+  },
+  "OA-9": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Aucun autre point d'ancrage n'est possible : seules les solutions en porte-à-faux restent envisageables",
+   "condition": "E-24 = Aucun possible",
+   "questions": "E-24"
+  },
+  "OA-10": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Espace dégagé devant la façade, sans contrainte de circulation, de secours ni de patrimoine, support massif (béton, maçonnerie pleine) et autres points d'ancrage existants",
+   "condition": "E-25 = Oui et E-22 = Béton ou maçonnerie pleine et E-24 = Mâts, poteaux ou élément solide existants",
+   "questions": "E-25, E-22, E-24"
+  },
+  "OA-11": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "OA-AL1": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Solution mutualisable entre protection solaire des locaux et protection des espaces extérieurs : une seule structure, dimensionnée pour l'usage extérieur, peut répondre aux deux besoins",
+   "condition": "Statut OA = Recommandé ou Sous réserve, et un local au RDC dont un mur figure en E-20 a un statut PH = Recommandé ou Sous réserve",
+   "questions": "E-20, L-09, MEX-01"
+  },
+  "OA-AL2": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Vent : la prise au vent d'une voile est reprise par la façade et par les mâts ; vérifier le dimensionnement et prévoir une dépose en hiver ou par vent fort",
+   "condition": "Statut OA = Recommandé ou Sous réserve",
+   "questions": ""
+  },
+  "OA-AL3": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Sécurité incendie : vérifier le classement de réaction au feu de la toile et/ou faire valider la solution par les services de sécurité incendie",
+   "condition": "Statut OA = Recommandé ou Sous réserve",
+   "questions": ""
+  },
+  "PR-1": {
+   "statut": "Non concerné",
+   "alerte": false,
+   "regle": "L'espace ne comporte aucun préau",
+   "condition": "E-02 ne contient pas Préau",
+   "questions": "E-02"
+  },
+  "PR-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Préau couvert d'une toiture translucide (polycarbonate clair, verrière) sans occultation complémentaire",
+   "condition": "E-26 = Polycarbonate ou verrière et E-27 = Non",
+   "questions": "E-26, E-27"
+  },
+  "PR-3": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Préau fermé sur au moins deux côtés par des parois vitrées ou pleines sans ouverture",
+   "condition": "E-30 ≥ 2",
+   "questions": "E-30"
+  },
+  "PR-4": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Préau couvert d'une toiture opaque de teinte foncée ou moyenne",
+   "condition": "E-26 ≠ Polycarbonate ou verrière et E-28 = Foncée ou Moyenne",
+   "questions": "E-26, E-28"
+  },
+  "PR-5": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Toiture métallique (bac acier, tôle) non isolée avec sous-face basse (moins de 3 m environ)",
+   "condition": "E-26 = Bac acier ou tôle, non isolé et E-29 < 3",
+   "questions": "E-26, E-29"
+  },
+  "PR-6": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "Préau ouvert sur au moins trois côtés et couvert d'une toiture opaque de teinte claire ou de tuiles",
+   "condition": "E-30 ≤ 1 et (E-26 = Tuiles ou E-28 = Claire)",
+   "questions": "E-30, E-26, E-28"
+  },
+  "PR-7": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  },
+  "PR-AL1": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Patrimoine : toute modification de la couverture ou des parois est soumise à l'avis de l'ABF",
+   "condition": "B-05 = Oui ou B-06 = Oui",
+   "questions": "B-05, B-06"
+  },
+  "PR-AL2": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Charpente : avant une végétalisation, une isolation ou l'ajout d'une occultation, faire vérifier la capacité de la charpente à porter la charge supplémentaire",
+   "condition": "Statut PR = À optimiser",
+   "questions": ""
+  },
+  "PR-AL3": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Amiante : une couverture en fibrociment posée avant 1997 doit faire l'objet d'un repérage amiante avant travaux",
+   "condition": "E-26 = Fibrociment et B-01 ≠ Après 1997",
+   "questions": "E-26, B-01"
+  },
+  "PR-AL4": {
+   "statut": null,
+   "alerte": true,
+   "regle": "Surface : préau petit au regard des effectifs, à compléter par un ombrage de la cour ou un ombrage adossé",
+   "condition": "Alerte EX-AL déclenchée",
+   "questions": ""
+  },
+  "OC-1": {
+   "statut": "En place",
+   "alerte": false,
+   "regle": "L'ombrage existant (arbres en bon état ou structures fonctionnelles) couvre au moins 25 % de la cour en milieu de journée",
+   "condition": "E-09 = Entre 25 et 50 %, Entre 50 et 75 % ou Entre 75 et 100 %, et E-12 ≠ Dégradé et E-15 ≠ Hors service ou dégradé",
+   "questions": "E-09, E-10, E-12, E-15"
+  },
+  "OC-2": {
+   "statut": "À optimiser",
+   "alerte": false,
+   "regle": "Arbres ou structures d'ombrage existants mais dégradés, hors service, ou couvrant moins de 25 % de la cour en milieu de journée",
+   "condition": "E-10 contient Arbres, Voiles d'ombrage ou Pergola, et (E-12 = Dégradé ou E-15 = Hors service ou dégradé ou E-09 = 0 % ou Entre 0 et 25 %)",
+   "questions": "E-10, E-12, E-15, E-09"
+  },
+  "OC-3": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Monument historique, périmètre de protection ou intérêt patrimonial",
+   "condition": "B-05 = Oui ou B-06 = Oui",
+   "questions": "B-05, B-06"
+  },
+  "OC-4": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "Aucune structure ne peut être fondée ni lestée et aucune plantation n'est possible (dalle sur ouvrage, parking souterrain, faible épaisseur de terre)",
+   "condition": "E-32 = Dalle sur ouvrage ou parking souterrain, ou Faible épaisseur de terre",
+   "questions": "E-32"
+  },
+  "OC-5": {
+   "statut": "Sous réserve",
+   "alerte": false,
+   "regle": "La cour sert de voie d'accès des secours ou de livraison",
+   "condition": "E-31 = Oui",
+   "questions": "E-31"
+  },
+  "OC-6": {
+   "statut": "Recommandé",
+   "alerte": false,
+   "regle": "Aucun cas précédent",
+   "condition": "Défaut (aucune règle précédente vérifiée)",
+   "questions": ""
+  }
+ }
+}
