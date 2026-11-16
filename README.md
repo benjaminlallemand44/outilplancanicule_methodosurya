@@ -96,6 +96,7 @@ formule de l'Excel compte les murs sans comparer leurs orientations. Le moteur f
 ## Suite possible
 
 - Persistance (Supabase) : comptes, liste des audits, enregistrement du dictionnaire de saisie.
+- Points de méthode à trancher : voir `docs/points_a_trancher.md`.
 - Rattachement au diagnostic confort d'été global.
 - Export PDF / Word du rapport de résultats.
 
