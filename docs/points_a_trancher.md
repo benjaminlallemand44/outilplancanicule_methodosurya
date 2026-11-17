@@ -3,13 +3,14 @@
 Relevé établi en reprenant toutes les formules de `2611111_outil_aide_test_methode-1.xlsx`
 (règles « version du 27/10/2026 ») pour les porter dans l'outil.
 
-Trois catégories :
+Quatre catégories :
 
 - **A. Erreurs de l'Excel** : des références cassées. La correction ne fait pas débat, mais elle change
   des résultats ; à valider.
 - **B. Points de méthode à trancher** : le libellé d'une règle et sa formule ne disent pas la même
   chose, ou un cas n'est pas prévu.
 - **C. Points mineurs** : cohérence des libellés, questions sans effet.
+- **D. Écarts entre l'Excel et le document de méthode** (ajoutés après lecture du document).
 
 Pour chaque point, la colonne « Dans l'outil » indique ce que fait la maquette aujourd'hui.
 
@@ -135,6 +136,64 @@ un électricien) est « toujours » vraie, y compris quand les brasseurs sont no
 | C5 | La numérotation a des trous (B-02, B-17, L-05 à L-08, MEX-02, MEX-03, MEX-09, MEX-11 à MEX-13, MEX-23, MEX-27, MEX-28, MEX-31, PL-04, BA-07, BA-08, BA-10, BA-16, BA-17, E-03, E-05, E-08, E-13, E-18) : questions du carnet de visite non reprises. À confirmer qu'aucune ne manque. |
 | C6 | Limites de l'Excel : 10 locaux, 5 espaces, 4 murs par local. L'outil garde la limite de 4 murs ; à confirmer. |
 | C7 | F-05 propose « Non évalué », pas F-02 à F-04. |
+
+## D. Écarts entre l'Excel et le document de méthode
+
+Relevés en comparant l'Excel au document « Méthode de l'audit de faisabilité d'actions d'adaptation »
+(SURYA, version 01 du 27/10/2026, copie dans `reference/`). Les règles elles-mêmes sont identiques
+dans les deux documents ; les écarts portent sur le cadre de l'audit.
+
+### D1. Type des alertes (AL / VA) non renseigné dans l'Excel
+
+La méthode distingue l'**alerte maîtrise d'œuvre (AL)**, qui exige une étude avant de consulter, et le
+**point de validation ponctuelle (VA)**, qu'un professionnel peut lever (§ I.e). L'Excel ne type pas ses
+alertes. Le compte rendu PDF les classe ainsi, d'après le tableau du § I.e. **Proposition à valider :**
+
+| Alerte | Objet | Type proposé |
+|---|---|---|
+| BR-AL | Électricien + capacité de la structure à porter les brasseurs | VA |
+| VN-AL1 | Pas de grilles ni de ventelles (sûreté) | VA |
+| VN-AL2 | Protection contre la pluie | Point d'attention |
+| FT-AL | Fenêtre de toit ouvrante, intérêt pour la ventilation | Point d'attention |
+| VV-AL | Tenue structurelle de la véranda ou verrière | AL |
+| EX-AL | Surface d'ombrage insuffisante | Point d'attention |
+| OA-AL1 | Solution mutualisable locaux / extérieur | Point d'attention |
+| OA-AL2 | Prise au vent de la voile (façade, mâts) | AL |
+| OA-AL3 | Sécurité incendie de la toile | AL |
+| PR-AL1 | Patrimoine : avis de l'ABF | AL |
+| PR-AL2 | Charpente du préau : charge supplémentaire | AL |
+| PR-AL3 | Amiante (fibrociment avant 1997) | AL |
+| PR-AL4 | Préau petit au regard des effectifs | Point d'attention |
+
+Dans le plan d'action du compte rendu, une solution Recommandée ou À optimiser portant une alerte AL
+passe dans « À valider avant de consulter ».
+
+**À trancher aussi :** la méthode classe en AL le « réglementaire et patrimonial ». Les règles PV-3,
+PH-5, FT-5, VV-6, OA-5 et OC-3 (monument historique, abords) donnent « Sous réserve » mais ne
+déclenchent pas d'alerte. Faut-il ajouter une alerte AL patrimoine sur ces solutions ?
+
+### D2. Photos normées obligatoires
+
+Principe de traçabilité (§ I.c) : « photos normées obligatoires sur les questions décisives ». Ni
+l'Excel ni l'outil ne prévoient de photos. **À trancher :** quelles questions exigent une photo ?
+L'outil pourra les recueillir et les insérer dans le compte rendu une fois la base de données en place.
+
+### D3. CO-1 : « occupé en continu » n'est pas relevé
+
+La règle vise un bureau « occupé en continu », mais aucune question ne relève la durée d'occupation :
+tout bureau de moins de 6 m² par occupant est concerné.
+
+### D4. CQ-1 : les réfrigérateurs ne figurent pas dans L-10
+
+La règle cite les réfrigérateurs parmi les équipements à forte dissipation ; L-10 ne propose que
+copieurs, baies informatiques, appareils de cuisson, aucun, autre.
+
+### D5. Règle du doute et option « Non évalué »
+
+La méthode demande de cocher « non évaluable » en cas d'hésitation (§ I.f). Ces questions à choix
+n'ont pas d'option « Non évalué » : B-03, B-04, B-07, B-18, B-22, B-26, L-02, L-09, MEX-14, MEX-16,
+MEX-17, MEX-20, MEX-21, MEX-24, PL-01, BA-05, E-15, E-21, E-24, E-25, E-26, E-27, E-28. Dans l'outil,
+laisser la question vide revient au même (donnée inconnue). À ajouter dans la grille de visite ?
 
 ## Décisions déjà prises
 

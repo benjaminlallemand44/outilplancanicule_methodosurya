@@ -61,3 +61,23 @@ def test_tirages_aleatoires_sans_erreur_et_regles_atteintes():
             vues.update(b["regle"] for b in x["blocs"].values() if b["regle"])
             vues.update(c for s in x["solutions"] for c in s["alertes"])
     assert len(vues) >= 0.93 * len(moteur.REGLES), sorted(set(moteur.REGLES) - vues)
+
+
+def test_compte_rendu_pdf():
+    from surya.rapport import generer_pdf
+
+    d = json.loads(json.dumps(EXEMPLE))
+    d["audit"] = {"etablissement": "École « test » & co", "synthese": "Commentaire ≥ 2 lignes\nsuite"}
+    d["locaux"][0]["observations"] = "Texte <libre> avec œ et √"
+    pdf = generer_pdf(d)
+    assert pdf.startswith(b"%PDF") and len(pdf) > 20_000
+    assert generer_pdf({}).startswith(b"%PDF")
+
+
+def test_compte_rendu_pdf_tirages_aleatoires():
+    import fuzz_excel
+    from surya.rapport import generer_pdf
+
+    rnd = random.Random(5)
+    for _ in range(15):
+        assert generer_pdf(fuzz_excel.tirage(rnd)).startswith(b"%PDF")

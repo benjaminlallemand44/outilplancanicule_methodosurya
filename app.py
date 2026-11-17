@@ -11,6 +11,7 @@ import csv
 import html
 import io
 import json
+import unicodedata
 import uuid
 from pathlib import Path
 
@@ -19,6 +20,8 @@ import streamlit as st
 from surya import moteur
 from surya.import_excel import lire_classeur
 from surya.moteur import NB_MURS_MAX, ORIENTATIONS, PARAMETRES_DEFAUT, REFERENTIEL, REGLES
+from surya.rapport import CHAMPS_AUDIT, QUESTIONS_DU_CAS, generer_pdf
+from surya.rapport import donnee_manquante as _manquante
 from surya.questions import (QUESTIONS_FACADE, QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE,
                              SECTIONS_LOCAL, avancement, visible)
 
@@ -34,11 +37,14 @@ COULEURS = {
     moteur.NON_RECOMMANDE: ("#f9d2d0", "#8c1d18"),
     moteur.NON_CONCERNE: ("#e6e6e6", "#4d4d4d"),
 }
-# Solutions dont le statut dépend d'abord d'un « cas » : question à renseigner si le cas est indéterminé
-QUESTIONS_DU_CAS = {
-    "Mise en place de brasseurs d'air plafonniers": "BA-05",
-    "Toiture": "L-09, puis B-18, B-21 et B-22 (bâtiment)",
-    "Ombrage autoportant ou végétal de la cour": "E-02",
+# Aides à la saisie tirées du document de méthode (SURYA, version 01 du 27/10/2026)
+AIDES = {
+    "MEX-07": "Estimé à l'œil ou sur photo, sans mesure. Aucun ; Faible : profondeur inférieure à la moitié de la "
+              "hauteur de la baie, ou débord nettement au-dessus de la baie ; Important : profondeur au moins égale à "
+              "la moitié de la hauteur de la baie et débord juste au-dessus.",
+    "MEX-05": "16 cm n'est pas une valeur de dimensionnement : c'est la profondeur de tableau qui permet d'envisager "
+              "une protection solaire parallèle au vitrage posée en tableau.",
+    "MEX-32": "La pose de films solaires est la dernière solution à envisager, du fait de sa faible efficacité.",
 }
 
 st.set_page_config(page_title="Méthode SURYA — faisabilité d'actions d'adaptation", page_icon="🌡️", layout="wide")
@@ -46,7 +52,7 @@ st.set_page_config(page_title="Méthode SURYA — faisabilité d'actions d'adapt
 
 # ------------------------------------------------------------------ état
 def donnees_vides() -> dict:
-    return {"batiment": {}, "facades": {}, "locaux": [], "espaces": [], "parametres": {}}
+    return {"audit": {}, "batiment": {}, "facades": {}, "locaux": [], "espaces": [], "parametres": {}}
 
 
 def charger(d: dict):
@@ -80,7 +86,7 @@ def _etiquette(q) -> str:
 def champ(q: dict, d: dict, prefixe: str):
     """Affiche le champ d'une question et range la réponse dans ``d``."""
     code, typ, k = q["code"], q["type"], cle(prefixe, q["code"])
-    aide = "Question informative : elle n'entre pas dans le calcul des statuts." if q.get("info") else None
+    aide = AIDES.get(code) or ("Question informative : elle n'entre pas dans le calcul des statuts." if q.get("info") else None)
     actuel = d.get(code)
     if typ == "choix":
         opts = q["options"]
@@ -205,10 +211,24 @@ def page_accueil():
 
 def page_batiment():
     st.title("Bâtiment")
+    with st.container(border=True):
+        st.subheader("Identification de l'audit")
+        st.caption("Informations reprises en page de garde du compte rendu.")
+        a = D["audit"]
+        cols = st.columns(3)
+        for n, (k, lib) in enumerate(CHAMPS_AUDIT):
+            v = cols[n % 3].text_input(lib, value=a.get(k, ""), key=cle("audit", k)).strip()
+            if v:
+                a[k] = v
+            else:
+                a.pop(k, None)
     b = D["batiment"]
     for s in SECTIONS_BATIMENT:
         with st.container(border=True):
             st.subheader(s["titre"])
+            if s["titre"] == "Ventilation mécanique":
+                st.caption("Cas technique : sans compétence suffisante, laissez les champs non évalués ; la ventilation "
+                           "mécanique nocturne passera alors « Sous réserve ».")
             section(s, b, lambda: moteur.etats_batiment(b, D["facades"]), CB, "bat")
     with st.container(border=True):
         st.subheader("Façades")
@@ -316,6 +336,17 @@ def _murs(l: dict, pid: str):
         st.rerun()
 
 
+def _observations(x: dict, pid: str):
+    st.caption("Texte libre repris dans la fiche du compte rendu. Les éléments décisifs restent saisis dans les "
+               "questions fermées : ce champ ne modifie aucun statut.")
+    v = st.text_area("Observations de l'auditeur", value=x.get("observations", ""), height=160,
+                     key=cle(pid, "observations")).strip()
+    if v:
+        x["observations"] = v
+    else:
+        x.pop("observations", None)
+
+
 def page_locaux():
     st.title("Locaux")
     l = _liste_entites("locaux", "i_local", "L-01", "local", "Local")
@@ -326,12 +357,15 @@ def page_locaux():
     with gauche:
         titres = [s["titre"] for s in SECTIONS_LOCAL]
         titres.insert(2, "Baies en façade")
+        titres.append("Observations")
         onglets = st.tabs(titres)
         sections = iter(SECTIONS_LOCAL)
         for titre, onglet in zip(titres, onglets):
             with onglet:
                 if titre == "Baies en façade":
                     _murs(l, pid)
+                elif titre == "Observations":
+                    _observations(l, pid)
                 else:
                     section(next(sections), l, lambda: moteur.etats_local(l, CB), CB, pid)
     with droite:
@@ -352,10 +386,12 @@ def page_espaces():
     pid, nom = f"esp:{e['_id']}", e.get("E-01")
     gauche, droite = st.columns([2.6, 1], gap="large")
     with gauche:
-        onglets = st.tabs([s["titre"] for s in SECTIONS_ESPACE])
+        onglets = st.tabs([s["titre"] for s in SECTIONS_ESPACE] + ["Observations"])
         for s, onglet in zip(SECTIONS_ESPACE, onglets):
             with onglet:
                 section(s, e, lambda: moteur.etats_espace(e), CB, pid)
+        with onglets[-1]:
+            _observations(e, pid)
     with droite:
         c = moteur.etats_espace(e)
         fait, total = avancement(SECTIONS_ESPACE, c, e, CB)
@@ -386,12 +422,6 @@ def _tableau(entites, defaut):
     st.markdown(f"<div style='overflow-x:auto'><table style='border-collapse:collapse'>"
                 f"<tr><th></th>{th}</tr>{lignes}</table></div>", unsafe_allow_html=True)
     st.caption("❓ statut « Sous réserve » dû à une donnée manquante · ⚠️ alerte associée")
-
-
-def _manquante(x, s) -> bool:
-    if s["statut"] != moteur.SOUS_RESERVE:
-        return False
-    return not s["blocs"] or any(x["blocs"][b]["manquante"] for b in s["blocs"])
 
 
 def _detail(x, s):
@@ -436,15 +466,39 @@ def _export_csv(res) -> str:
     return out.getvalue()
 
 
+@st.cache_data(max_entries=20, show_spinner="Préparation du compte rendu…")
+def _pdf(donnees_json: str) -> bytes:
+    return generer_pdf(json.loads(donnees_json))
+
+
 def page_resultats():
     st.title("Résultats — statuts de faisabilité")
     res = moteur.calculer(D)
     if not res["locaux"] and not res["espaces"]:
         st.info("Ajoutez au moins un local ou un espace extérieur pour obtenir des résultats.")
         return
+    with st.container(border=True):
+        st.subheader("📄 Compte rendu de l'audit")
+        st.markdown("Le compte rendu PDF reprend **tout** l'audit : page de garde, cadre et statuts, synthèse, "
+                    "plan d'action par solution (engageable / à valider / en place / exclue, avec quantités), alertes "
+                    "AL / VA, données manquantes, fiche détaillée de chaque local et espace, seuils utilisés.")
+        a = D["audit"]
+        v = st.text_area("Commentaire général de l'auditeur (facultatif)", value=a.get("synthese", ""),
+                         key=cle("audit", "synthese")).strip()
+        if v:
+            a["synthese"] = v
+        else:
+            a.pop("synthese", None)
+        base = unicodedata.normalize("NFKD", a.get("etablissement", "audit")).encode("ascii", "ignore").decode()
+        nom_fichier = "compte_rendu_" + "".join(c if c.isalnum() else "_" for c in base).strip("_") + ".pdf"
+        c1, c2 = st.columns([1, 1])
+        c1.download_button("Télécharger le compte rendu (PDF)", _pdf(json.dumps(D, ensure_ascii=False, sort_keys=True)),
+                           file_name=nom_fichier, mime="application/pdf", type="primary", width="stretch")
+        c2.download_button("Télécharger les résultats (CSV)", _export_csv(res).encode("utf-8-sig"),
+                           file_name="resultats_surya.csv", mime="text/csv", width="stretch")
+        if not a.get("etablissement"):
+            st.caption("Astuce : renseignez l'identification de l'audit (page Bâtiment) pour compléter la page de garde.")
     st.markdown(" ".join(pastille(s) for s in COULEURS), unsafe_allow_html=True)
-    st.download_button("Télécharger les résultats (CSV)", _export_csv(res).encode("utf-8-sig"),
-                       file_name="resultats_surya.csv", mime="text/csv")
     for titre, cle_, defaut in (("Locaux", "locaux", "Local"), ("Espaces extérieurs", "espaces", "Espace")):
         entites = res[cle_]
         if not entites:

@@ -27,6 +27,11 @@ méthode déjà rempli (`.xlsx`), exporter / réimporter une saisie (`.json`).
 | Résultats | `Résultats`, avec en plus la règle retenue, les données manquantes, les alertes et le détail de chaque règle (`Règles_Locaux`, `Règles_Extérieurs`) |
 | Paramètres | `Paramètres` (seuils des règles, modifiables) |
 
+**Compte rendu PDF** (page Résultats) : page de garde, cadre de l'audit et statuts, synthèse,
+plan d'action par solution (engageable / à valider / en place / exclue, avec quantités relevées),
+alertes typées AL / VA, données manquantes, fiche détaillée de chaque local et espace, seuils utilisés.
+Il est généré par `surya/rapport.py` (reportlab), sans dépendance à l'interface.
+
 Les questions conditionnelles (« - si B-09 = Oui : … ») ne s'affichent que lorsqu'elles ont un objet.
 
 ## Organisation du code
@@ -36,10 +41,11 @@ app.py                      interface Streamlit (aucune règle métier)
 surya/moteur.py             moteur de calcul : états des réponses, règles, statuts
 surya/questions.py          questionnaire et conditions d'affichage
 surya/import_excel.py       lecture d'un Excel de la méthode
+surya/rapport.py            compte rendu PDF
 surya/referentiel.json      textes extraits de l'Excel (questions, options, règles, seuils)
 surya/exemple.json          jeu d'exemple (celui de l'Excel)
 outils/extraire_referentiel.py   régénère referentiel.json depuis l'Excel
-reference/                  Excel d'origine
+reference/                  Excel d'origine et document de méthode (PDF)
 tests/                      tests
 ```
 
@@ -98,7 +104,7 @@ formule de l'Excel compte les murs sans comparer leurs orientations. Le moteur f
 - Persistance (Supabase) : comptes, liste des audits, enregistrement du dictionnaire de saisie.
 - Points de méthode à trancher : voir `docs/points_a_trancher.md`.
 - Rattachement au diagnostic confort d'été global.
-- Export PDF / Word du rapport de résultats.
+- Photos par question décisive, insérées dans le compte rendu.
 
 ## Licence
 
