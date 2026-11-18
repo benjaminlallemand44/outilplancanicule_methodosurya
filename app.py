@@ -467,8 +467,8 @@ def _export_csv(res) -> str:
 
 
 @st.cache_data(max_entries=20, show_spinner="Préparation du compte rendu…")
-def _pdf(donnees_json: str) -> bytes:
-    return generer_pdf(json.loads(donnees_json))
+def _pdf(donnees_json: str, complet: bool) -> bytes:
+    return generer_pdf(json.loads(donnees_json), complet=complet)
 
 
 def page_resultats():
@@ -478,10 +478,13 @@ def page_resultats():
         st.info("Ajoutez au moins un local ou un espace extérieur pour obtenir des résultats.")
         return
     with st.container(border=True):
-        st.subheader("📄 Compte rendu de l'audit")
-        st.markdown("Le compte rendu PDF reprend **tout** l'audit : page de garde, cadre et statuts, synthèse, "
-                    "plan d'action par solution (engageable / à valider / en place / exclue, avec quantités), alertes "
-                    "AL / VA, données manquantes, fiche détaillée de chaque local et espace, seuils utilisés.")
+        st.subheader("📄 Exporter en PDF")
+        st.markdown("Deux documents au choix :\n"
+                    "- **Résultats** (2 à 3 pages) : statuts de chaque solution par local et espace, alertes, "
+                    "données manquantes.\n"
+                    "- **Compte rendu complet** : page de garde, cadre de l'audit, synthèse, plan d'action par "
+                    "solution (engageable / à valider / en place / exclue, avec quantités), alertes AL / VA, données "
+                    "manquantes, fiche détaillée de chaque local et espace, seuils utilisés.")
         a = D["audit"]
         v = st.text_area("Commentaire général de l'auditeur (facultatif)", value=a.get("synthese", ""),
                          key=cle("audit", "synthese")).strip()
@@ -490,11 +493,14 @@ def page_resultats():
         else:
             a.pop("synthese", None)
         base = unicodedata.normalize("NFKD", a.get("etablissement", "audit")).encode("ascii", "ignore").decode()
-        nom_fichier = "compte_rendu_" + "".join(c if c.isalnum() else "_" for c in base).strip("_") + ".pdf"
-        c1, c2 = st.columns([1, 1])
-        c1.download_button("Télécharger le compte rendu (PDF)", _pdf(json.dumps(D, ensure_ascii=False, sort_keys=True)),
-                           file_name=nom_fichier, mime="application/pdf", type="primary", width="stretch")
-        c2.download_button("Télécharger les résultats (CSV)", _export_csv(res).encode("utf-8-sig"),
+        suffixe = "".join(c if c.isalnum() else "_" for c in base).strip("_") + ".pdf"
+        donnees_json = json.dumps(D, ensure_ascii=False, sort_keys=True)
+        c1, c2, c3 = st.columns([1, 1, 0.7])
+        c1.download_button("Résultats (PDF)", _pdf(donnees_json, False), file_name="resultats_" + suffixe,
+                           mime="application/pdf", type="primary", width="stretch")
+        c2.download_button("Compte rendu complet (PDF)", _pdf(donnees_json, True), file_name="compte_rendu_" + suffixe,
+                           mime="application/pdf", type="primary", width="stretch")
+        c3.download_button("Tableau (CSV)", _export_csv(res).encode("utf-8-sig"),
                            file_name="resultats_surya.csv", mime="text/csv", width="stretch")
         if not a.get("etablissement"):
             st.caption("Astuce : renseignez l'identification de l'audit (page Bâtiment) pour compléter la page de garde.")

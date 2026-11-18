@@ -81,3 +81,10 @@ def test_compte_rendu_pdf_tirages_aleatoires():
     rnd = random.Random(5)
     for _ in range(15):
         assert generer_pdf(fuzz_excel.tirage(rnd)).startswith(b"%PDF")
+
+
+def test_pdf_resultats_seuls():
+    from surya.rapport import generer_pdf
+
+    court, complet = generer_pdf(EXEMPLE, complet=False), generer_pdf(EXEMPLE)
+    assert court.startswith(b"%PDF") and len(court) < len(complet)

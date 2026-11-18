@@ -276,8 +276,8 @@ def _cadre(S):
     return el
 
 
-def _synthese(res, S):
-    el = [PageBreak(), Paragraph("2. Synthèse des statuts", S["h1"])]
+def _synthese(res, S, titre="2. Synthèse des statuts", saut=True):
+    el = ([PageBreak()] if saut else []) + [Paragraph(titre, S["h1"])]
     compte = Counter(s["statut"] for x in res["locaux"] + res["espaces"] for s in x["solutions"])
     data = [[_p_statut(st, S) for st in STATUTS], [Paragraph(f"<b>{compte.get(st, 0)}</b>", S["entete"]) for st in STATUTS]]
     el.append(_tableau(data, [30 * mm] * 6, [("BACKGROUND", (i, 0), (i, 0), _fond(st)) for i, st in enumerate(STATUTS)],
@@ -291,7 +291,7 @@ def _synthese(res, S):
         for debut in range(0, len(entites), 5):
             el.append(_tableau_statuts(entites[debut:debut + 5], debut, defaut, S))
             el.append(Spacer(1, 3 * mm))
-    el.append(Paragraph("(?) statut « Sous réserve » dû à une donnée manquante · (!) alerte associée, voir § 4.", S["petit"]))
+    el.append(Paragraph("(?) statut « Sous réserve » dû à une donnée manquante · (!) alerte associée, voir la partie Alertes.", S["petit"]))
     return el
 
 
@@ -373,8 +373,8 @@ def _plan_action(res, d, S):
     return el
 
 
-def _alertes(res, S):
-    el = [PageBreak(), Paragraph("4. Alertes et points de vigilance", S["h1"]),
+def _alertes(res, S, titre="4. Alertes et points de vigilance", saut=True):
+    el = ([PageBreak()] if saut else []) + [Paragraph(titre, S["h1"]),
           Paragraph("Le type d'alerte (AL / VA) est proposé par l'outil d'après le tableau « Limites déclenchant une "
                     "alerte maîtrise d'œuvre » de la méthode.", S["petit"])]
     concernes = defaultdict(list)
@@ -398,14 +398,14 @@ def _alertes(res, S):
     return el
 
 
-def _donnees_manquantes(res, S):
+def _donnees_manquantes(res, S, titre="5. Données manquantes"):
     lignes = []
     for cle, defaut in (("locaux", "Local"), ("espaces", "Espace")):
         for i, x in enumerate(res[cle]):
             for s in x["solutions"]:
                 if donnee_manquante(x, s):
                     lignes.append((nom(x, i, defaut), s["solution"], justification(x, s)[1]))
-    el = [Paragraph("5. Données manquantes", S["h1"])]
+    el = [Paragraph(titre, S["h1"])]
     if not lignes:
         return el + [Paragraph("Aucune : tous les statuts sont établis sur des données renseignées.", S["base"])]
     el.append(Paragraph("Ces statuts « Sous réserve » ne traduisent pas un obstacle constaté mais une information "
@@ -541,9 +541,29 @@ def _annexe(d, S):
     return el
 
 
+def _entete_resultats(audit, res, S):
+    """En-tête du PDF « résultats seuls » : titre, identification, légende des statuts."""
+    el = [Paragraph("Résultats de l'audit de faisabilité d'actions d'adaptation", S["h1"])]
+    ident = [f"<b>{_t(lib)}</b> : {_t(audit[k])}" for k, lib in CHAMPS_AUDIT if audit.get(k)]
+    ident.append(f"<b>Périmètre</b> : {len(res['locaux'])} local(aux), {len(res['espaces'])} espace(s) extérieur(s)")
+    ident.append(f"<b>Édité le</b> : {dt.date.today().strftime('%d/%m/%Y')}")
+    el.append(Paragraph(" · ".join(ident), S["base"]))
+    el.append(Spacer(1, 3 * mm))
+    data = [[_p_statut(st, S) for st in STATUTS],
+            [Paragraph(_t(DEFINITIONS_STATUTS[st]), S["petit"]) for st in STATUTS]]
+    el.append(_tableau(data, [30 * mm] * 6, [("BACKGROUND", (i, 0), (i, 0), _fond(st)) for i, st in enumerate(STATUTS)],
+                       entete=False))
+    return el
+
+
 # ------------------------------------------------------------------ point d'entrée
-def generer_pdf(donnees: dict) -> bytes:
-    """Compte rendu complet de l'audit (PDF)."""
+def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
+    """PDF de l'audit.
+
+    ``complet=True`` : compte rendu complet (page de garde, cadre, synthèse, plan d'action, alertes,
+    données manquantes, fiches détaillées, annexe).
+    ``complet=False`` : résultats seuls (tableaux de statuts, alertes, données manquantes).
+    """
     S = _styles()
     res = moteur.calculer(donnees)
     audit = donnees.get("audit") or {}
@@ -560,6 +580,16 @@ def generer_pdf(donnees: dict) -> bytes:
         canvas.line(15 * mm, 12 * mm, A4[0] - 15 * mm, 12 * mm)
         canvas.restoreState()
 
+    if not complet:
+        el = _entete_resultats(audit, res, S)
+        if res["locaux"] or res["espaces"]:
+            el += _synthese(res, S, "Statuts par solution", saut=False)
+            el += [CondPageBreak(60 * mm)] + _alertes(res, S, "Alertes", saut=False) + [Spacer(1, 4 * mm)]
+            el += _donnees_manquantes(res, S, "Données manquantes")
+        else:
+            el.append(Paragraph("Aucun local ni espace extérieur n'a été saisi.", S["base"]))
+        return _construire(el, audit, titre_pied, "Résultats — audit de faisabilité d'actions d'adaptation", pied)
+
     el = _page_de_garde(audit, res, S) + _cadre(S)
     if res["locaux"] or res["espaces"]:
         el += _synthese(res, S) + _plan_action(res, donnees, S) + _alertes(res, S) + [Spacer(1, 6 * mm)]
@@ -569,10 +599,12 @@ def generer_pdf(donnees: dict) -> bytes:
     if audit.get("synthese"):
         el += [Paragraph("Commentaire général de l'auditeur", S["h2"]), Paragraph(_t(audit["synthese"]), S["base"])]
     el += _fiches(res, donnees, S) + _annexe(donnees, S)
+    return _construire(el, audit, titre_pied, "Compte rendu — audit de faisabilité d'actions d'adaptation", pied)
 
+
+def _construire(el, audit, titre_pied, titre, pied) -> bytes:
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=14 * mm,
-                            bottomMargin=17 * mm, title="Compte rendu — audit de faisabilité d'actions d'adaptation",
-                            author=audit.get("auditeur") or "", subject=titre_pied)
+                            bottomMargin=17 * mm, title=titre, author=audit.get("auditeur") or "", subject=titre_pied)
     doc.build(el, onFirstPage=pied, onLaterPages=pied)
     return buf.getvalue()
