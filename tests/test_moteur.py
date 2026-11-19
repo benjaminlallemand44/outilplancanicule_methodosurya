@@ -88,3 +88,21 @@ def test_pdf_resultats_seuls():
 
     court, complet = generer_pdf(EXEMPLE, complet=False), generer_pdf(EXEMPLE)
     assert court.startswith(b"%PDF") and len(court) < len(complet)
+
+
+def test_questionnaire_csv_et_matrice():
+    from surya import questionnaire as QU
+    from surya.rapport import generer_pdf
+
+    reps, avert = QU.lire_csv((RACINE / "surya" / "exemple_questionnaires.csv").read_bytes())
+    assert len(reps) == 14 and not avert
+    assert QU.lire_csv(QU.vers_csv(reps))[0] == reps  # aller-retour sans perte
+    entete = "Q4 - Ressenti ? ,Q11. Protections,Q99\nChaude,Rideaux ; Inconnu,x\n"
+    r, av = QU.lire_csv(entete)
+    assert r == [{"Q4": "Chaude", "Q11": ["Rideaux"]}] and av
+    m = QU.matrice(reps, moteur.calculer(EXEMPLE))
+    assert {l["resultat"] for l in m["lignes"]} <= {QU.COHERENT, QU.A_VERIFIER, QU.NON_CORROBORE, QU.NON_EVALUABLE}
+    assert 0 <= m["indicateur"] <= 1
+    assert QU.matrice([], moteur.calculer(EXEMPLE))["indicateur"] is None
+    d = dict(EXEMPLE, questionnaires=reps)
+    assert len(generer_pdf(d)) > len(generer_pdf(EXEMPLE))

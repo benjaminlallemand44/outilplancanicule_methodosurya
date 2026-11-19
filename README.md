@@ -25,7 +25,7 @@ Un **parcours guidé**. Au départ, l'utilisateur choisit :
   - *Résultats de faisabilité* (équivalent de l'Excel) : Bâtiment → Locaux → Espaces extérieurs →
     Façades → Vérification → Résultats (tableau, PDF des résultats, CSV) ;
   - *Diagnostic complet* : Identification → Bâtiment → Locaux → Espaces extérieurs → Façades →
-    Vérification → Documents (compte rendu complet en PDF, PDF des résultats, CSV), avec en plus les
+    Questionnaires usagers → Vérification → Documents (compte rendu complet en PDF, PDF des résultats, CSV), avec en plus les
     observations par local et espace et un commentaire général ;
 - **comment remplir le questionnaire** (bâtiment, locaux, espaces) : *pas à pas* (un bloc par écran,
   « Suivant ») ou *fiches à onglets* (tous les blocs accessibles librement). Modifiable à tout moment.
@@ -42,6 +42,12 @@ solution (engageable / à valider / en place / exclue, avec quantités relevées
 données manquantes, fiche détaillée de chaque local et espace, seuils utilisés. Il est généré par
 `surya/rapport.py` (reportlab), sans dépendance à l'interface.
 
+**Questionnaire usagers** (diagnostic complet) : questionnaire confort estival (Q1 à Q24) en ligne
+(lien `?questionnaire=<code>`), import CSV au même format, saisie de questionnaires papier, synthèse
+globale et matrice de correspondance ressenti / préconisations (proposition, voir
+`docs/points_a_trancher.md` § E1). Maquette : aucune réponse n'est stockée sur un serveur ; le passage
+à Supabase est préparé (`surya/stockage.py`, `docs/supabase.md`).
+
 Les questions conditionnelles (« - si B-09 = Oui : … ») ne s'affichent que lorsqu'elles ont un objet.
 
 ## Organisation du code
@@ -52,10 +58,12 @@ surya/moteur.py             moteur de calcul : états des réponses, règles, st
 surya/questions.py          questionnaire et conditions d'affichage
 surya/import_excel.py       lecture d'un Excel de la méthode
 surya/rapport.py            compte rendu PDF
+surya/questionnaire.py      questionnaire usagers : questions, CSV, synthèse, matrice
+surya/stockage.py           stockage des réponses (mémoire ; Supabase plus tard)
 surya/referentiel.json      textes extraits de l'Excel (questions, options, règles, seuils)
 surya/exemple.json          jeu d'exemple (celui de l'Excel)
 outils/extraire_referentiel.py   régénère referentiel.json depuis l'Excel
-reference/                  Excel d'origine et document de méthode (PDF)
+reference/                  Excel d'origine, document de méthode, questionnaire usagers (PDF)
 tests/                      tests
 ```
 

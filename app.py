@@ -23,7 +23,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from surya import moteur
+from surya import questionnaire as QU
 from surya.import_excel import lire_classeur
+from surya.stockage import DepotMemoire
 from surya.moteur import NB_MURS_MAX, ORIENTATIONS, REFERENTIEL, REGLES
 from surya.questions import (QUESTIONS_FACADE, QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE, SECTIONS_LOCAL,
                              visible)
@@ -41,7 +43,8 @@ MODES = {
     "complet": {
         "titre": "Diagnostic complet",
         "court": "Diagnostic complet",
-        "etapes": ["Identification", "Bâtiment", "Locaux", "Espaces extérieurs", "Façades", "Vérification",
+        "etapes": ["Identification", "Bâtiment", "Locaux", "Espaces extérieurs", "Façades", "Questionnaires usagers",
+                   "Vérification",
                    "Documents"],
     },
 }
@@ -81,7 +84,8 @@ ss = st.session_state
 
 # ------------------------------------------------------------------ état
 def donnees_vides() -> dict:
-    return {"audit": {}, "batiment": {}, "facades": {}, "locaux": [], "espaces": [], "parametres": {}}
+    return {"audit": {}, "batiment": {}, "facades": {}, "locaux": [], "espaces": [], "parametres": {},
+            "questionnaires": []}
 
 
 def charger(d: dict):
@@ -284,7 +288,8 @@ def ecran_depart():
     with c2.container(border=True, height="stretch"):
         st.markdown("### 📄 Diagnostic complet")
         st.markdown("Même saisie, avec en plus l'identification de l'audit (établissement, auditeur, date), vos "
-                    "observations par local et espace et un commentaire général.")
+                    "observations par local et espace, les **questionnaires usagers** (confort estival) et un "
+                    "commentaire général.")
         st.markdown("**À la fin :** le **compte rendu complet** (page de garde, synthèse, plan d'action, alertes, "
                     "fiches détaillées) et le PDF des résultats.")
         st.markdown(f":gray[{len(MODES['complet']['etapes'])} étapes : {' → '.join(MODES['complet']['etapes'])}]")
@@ -311,8 +316,11 @@ def bloc_donnees(prefixe: str):
     """Exemple, import, export, effacement."""
     c1, c2 = st.columns(2)
     if c1.button("Charger l'exemple de l'Excel", width="stretch", key=f"{prefixe}:exemple"):
-        charger(json.loads((RACINE / "surya" / "exemple.json").read_text(encoding="utf-8")))
-        ss.message = "Exemple chargé : 3 locaux et 1 espace extérieur."
+        exemple = json.loads((RACINE / "surya" / "exemple.json").read_text(encoding="utf-8"))
+        exemple["questionnaires"] = [dict(r, source="exemple (fictif)") for r in
+                                     QU.lire_csv((RACINE / "surya" / "exemple_questionnaires.csv").read_bytes())[0]]
+        charger(exemple)
+        ss.message = ("Exemple chargé : 3 locaux, 1 espace extérieur et 14 questionnaires usagers fictifs.")
         ss.etape_max = len(etapes()) - 1 if ss.mode else 0
         st.rerun()
     c2.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
@@ -804,9 +812,172 @@ def etape_verification():
                     ss.theme[c] = premier_theme_incomplet(c, xx)
                     aller(ENTITES[c]["titre"])
                 ligne(f"{cle_liste}:{x['_id']}", nom_entite(x, i, cle_liste), n, detail, action)
+    if ss.mode == "complet":
+        n = len(D["questionnaires"])
+        c1, c2, c3 = st.columns([3, 4, 1.3], vertical_alignment="center")
+        c1.markdown(f"{'✅' if n >= QU.MIN_REPONDANTS else 'ℹ️'} **Questionnaires usagers**")
+        c2.markdown(f"{n} réponse(s)" + ("" if n >= QU.MIN_REPONDANTS else
+                                           f" — facultatif ; la synthèse demande au moins {QU.MIN_REPONDANTS} réponses"))
+        if n < QU.MIN_REPONDANTS and c3.button("Ajouter", key="verif:quest", width="stretch"):
+            aller("Questionnaires usagers")
     if total == 0:
         st.success("Tout est renseigné.")
     pied(suivant_label="Générer les documents →" if ss.mode == "complet" else "Voir les résultats →")
+
+
+# --- questionnaires usagers ---------------------------------------------------------------------
+def code_audit() -> str:
+    a = D["audit"]
+    if not a.get("code"):
+        a["code"] = uuid.uuid4().hex[:10]
+    return a["code"]
+
+
+def formulaire_usager(r: dict, prefixe: str):
+    """Les questions du questionnaire confort estival, avec leurs conditions. Remplit ``r``."""
+    theme = None
+    for q in QU.QUESTIONS:
+        if not QU.visible(q["code"], r):
+            r.pop(q["code"], None)
+            continue
+        if q["theme"] != theme:
+            theme = q["theme"]
+            st.markdown(f"##### {QU.THEMES[theme]}")
+        k = f"{prefixe}:{q['code']}"
+        lib = f"**{q['code'].removeprefix('Q')}.** {q['libelle']}"
+        if q["type"] == "texte":
+            v = (st.text_area if q["code"] == "Q24" else st.text_input)(lib, value=r.get(q["code"], ""), key=k).strip()
+        elif q["type"] == "choix":
+            v = st.radio(lib, q["options"], index=q["options"].index(r[q["code"]]) if r.get(q["code"]) in q["options"] else None,
+                         key=k)
+        else:
+            st.markdown(lib + " :gray[(plusieurs réponses possibles)]")
+            v = [o for n, o in enumerate(q["options"]) if st.checkbox(o, value=o in (r.get(q["code"]) or []), key=f"{k}:{n}")]
+        if v:
+            r[q["code"]] = v
+        else:
+            r.pop(q["code"], None)
+
+
+def page_usager(code: str):
+    """Questionnaire en ligne, tel qu'un usager le voit (lien ?questionnaire=<code>)."""
+    st.title("Questionnaire confort estival")
+    st.markdown("Ce questionnaire, anonyme, prend 5 minutes. Il porte sur la **période estivale** (mai, juin et "
+                "septembre) et sur le **local que vous occupez principalement**. Vos réponses aideront à choisir les "
+                "solutions pour limiter la chaleur dans l'école.")
+    st.info("Maquette : vos réponses ne sont pas encore envoyées automatiquement. À la fin, téléchargez le fichier "
+            "de votre réponse et transmettez-le à la personne qui réalise l'audit.", icon="ℹ️")
+    if ss.get("usager_envoye"):
+        st.success("Merci pour votre participation !")
+        st.download_button("Télécharger ma réponse (CSV)", QU.vers_csv([ss.usager_envoye]).encode("utf-8-sig"),
+                           file_name=f"reponse_questionnaire_{code}.csv", mime="text/csv", type="primary")
+        if st.button("Répondre à nouveau"):
+            ss.usager_envoye, ss.usager_r = None, {}
+            ss.usager_n = ss.get("usager_n", 0) + 1
+            st.rerun()
+        return
+    r = ss.setdefault("usager_r", {})
+    formulaire_usager(r, f"usager:{ss.get('usager_n', 0)}")
+    if st.button("Envoyer mes réponses", type="primary"):
+        if not any(k.startswith("Q") for k in r):
+            st.error("Le questionnaire est vide.")
+        else:
+            ss.usager_envoye = dict(r, horodatage=__import__("datetime").datetime.now().strftime("%Y-%m-%d %H:%M"))
+            st.rerun()
+
+
+def etape_questionnaires():
+    st.header("Questionnaires usagers")
+    st.markdown("Le questionnaire confort estival (23 questions, 5 minutes) recueille le ressenti des occupants : "
+                "ressenti thermique, gênes, pratiques d'adaptation, moments d'inconfort. Ses résultats sont "
+                "**indicatifs** (enquête déclarative) et servent à vérifier la cohérence des préconisations. "
+                "La synthèse est faite pour tout l'établissement. Cette étape est facultative.")
+    depot = DepotMemoire(D["questionnaires"])
+    code = code_audit()
+    t1, t2, t3 = st.tabs(["📨 Questionnaire en ligne", "📥 Importer des réponses (CSV)", "✍️ Saisir un questionnaire papier"])
+    with t1:
+        st.markdown("Lien à diffuser aux enseignants et au personnel :")
+        st.code(f"<adresse de l'application>/?questionnaire={code}", language=None)
+        st.link_button("Ouvrir le questionnaire tel que le voient les usagers", f"?questionnaire={code}")
+        st.caption("Maquette : les réponses données par ce lien ne sont pas encore enregistrées sur un serveur. "
+                   "Chaque usager peut télécharger sa réponse (CSV) et vous l'envoyer ; vous l'importez dans "
+                   "l'onglet suivant. Avec la base de données (étape suivante), elles arriveront ici automatiquement.")
+    with t2:
+        st.markdown("Fichier CSV au format du questionnaire en ligne : une ligne par répondant, une colonne par "
+                    "question (`Q1` à `Q24`), réponses multiples séparées par « ; ». Les exports de formulaires "
+                    "dont les en-têtes commencent par le numéro de question (« Q4 - … ») sont aussi acceptés.")
+        st.download_button("Télécharger le modèle de fichier", QU.modele_csv().encode("utf-8-sig"),
+                           file_name="modele_questionnaire_confort.csv", mime="text/csv")
+        fichiers = st.file_uploader("Fichiers de réponses (CSV)", type=["csv"], accept_multiple_files=True,
+                                    key=cle("quest", "import"))
+        if fichiers and st.button("Importer ces réponses", type="primary"):
+            total, avert = 0, []
+            for f in fichiers:
+                reps, av = QU.lire_csv(f.getvalue())
+                for r in reps:
+                    depot.ajouter(code, dict(r, source="import"))
+                total += len(reps)
+                avert += [f"{f.name} — {a}" for a in av]
+            ss.message = f"{total} réponse(s) importée(s)."
+            ss.avert_import = avert
+            st.rerun()
+    with t3:
+        st.caption("Pour reporter un questionnaire rempli sur papier.")
+        n = ss.get("papier_n", 0)
+        r = ss.setdefault("papier_r", {})
+        with st.container(border=True):
+            formulaire_usager(r, cle("papier", n))
+        if st.button("Ajouter ce questionnaire", type="primary"):
+            if any(k.startswith("Q") for k in r):
+                depot.ajouter(code, dict(r, source="papier"))
+                ss.papier_r, ss.papier_n = {}, n + 1
+                ss.message = "Questionnaire ajouté."
+                st.rerun()
+            st.error("Le questionnaire est vide.")
+    if ss.message:
+        st.success(ss.message)
+        ss.message = None
+    for a in ss.pop("avert_import", []) or []:
+        st.warning(a)
+
+    reponses = depot.lister(code)
+    st.subheader(f"Réponses recueillies : {len(reponses)}")
+    if reponses:
+        lignes = [{"N°": k + 1, "Source": r.get("source", ""), "Reçue le": r.get("horodatage", ""),
+                   "Local (Q1)": r.get("Q1", ""), "Ressenti (Q4)": r.get("Q4", ""), "Ambiance (Q5)": r.get("Q5", "")}
+                  for k, r in enumerate(reponses)]
+        st.dataframe(lignes, hide_index=True, width="stretch")
+        c1, c2, c3 = st.columns([1.2, 1, 1.3], vertical_alignment="bottom")
+        k = c1.selectbox("Réponse", range(len(reponses)), format_func=lambda i: f"N° {i + 1}")
+        if c2.button("Supprimer cette réponse"):
+            depot.supprimer(code, reponses[k].get("_id", ""))
+            st.rerun()
+        c3.download_button("Exporter toutes les réponses (CSV)", QU.vers_csv(reponses).encode("utf-8-sig"),
+                           file_name="reponses_questionnaire_confort.csv", mime="text/csv")
+        afficher_synthese_usagers(reponses)
+    pied()
+
+
+def afficher_synthese_usagers(reponses):
+    m = QU.matrice(reponses, moteur.calculer(D))
+    syn = m["synthese"]
+    st.subheader("Synthèse (tout l'établissement)")
+    if syn["repondants"] < QU.MIN_REPONDANTS:
+        st.info(f"Au moins {QU.MIN_REPONDANTS} réponses sont nécessaires pour une synthèse interprétable.")
+    i = syn["indicateurs"]
+    c = st.columns(4)
+    s = i["sensation_moyenne"]
+    c[0].metric("Sensation moyenne (Q4)", "—" if s is None else f"{s:+.1f}", help="Échelle de −3 (très froide) à +3 (très chaude).")
+    for col, cle_i in zip(c[1:], ("inconfort", "trop_chaud_souvent", "soleil_gene")):
+        v = i[cle_i]["part"]
+        col.metric(QU.LIBELLES_INDICATEURS[cle_i].split(" (")[0], "—" if v is None else f"{v:.0%}")
+    st.markdown("**Matrice de correspondance ressenti / préconisations** :gray[(proposition, à valider)]")
+    st.dataframe([{"Croisement": f"{l['id']} — {l['ressenti']}", "Usagers": l["usagers"], "Audit": l["audit"],
+                   "Résultat": l["resultat"], "Commentaire": l["commentaire"]} for l in m["lignes"]],
+                 hide_index=True, width="stretch")
+    if m["indicateur"] is not None:
+        st.markdown(f"**Indicateur de cohérence : {m['indicateur']:.0%}** "
+                    f"({m['evalues'] - m['a_verifier']} croisement(s) sans incohérence sur {m['evalues']} évalué(s))")
 
 
 # --- résultats / documents -------------------------------------------------------------------
@@ -979,9 +1150,12 @@ def vue_reglages():
 # ------------------------------------------------------------------ aiguillage
 ETAPES = {"Identification": etape_identification, "Bâtiment": etape_batiment, "Façades": etape_facades,
           "Locaux": lambda: etape_entites("locaux"), "Espaces extérieurs": lambda: etape_entites("espaces"),
+          "Questionnaires usagers": etape_questionnaires,
           "Vérification": etape_verification, "Résultats": etape_documents, "Documents": etape_documents}
 
-if ss.mode is None:
+if st.query_params.get("questionnaire"):
+    page_usager(st.query_params["questionnaire"])
+elif ss.mode is None:
     ecran_depart()
 elif ss.vue == "reglages":
     entete()

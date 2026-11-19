@@ -1,16 +1,23 @@
-# Points à trancher suite à la lecture de l'Excel
+# Points à trancher — outil méthode SURYA
 
-Relevé établi en reprenant toutes les formules de `2611111_outil_aide_test_methode-1.xlsx`
-(règles « version du 27/10/2026 ») pour les porter dans l'outil.
+Mise à jour du 19/11/2026. Relevé établi en portant dans l'outil :
 
-Quatre catégories :
+- toutes les formules de l'Excel `2611111_outil_aide_test_methode-1.xlsx` (règles « version du
+  27/10/2026 ») ;
+- le document « Méthode de l'audit de faisabilité d'actions d'adaptation » (version 01 du 27/10/2026) ;
+- le « Questionnaire confort estival » (version 01 du 11/11/2026).
+
+Chaque point a été revérifié sur l'outil à cette date. Cinq catégories :
 
 - **A. Erreurs de l'Excel** : des références cassées. La correction ne fait pas débat, mais elle change
   des résultats ; à valider.
 - **B. Points de méthode à trancher** : le libellé d'une règle et sa formule ne disent pas la même
   chose, ou un cas n'est pas prévu.
 - **C. Points mineurs** : cohérence des libellés, questions sans effet.
-- **D. Écarts entre l'Excel et le document de méthode** (ajoutés après lecture du document).
+- **D. Écarts entre l'Excel et le document de méthode.**
+- **E. Questionnaire usagers** : matrice de correspondance proposée et points à préciser.
+
+Les décisions déjà prises sont regroupées à la fin.
 
 Pour chaque point, la colonne « Dans l'outil » indique ce que fait la maquette aujourd'hui.
 
@@ -101,9 +108,11 @@ et PH-6 peuvent s'y appliquer. **À trancher** : assimiler le sous-sol au RDC po
 ### B10. Façades non décrites
 
 Les règles PV-5 à PV-7, PH-4, PH-6, PH-8 à PH-10 et OA-4 lisent la façade du bâtiment de même
-orientation que le mur du local ou que l'espace. Si cette façade n'est pas cochée en F-01, elles
-restent indéterminées. L'outil affiche un avertissement sur le mur concerné. **À trancher** : rendre
-la description de la façade obligatoire dès qu'un mur ou un espace la cite ?
+orientation que le mur du local ou que l'espace. Si cette façade n'est pas décrite, elles restent
+indéterminées (« Sous réserve »).
+**Dans l'outil** (depuis le parcours guidé) : l'étape Façades vient après les locaux et les espaces ;
+les façades qu'ils citent sont cochées d'office et l'étape Vérification signale celles qui restent
+incomplètes. **À trancher** : rendre leur description obligatoire, ou garder un simple avertissement ?
 
 ### B11. Alerte de mutualisation OA-AL1
 
@@ -123,7 +132,8 @@ suffisant, ou faut-il rattacher les locaux aux espaces ?
 L'Excel calcule 14 alertes mais ne les affiche que dans les onglets de règles. BR-AL (validation par
 un électricien) est « toujours » vraie, y compris quand les brasseurs sont non recommandés.
 **À trancher** : quelles alertes afficher dans la restitution, et BR-AL dans tous les cas ?
-**Dans l'outil** : toutes affichées, BR-AL toujours.
+**Dans l'outil** : toutes affichées à l'écran et dans les deux PDF, typées AL / VA / point d'attention
+(voir D1) ; BR-AL affichée dans tous les cas.
 
 ## C. Points mineurs
 
@@ -134,7 +144,7 @@ un électricien) est « toujours » vraie, y compris quand les brasseurs sont no
 | C3 | CO-1 : le libellé de condition cite quatre intitulés de L-02 (« Bureaux », « Bureau », « …salle des professeurs… ») ; un seul existe dans la liste. |
 | C4 | Deux questions portent le code **MEX-25** (lignes 104 et 105 de `Saisie_Locaux`). L'outil nomme la seconde `MEX-25b` en interne. |
 | C5 | La numérotation a des trous (B-02, B-17, L-05 à L-08, MEX-02, MEX-03, MEX-09, MEX-11 à MEX-13, MEX-23, MEX-27, MEX-28, MEX-31, PL-04, BA-07, BA-08, BA-10, BA-16, BA-17, E-03, E-05, E-08, E-13, E-18) : questions du carnet de visite non reprises. À confirmer qu'aucune ne manque. |
-| C6 | Limites de l'Excel : 10 locaux, 5 espaces, 4 murs par local. L'outil garde la limite de 4 murs ; à confirmer. |
+| C6 | Limites de l'Excel : 10 locaux, 5 espaces, 4 murs par local. L'outil n'a pas de limite de locaux ni d'espaces, mais garde 4 murs par local ; à confirmer. |
 | C7 | F-05 propose « Non évalué », pas F-02 à F-04. |
 
 ## D. Écarts entre l'Excel et le document de méthode
@@ -176,7 +186,8 @@ déclenchent pas d'alerte. Faut-il ajouter une alerte AL patrimoine sur ces solu
 
 Principe de traçabilité (§ I.c) : « photos normées obligatoires sur les questions décisives ». Ni
 l'Excel ni l'outil ne prévoient de photos. **À trancher :** quelles questions exigent une photo ?
-L'outil pourra les recueillir et les insérer dans le compte rendu une fois la base de données en place.
+L'outil pourra les recueillir et les insérer dans le compte rendu une fois la base de données
+(Supabase) en place ; la maquette n'en stocke pas.
 
 ### D3. CO-1 : « occupé en continu » n'est pas relevé
 
@@ -195,8 +206,94 @@ n'ont pas d'option « Non évalué » : B-03, B-04, B-07, B-18, B-22, B-26, L-02
 MEX-17, MEX-20, MEX-21, MEX-24, PL-01, BA-05, E-15, E-21, E-24, E-25, E-26, E-27, E-28. Dans l'outil,
 laisser la question vide revient au même (donnée inconnue). À ajouter dans la grille de visite ?
 
+## E. Questionnaire usagers
+
+### E1. Matrice de correspondance et indicateur de cohérence (proposition)
+
+Le questionnaire (§ I.a, 4e objectif) prévoit de « vérifier l'adéquation entre préconisations et
+ressenti grâce à une matrice de correspondance item / préconisation et à un indicateur de
+cohérence », sans les définir. **Proposition, programmée dans l'outil et à valider :**
+
+Principe : la synthèse est faite pour tout l'établissement (décision prise). Un ressenti est jugé
+**signalé** quand au moins **30 %** des répondants le déclarent. Il est rapproché des statuts de
+l'audit sur l'ensemble des locaux. En dessous de **3 réponses**, rien n'est évalué.
+
+| Croisement | Ressenti des usagers (signalé si ≥ 30 %) | Solutions de l'audit rapprochées |
+|---|---|---|
+| M1 | Soleil direct souvent ou très souvent, et au moins assez gênant (Q8, Q9) | Protections solaires (verticales, horizontales, films, fenêtres de toit, vérandas) |
+| M2 | Air lourd ou stagnant souvent ou très souvent (Q10) | Ventilation nocturne naturelle et mécanique, brasseurs d'air |
+| M3 | Chaleur dès l'arrivée le matin ou toute la journée (Q22) | Ventilation nocturne (décharge thermique) |
+| M4 | Chaleur l'après-midi ou toute la journée (Q22) | Protections solaires et toiture |
+| M5 | Ambiance inconfortable à extrêmement inconfortable (Q5) | Toutes les solutions |
+| M6 | Protections utilisées jamais ou rarement (Q12), ou jugées peu efficaces (Q15) | Protections relevées « En place » |
+| M7 | Fenêtres ne pouvant pas rester ouvertes la nuit (Q18) | Ventilation naturelle nocturne « Recommandé » |
+| M8 | Équipements de rafraîchissement déclarés (Q20) | Relevé des équipements BA-01, BA-02, BA-04, BA-05 |
+
+Résultat de chaque croisement :
+
+- **Cohérent** : ressenti signalé et au moins une solution correspondante préconisée (Recommandé,
+  À optimiser ou Sous réserve), ou ni l'un ni l'autre ;
+- **À vérifier** : ressenti signalé sans solution correspondante préconisée ; protection relevée
+  « En place » mais peu utilisée ou jugée peu efficace (M6) ; ventilation naturelle recommandée alors
+  que les fenêtres ne peuvent pas rester ouvertes la nuit (M7) ; équipement déclaré par les usagers
+  mais relevé dans aucun local (M8) ;
+- **Non corroboré** : solution préconisée sans ressenti signalé. Ce n'est pas une incohérence : la
+  solution reste valable (sans regret), mais le ressenti ne la confirme pas ;
+- **Non évaluable** : moins de 3 réponses, ou aucun local concerné.
+
+**Indicateur de cohérence** = part des croisements évalués qui ne sont pas « À vérifier ».
+
+Sur l'exemple (14 réponses fictives), 7 croisements sont évalués et 1 est « À vérifier » (M7 :
+71 % des usagers indiquent que les fenêtres ne peuvent pas rester ouvertes la nuit, alors que la
+ventilation naturelle nocturne est recommandée dans 2 locaux). L'indicateur vaut donc 86 %.
+
+**À trancher :** les croisements retenus, le seuil de 30 %, le minimum de 3 réponses, la définition
+de l'indicateur, et le traitement des « Non corroboré ».
+
+### E2. Question ouverte annoncée mais non rédigée
+
+La méthode du questionnaire (§ I.b) annonce « une seule question ouverte facultative pour les
+remarques libres », qui ne figure pas dans la liste. **Dans l'outil** : ajoutée en Q24 « Remarques
+libres (facultatif) ». À confirmer.
+
+### E3. Contexte : étage et orientation
+
+- Q2 propose « RDC / 1er étage / 2ème étage / etc. ». **Dans l'outil** : RDC, 1er étage, 2e étage,
+  3e étage ou plus.
+- Q3 ne propose que 4 orientations (Sud, Ouest, Nord, Est), contre 8 dans la grille d'audit. Pas de
+  « Je ne sais pas ». Sans incidence tant que la synthèse est globale.
+
+### E4. Questions conditionnelles
+
+« Si vous en avez » (Q12, Q14, Q15) : **dans l'outil**, posées seulement si Q11 cite au moins une
+protection (ni « Aucune » ni « Je ne sais pas » seuls). Q13 : seulement si Q12 = Jamais ou
+Rarement. Q17 « si vous ouvrez peu ou pas » : interprété comme Q16 = Jamais ou un seul moment
+d'ouverture. À confirmer.
+
+### E5. Q20 : une seule réponse possible
+
+Q20 n'admet qu'un équipement, alors qu'un local peut en avoir plusieurs (ventilateur et climatiseur
+mobile). Passer en choix multiple ?
+
+### E6. Public visé
+
+La méthode du questionnaire indique « échelle à 7 points (ISO 7730 / ISO 10551) pour les adultes ».
+Le questionnaire s'adresse-t-il uniquement aux adultes (enseignants, personnel) ? Une version
+élèves est-elle prévue ?
+
+### E7. Collecte en ligne : données personnelles
+
+Pour la version avec base de données (Supabase) : anonymat des répondants, durée de conservation,
+hébergement des données (RGPD), limitation du nombre de réponses par lien. Voir `docs/supabase.md`.
+
 ## Décisions déjà prises
 
 | Point | Décision |
 |---|---|
-| BA-18 | Débit en m³/h — confirmé. |
+| BA-18 | Débit en m³/h. |
+| Interface | Parcours guidé ; choix au départ entre « Résultats de faisabilité » (équivalent de l'Excel) et « Diagnostic complet » (compte rendu) ; choix du mode de saisie (pas à pas ou fiches à onglets). |
+| Contrôle de saisie | Avertir sans bloquer ; étape Vérification avant les documents. |
+| Ordre des étapes | Bâtiment (bloc par bloc en pas à pas), Locaux, Espaces extérieurs, puis Façades. |
+| Réglages | Seuils et import / export dans un menu « Réglages » discret. |
+| Questionnaire usagers | Collecte par questionnaire en ligne, ou import d'un fichier au même format ; synthèse globale pour l'établissement (pas de rattachement aux locaux) ; matrice de correspondance proposée par l'outil (E1). |
+| Base de données | Supabase dans une étape ultérieure ; la maquette ne stocke aucune donnée, mais le code est prêt (`surya/stockage.py`, `docs/supabase.md`). |

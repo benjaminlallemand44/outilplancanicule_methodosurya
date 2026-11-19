@@ -455,11 +455,75 @@ def _table_reponses(lignes, S):
     return _tableau(data, [110 * mm, 70 * mm], style, entete=False) if data else Spacer(1, 1)
 
 
-def _fiches(res, d, S):
+def _usagers(d, res, S, num):
+    """Ressenti des usagers (questionnaire confort estival) et matrice de cohérence."""
+    from . import questionnaire as QU
+
+    reponses = d.get("questionnaires") or []
+    m = QU.matrice(reponses, res)
+    syn, ind = m["synthese"], m["synthese"]["indicateurs"]
+    el = [PageBreak(), Paragraph(f"{num}. Ressenti des usagers", S["h1"]),
+          Paragraph(f"Questionnaire confort estival : <b>{syn['repondants']} répondant(s)</b>, synthèse pour l'ensemble "
+                    "de l'établissement. Enquête déclarative ponctuelle : elle ne remplace pas une campagne de mesures ; "
+                    "ses résultats sont indicatifs et servent à orienter et vérifier les préconisations.", S["base"])]
+    if syn["repondants"] < QU.MIN_REPONDANTS:
+        el.append(Paragraph(f"Moins de {QU.MIN_REPONDANTS} réponses : synthèse non interprétable.", S["base"]))
+    el.append(Paragraph("Indicateurs clés", S["h2"]))
+    data = [[Paragraph(h, S["entete"]) for h in ("Indicateur", "Valeur", "Répondants")]]
+    for cle_i, (lib, unite) in (("sensation_moyenne", ("Sensation thermique moyenne (Q4), de −3 très froide à +3 très chaude", "")),
+                                ("preference_moyenne", ("Préférence moyenne (Q6), de −3 beaucoup plus froide à +3 beaucoup plus chaude", ""))):
+        v = ind[cle_i]
+        data.append([Paragraph(_t(lib), S["cellule"]), Paragraph("—" if v is None else f"{v:+.1f}", S["cellule"]), ""])
+    for cle_i, lib in QU.LIBELLES_INDICATEURS.items():
+        v = ind[cle_i]
+        data.append([Paragraph(_t(lib), S["cellule"]),
+                     Paragraph("—" if v["part"] is None else f"<b>{v['part']:.0%}</b>", S["cellule"]),
+                     Paragraph(f"{v['nb']} / {v['sur']}", S["cellule"])])
+    el.append(_tableau(data, [120 * mm, 25 * mm, 35 * mm]))
+
+    el.append(Paragraph("Répartition des réponses", S["h2"]))
+    for code in ("Q4", "Q5", "Q21", "Q8", "Q10", "Q22", "Q11", "Q12", "Q15", "Q13", "Q16", "Q18", "Q19", "Q20"):
+        q = QU.PAR_CODE[code]
+        rep_q = syn["repartition"][code]
+        if not rep_q["repondants"]:
+            continue
+        lignes = [[Paragraph(_t(o), S["cellule"]), Paragraph(str(n), S["cellule"]),
+                   Paragraph(f"{n / rep_q['repondants']:.0%}", S["cellule"])] for o, n in rep_q["comptes"].items()]
+        bloc = [Paragraph(f"{code}. {_t(q['libelle'])} <font color='#888888'>({rep_q['repondants']} répondant(s)"
+                          f"{', plusieurs réponses possibles' if q['type'] == 'multi' else ''})</font>", S["h3"]),
+                _tableau(lignes, [110 * mm, 20 * mm, 20 * mm], entete=False)]
+        el.append(KeepTogether(bloc))
+
+    el.append(Paragraph("Correspondance ressenti / préconisations", S["h2"]))
+    el.append(Paragraph(f"Proposition de matrice (à valider) : chaque ressenti est jugé « signalé » au-delà de "
+                        f"{m['seuil']:.0%} des répondants, et rapproché des statuts de l'audit pour l'ensemble des "
+                        f"locaux. Cohérent : ressenti et préconisation concordent. À vérifier : contradiction entre "
+                        f"le ressenti et l'audit. Non corroboré : préconisation sans ressenti signalé (elle reste "
+                        f"valable). Indicateur de cohérence : part des croisements évalués sans incohérence.", S["petit"]))
+    couleurs = {QU.COHERENT: "#d3f0db", QU.A_VERIFIER: "#ffe2c2", QU.NON_CORROBORE: "#e6e6e6", QU.NON_EVALUABLE: "#ffffff"}
+    data = [[Paragraph(h, S["entete"]) for h in ("Croisement", "Usagers", "Audit", "Résultat", "Commentaire")]]
+    style = []
+    for l in m["lignes"]:
+        data.append([Paragraph(f"<b>{l['id']}</b> {_t(l['ressenti'])}", S["cellule"]), Paragraph(_t(l["usagers"]), S["cellule"]),
+                     Paragraph(_t(l["audit"]), S["cellule"]), Paragraph(f"<b>{_t(l['resultat'])}</b>", S["cellule"]),
+                     Paragraph(_t(l["commentaire"]), S["cellule"])])
+        style.append(("BACKGROUND", (3, len(data) - 1), (3, len(data) - 1), colors.HexColor(couleurs[l["resultat"]])))
+    el.append(_tableau(data, [34 * mm, 30 * mm, 28 * mm, 22 * mm, 66 * mm], style))
+    if m["indicateur"] is not None:
+        el.append(Paragraph(f"<b>Indicateur de cohérence : {m['indicateur']:.0%}</b> "
+                            f"({m['evalues'] - m['a_verifier']} croisement(s) sans incohérence sur {m['evalues']} évalué(s)).",
+                            S["base"]))
+    if syn["remarques"]:
+        el.append(Paragraph("Remarques libres", S["h2"]))
+        el += [Paragraph(f"« {_t(t)} »", S["puce"], bulletText="•") for t in syn["remarques"][:30]]
+    return el
+
+
+def _fiches(res, d, S, num=6):
     from .questions import QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE, SECTIONS_LOCAL
 
     cb = res["batiment"]
-    el = [PageBreak(), Paragraph("6. Fiches détaillées", S["h1"]), Paragraph("6.1 Bâtiment", S["h2"])]
+    el = [PageBreak(), Paragraph(f"{num}. Fiches détaillées", S["h1"]), Paragraph(f"{num}.1 Bâtiment", S["h2"])]
     el.append(_table_reponses(_questions_renseignees(SECTIONS_BATIMENT, d.get("batiment") or {}, cb, cb), S))
     facades = [(o, f) for o, f in (d.get("facades") or {}).items() if f.get("F-01")]
     if facades:
@@ -470,8 +534,8 @@ def _fiches(res, d, S):
                                                             for q in qs] for o, f in facades]
         el.append(_tableau(data, [20 * mm] + [40 * mm] * len(qs)))
 
-    for titre, cle, defaut, sections in (("6.2 Locaux", "locaux", "Local", SECTIONS_LOCAL),
-                                         ("6.3 Espaces extérieurs", "espaces", "Espace", SECTIONS_ESPACE)):
+    for titre, cle, defaut, sections in ((f"{num}.2 Locaux", "locaux", "Local", SECTIONS_LOCAL),
+                                         (f"{num}.3 Espaces extérieurs", "espaces", "Espace", SECTIONS_ESPACE)):
         entites = res[cle]
         if not entites:
             continue
@@ -598,7 +662,11 @@ def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
         el += [PageBreak(), Paragraph("Aucun local ni espace extérieur n'a été saisi.", S["base"])]
     if audit.get("synthese"):
         el += [Paragraph("Commentaire général de l'auditeur", S["h2"]), Paragraph(_t(audit["synthese"]), S["base"])]
-    el += _fiches(res, donnees, S) + _annexe(donnees, S)
+    num = 6
+    if donnees.get("questionnaires"):
+        el += _usagers(donnees, res, S, num)
+        num += 1
+    el += _fiches(res, donnees, S, num) + _annexe(donnees, S)
     return _construire(el, audit, titre_pied, "Compte rendu — audit de faisabilité d'actions d'adaptation", pied)
 
 
