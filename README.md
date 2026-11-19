@@ -22,13 +22,13 @@ méthode déjà rempli (`.xlsx`), exporter / réimporter une saisie (`.json`).
 Un **parcours guidé**. Au départ, l'utilisateur choisit :
 
 - **ce qu'il veut produire** :
-  - *Résultats de faisabilité* (équivalent de l'Excel) : Bâtiment → Façades → Locaux → Espaces
-    extérieurs → Vérification → Résultats (tableau, PDF des résultats, CSV) ;
-  - *Diagnostic complet* : Identification → Bâtiment → Façades → Locaux → Espaces extérieurs →
+  - *Résultats de faisabilité* (équivalent de l'Excel) : Bâtiment → Locaux → Espaces extérieurs →
+    Façades → Vérification → Résultats (tableau, PDF des résultats, CSV) ;
+  - *Diagnostic complet* : Identification → Bâtiment → Locaux → Espaces extérieurs → Façades →
     Vérification → Documents (compte rendu complet en PDF, PDF des résultats, CSV), avec en plus les
     observations par local et espace et un commentaire général ;
-- **comment saisir les locaux et espaces** : *pas à pas* (un thème par écran, « Thème suivant ») ou
-  *fiches à onglets* (tous les thèmes accessibles librement). Modifiable à tout moment.
+- **comment remplir le questionnaire** (bâtiment, locaux, espaces) : *pas à pas* (un bloc par écran,
+  « Suivant ») ou *fiches à onglets* (tous les blocs accessibles librement). Modifiable à tout moment.
 
 On avance avec « Suivant » ; les étapes déjà vues restent accessibles dans la barre d'étapes. Rien
 n'est bloquant : chaque écran signale les questions sans réponse, et l'étape Vérification récapitule
@@ -72,6 +72,8 @@ exactement ce qu'il faudra stocker plus tard (par exemple une colonne JSON par a
   indéterminée, le statut est « Sous réserve ».
 
 ## Vérification
+
+Campagne de tests complète : prompt prêt à l'emploi dans `docs/prompt_tests.md`.
 
 ```bash
 python -m pytest tests

@@ -36,23 +36,24 @@ MODES = {
     "resultats": {
         "titre": "Résultats de faisabilité",
         "court": "Résultats",
-        "etapes": ["Bâtiment", "Façades", "Locaux", "Espaces extérieurs", "Vérification", "Résultats"],
+        "etapes": ["Bâtiment", "Locaux", "Espaces extérieurs", "Façades", "Vérification", "Résultats"],
     },
     "complet": {
         "titre": "Diagnostic complet",
         "court": "Diagnostic complet",
-        "etapes": ["Identification", "Bâtiment", "Façades", "Locaux", "Espaces extérieurs", "Vérification",
+        "etapes": ["Identification", "Bâtiment", "Locaux", "Espaces extérieurs", "Façades", "Vérification",
                    "Documents"],
     },
 }
 SAISIES = {
     "guidee": ("Pas à pas",
-               "Chaque local est rempli thème par thème (usages, ouvertures en plafond, murs et baies, équipements, "
-               "éclairage…), un écran à la fois, avec « Thème suivant ». Le plus simple pendant ou juste après "
-               "la visite, en suivant l'ordre du carnet."),
+               "Le bâtiment puis chaque local et chaque espace sont remplis bloc par bloc (usages, ouvertures en "
+               "plafond, murs et baies, équipements, éclairage…), un écran à la fois, avec « Suivant ». Le plus "
+               "simple pendant ou juste après la visite, en suivant l'ordre du carnet."),
     "libre": ("Fiches à onglets",
-              "Chaque local est une fiche dont tous les thèmes sont accessibles par onglets, dans l'ordre de votre "
-              "choix. Pratique pour reprendre ou corriger une saisie, ou si vous connaissez bien la grille."),
+              "Le bâtiment, chaque local et chaque espace sont des fiches dont tous les blocs sont accessibles par "
+              "onglets, dans l'ordre de votre choix. Pratique pour reprendre ou corriger une saisie, ou si vous "
+              "connaissez bien la grille."),
 }
 # statut -> (fond, texte)
 COULEURS = {
@@ -92,7 +93,7 @@ def charger(d: dict):
     ss.donnees = base
     ss.generation = ss.get("generation", 0) + 1
     ss.edition = {"locaux": None, "espaces": None}
-    ss.theme = {"locaux": 0, "espaces": 0}
+    ss.theme = {"locaux": 0, "espaces": 0, "batiment": 0}
 
 
 if "donnees" not in ss:
@@ -262,12 +263,12 @@ def ecran_depart():
         st.info(f"Une saisie est en cours ({len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)) : "
                 "elle sera conservée quel que soit votre choix.", icon="💾")
 
-    st.subheader("1. Comment voulez-vous remplir les locaux et les espaces extérieurs ?")
+    st.subheader("1. Comment voulez-vous remplir le questionnaire ?")
     choix = st.radio("Mode de saisie", list(SAISIES), index=list(SAISIES).index(ss.saisie),
                      format_func=lambda k: SAISIES[k][0], captions=[SAISIES[k][1] for k in SAISIES],
                      label_visibility="collapsed", key="choix_saisie")
     ss.saisie = choix
-    st.caption("Vous pourrez changer de mode à tout moment depuis l'étape Locaux.")
+    st.caption("Vous pourrez changer de mode à tout moment depuis les étapes Bâtiment, Locaux et Espaces extérieurs.")
 
     st.subheader("2. Que voulez-vous produire ?")
     c1, c2 = st.columns(2, gap="large")
@@ -380,19 +381,76 @@ def etape_identification():
     pied()
 
 
-def etape_batiment():
-    st.header("Bâtiment")
-    st.markdown("Données générales du bâtiment. Les questions en retrait n'apparaissent que si elles ont un objet.")
+def selecteur_saisie(cle_widget: str):
+    """Permet de changer de mode de saisie (pas à pas / fiches à onglets)."""
+    mode = st.segmented_control("Mode de saisie", list(SAISIES), default=ss.saisie,
+                                format_func=lambda k: SAISIES[k][0], key=f"saisie:{cle_widget}",
+                                help=" · ".join(f"{v[0]} : {v[1]}" for v in SAISIES.values()))
+    if mode and mode != ss.saisie:
+        ss.saisie = mode
+        st.rerun()
+
+
+def _bloc_batiment(s, b, etats):
+    if s["titre"] == "Ventilation mécanique":
+        st.caption("Cas technique : sans compétence suffisante, laissez les champs non évalués ; la ventilation "
+                   "mécanique nocturne passera alors « Sous réserve ».")
+    section(s, b, etats, CB, "bat")
+    avertir(sans_reponse([s], b, etats, CB))
+
+
+def premier_bloc_batiment_incomplet() -> int:
     b = D["batiment"]
     etats = lambda: moteur.etats_batiment(b, D["facades"])  # noqa: E731
-    for s in SECTIONS_BATIMENT:
+    for k, s in enumerate(SECTIONS_BATIMENT):
+        if sans_reponse([s], b, etats, CB):
+            return k
+    return 0
+
+
+def etape_batiment():
+    c1, c2 = st.columns([3, 2], vertical_alignment="bottom")
+    c1.header("Bâtiment")
+    with c2:
+        selecteur_saisie("batiment")
+    st.markdown("Données générales du bâtiment. Certaines questions n'apparaissent que si elles ont un objet.")
+    b = D["batiment"]
+    etats = lambda: moteur.etats_batiment(b, D["facades"])  # noqa: E731
+    secs = SECTIONS_BATIMENT
+    if ss.saisie == "guidee":
+        t = min(ss.theme.get("batiment", 0), len(secs) - 1)
+        choix = st.segmented_control("Bloc", range(len(secs)), default=t, key=f"bloc_bat:{t}", width="stretch",
+                                     format_func=lambda k: f"{k + 1}. {secs[k]['titre']}", label_visibility="collapsed")
+        if choix is not None and choix != t:
+            ss.theme["batiment"] = choix
+            ss.haut = True
+            st.rerun()
+        st.progress((t + 1) / len(secs), text=f"Bloc {t + 1} sur {len(secs)} : **{secs[t]['titre']}**")
         with st.container(border=True):
-            st.subheader(s["titre"])
-            if s["titre"] == "Ventilation mécanique":
-                st.caption("Cas technique : sans compétence suffisante, laissez les champs non évalués ; la ventilation "
-                           "mécanique nocturne passera alors « Sous réserve ».")
-            section(s, b, etats, CB, "bat")
-    avertir(sans_reponse(SECTIONS_BATIMENT, b, etats, CB))
+            _bloc_batiment(secs[t], b, etats)
+        if t < len(secs) - 1:
+            n1, _, n3 = st.columns([1, 1.5, 1.2])
+            if t > 0 and n1.button("← Bloc précédent", width="stretch"):
+                ss.theme["batiment"] = t - 1
+                ss.haut = True
+                st.rerun()
+            if n3.button("Bloc suivant →", type="primary", width="stretch", help=secs[t + 1]["titre"]):
+                ss.theme["batiment"] = t + 1
+                ss.haut = True
+                st.rerun()
+            st.divider()
+            if ss.etape > 0 and st.button("← Étape précédente"):
+                aller(ss.etape - 1)
+            return
+        if st.button("← Bloc précédent"):
+            ss.theme["batiment"] = t - 1
+            ss.haut = True
+            st.rerun()
+    else:
+        onglets = st.tabs([f"{k + 1}. {s['titre']}" for k, s in enumerate(secs)])
+        for onglet, s in zip(onglets, secs):
+            with onglet:
+                _bloc_batiment(s, b, etats)
     pied()
 
 
@@ -412,29 +470,46 @@ def orientations_utilisees() -> dict[str, list[str]]:
     return out
 
 
+def _ligne_facade(o, f, autres, f01, citee=""):
+    with st.container(border=bool(f.get("F-01"))):
+        cols = st.columns([1.4] + [2] * len(autres))
+        decrite = cols[0].checkbox(f"Façade **{o}**", value=bool(f.get("F-01")), key=cle("fac", o, "F-01"),
+                                   help=f01["libelle"])
+        if citee:
+            cols[0].caption(citee)
+        if decrite:
+            f["F-01"] = True
+            for col, q in zip(cols[1:], autres):
+                with col:
+                    champ({**q, "type": "choix"}, f, f"fac:{o}")
+        else:
+            f.pop("F-01", None)
+
+
 def etape_facades():
     st.header("Façades")
-    st.markdown("Cochez chaque façade qui porte des baies des locaux visités ou qui borde un espace extérieur, puis "
-                "décrivez-la. Les règles des locaux (protections solaires) et des espaces (ombrage adossé) utilisent "
-                "la façade de **même orientation**.")
+    st.markdown("Décrivez les façades du bâtiment qui portent les baies des locaux visités ou qui bordent un espace "
+                "extérieur. Les règles des locaux (protections solaires) et des espaces (ombrage adossé) utilisent "
+                "la façade de **même orientation** que le mur ou l'espace.")
     utilisees = orientations_utilisees()
-    if utilisees:
-        st.caption("Orientations citées dans la saisie : " + " · ".join(
-            f"**{o}** ({', '.join(dict.fromkeys(n))})" for o, n in sorted(utilisees.items(), key=lambda t: ORIENTATIONS.index(t[0]))))
     f01, autres = QUESTIONS_FACADE[0], QUESTIONS_FACADE[1:]
     for o in ORIENTATIONS:
-        f = D["facades"].setdefault(o, {})
-        with st.container(border=bool(f.get("F-01"))):
-            cols = st.columns([1.1] + [2] * len(autres))
-            libelle = f"Façade **{o}**" + (" ·  :orange[citée]" if o in utilisees and not f.get("F-01") else "")
-            decrite = cols[0].checkbox(libelle, value=bool(f.get("F-01")), key=cle("fac", o, "F-01"), help=f01["libelle"])
-            if decrite:
-                f["F-01"] = True
-                for col, q in zip(cols[1:], autres):
-                    with col:
-                        champ({**q, "type": "choix"}, f, f"fac:{o}")
-            else:
-                f.pop("F-01", None)
+        D["facades"].setdefault(o, {})
+        deja = ss.setdefault("facades_cochees", set())
+        if o in utilisees and (ss.generation, o) not in deja:
+            D["facades"][o]["F-01"] = True  # façade citée : cochée d'office (une seule fois), à décrire
+            deja.add((ss.generation, o))
+    citees = [o for o in ORIENTATIONS if o in utilisees]
+    if citees:
+        st.subheader("Façades citées par vos locaux et espaces")
+        for o in citees:
+            _ligne_facade(o, D["facades"][o], autres, f01, "citée par " + ", ".join(dict.fromkeys(utilisees[o])))
+    else:
+        st.info("Aucun mur de local ni espace extérieur n'indique d'orientation pour l'instant.")
+    reste = [o for o in ORIENTATIONS if o not in utilisees]
+    with st.expander("Autres façades", expanded=not citees or any(D["facades"][o].get("F-01") for o in reste)):
+        for o in reste:
+            _ligne_facade(o, D["facades"][o], autres, f01)
     oublis = [f"façade {o} citée par {', '.join(dict.fromkeys(n))} mais non décrite" for o, n in utilisees.items()
               if not (D["facades"].get(o) or {}).get("F-01")]
     incompletes = [f"façade {o} : {q['libelle']}" for o, f in D["facades"].items() if f.get("F-01")
@@ -493,12 +568,7 @@ def liste_entites(cle_liste: str):
         st.markdown("Ajoutez chaque espace extérieur (cour, préau, jardin…). S'il n'y en a pas, passez à l'étape suivante.")
     c1, c2 = st.columns([3, 2], vertical_alignment="center")
     with c2:
-        mode = st.segmented_control("Mode de saisie", list(SAISIES), default=ss.saisie,
-                                    format_func=lambda k: SAISIES[k][0], key=f"saisie:{cle_liste}",
-                                    help=" · ".join(f"{v[0]} : {v[1]}" for v in SAISIES.values()))
-        if mode and mode != ss.saisie:
-            ss.saisie = mode
-            st.rerun()
+        selecteur_saisie(cle_liste)
     if ss.message:
         st.success(ss.message)
         ss.message = None
@@ -636,8 +706,8 @@ def _murs(l: dict, pid: str):
                     champ(q, m, f"{pid}:mur{i}")
             ori = m.get("orientation")
             if ori and not (D["facades"].get(ori) or {}).get("F-01"):
-                st.warning(f"La façade {ori} n'est pas décrite (étape Façades) : les règles qui en dépendent "
-                           "(alignement, accès, obstacles, désordres) resteront indéterminées.", icon="⚠️")
+                st.caption(f"ℹ️ La façade {ori} sera à décrire à l'étape Façades (alignement, accès, obstacles, "
+                           "désordres), après les espaces extérieurs.")
             anciens = m.get("baies") or {}
             types = st.multiselect("Types de baie présents sur ce mur :gray[· MEX-08]", q_baies["options"],
                                    default=[t for t in q_baies["options"] if t in anciens],
@@ -714,10 +784,14 @@ def etape_verification():
             manque = [lib for k, lib in CHAMPS_AUDIT if not D["audit"].get(k)]
             ligne("audit", "Identification", len(manque), ", ".join(manque), lambda: aller("Identification"))
         q = sans_reponse(SECTIONS_BATIMENT, D["batiment"], lambda: moteur.etats_batiment(D["batiment"], D["facades"]), CB)
-        ligne("bat", "Bâtiment", len(q), f"{len(q)} question(s) sans réponse", lambda: aller("Bâtiment"))
-        oublis = [o for o in orientations_utilisees() if not (D["facades"].get(o) or {}).get("F-01")]
-        ligne("fac", "Façades", len(oublis), "façade(s) citée(s) mais non décrite(s) : " + ", ".join(oublis),
-              lambda: aller("Façades"))
+        def vers_batiment():
+            ss.theme["batiment"] = premier_bloc_batiment_incomplet()
+            aller("Bâtiment")
+        ligne("bat", "Bâtiment", len(q), f"{len(q)} question(s) sans réponse", vers_batiment)
+        oublis = [f"{o} non décrite" for o in orientations_utilisees() if not (D["facades"].get(o) or {}).get("F-01")]
+        oublis += [f"{o} : {q['code']} sans réponse" for o, f in D["facades"].items() if f.get("F-01")
+                   for q in QUESTIONS_FACADE[1:] if not f.get(q["code"])]
+        ligne("fac", "Façades", len(oublis), " · ".join(oublis), lambda: aller("Façades"))
         for cle_liste in ("locaux", "espaces"):
             for i, x in enumerate(D[cle_liste]):
                 n = nb_manques(cle_liste, x)
