@@ -111,7 +111,8 @@ async function aller(page, numero, nomEtape) {
     // libellés d'étapes tronqués (points de suspension CSS) et infobulles dont le nom contient du balisage
     d.etapes_tronquees = await page.evaluate(() => [...document.querySelectorAll('button')]
       .filter((b) => /^(✓ )?\d\. /.test(b.innerText.trim()))
-      .filter((b) => { const p = b.querySelector('p') || b; return p.scrollWidth > p.clientWidth + 1; })
+      .filter((b) => [b, ...b.querySelectorAll('*')].some((e) => e.scrollWidth > e.clientWidth + 1
+        || getComputedStyle(e).textOverflow === 'ellipsis' && e.scrollWidth > e.getBoundingClientRect().width + 1))
       .map((b) => b.innerText.trim()));
     await aller(page, 3, 'Locaux');
     await page.getByRole('button', { name: '✏️ Modifier' }).first().click();

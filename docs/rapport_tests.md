@@ -12,8 +12,8 @@ Sources de vérité, par ordre de priorité : méthode v01 du 27/10/2026 (« mé
 
 | | |
 |---|---|
-| Tests écrits (fichiers `tests/test_*.py` + script Playwright) | **__NTESTS__ cas** exécutés par pytest, dont **__NXFAIL__ « xfail »** qui reproduisent chacun une anomalie (`strict=True` : ils échouent tant que le défaut existe et signaleront sa correction) |
-| Comparaison à l'Excel recalculé (LibreOffice) | 5 graines × 40 tirages (2 000 locaux, 1 000 espaces) : **0 écart** ; 5 cas pile sur un seuil : **4 écarts** (ANO-01, ANO-09) |
+| Tests écrits (fichiers `tests/test_*.py` + script Playwright) | **890 cas** exécutés par pytest (845 réussis), dont **45 « xfail »** qui reproduisent chacun une anomalie (`strict=True` : ils échouent tant que le défaut existe et signaleront sa correction) |
+| Comparaison à l'Excel recalculé (LibreOffice) | 5 graines × 40 tirages (2 000 locaux, 1 000 espaces) : **0 écart** ; 5 cas pile sur un seuil : **5 cas en écart** (ANO-01, ANO-09) |
 | Règles couvertes par un cas écrit à la main | **132 / 134** (121 règles + 13 alertes) ; VM-9 : statut vérifié mais règle jamais retenue ; VM-11 : inatteignable avec des données valides (QM-01) |
 | Invariants vérifiés sur saisies aléatoires | 1 500 saisies (statuts, « Non concerné »), 300 (ordre, noms, indépendance des locaux), 400 (questions masquées, marqueur « donnée manquante »), matrice de dépendances sur 250 saisies |
 | Interface | 4 combinaisons type d'audit × mode de saisie (AppTest) ; 7 scénarios dans Chromium réel (Playwright) : parcours, téléchargements, téléphone 375 px, écran 2560 px, 30 locaux / 5 espaces, questionnaire en ligne |
