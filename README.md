@@ -19,18 +19,28 @@ méthode déjà rempli (`.xlsx`), exporter / réimporter une saisie (`.json`).
 
 ## Ce que fait l'outil
 
-| Page | Équivalent Excel |
-|---|---|
-| Bâtiment | `Saisie_Bâtiment` (questions + façades par orientation) |
-| Locaux | `Saisie_Locaux` — nombre de locaux libre, 4 murs extérieurs au plus par local |
-| Espaces extérieurs | `Saisie_Extérieurs` |
-| Résultats | `Résultats`, avec en plus la règle retenue, les données manquantes, les alertes et le détail de chaque règle (`Règles_Locaux`, `Règles_Extérieurs`) |
-| Paramètres | `Paramètres` (seuils des règles, modifiables) |
+Un **parcours guidé**. Au départ, l'utilisateur choisit :
 
-**Compte rendu PDF** (page Résultats) : page de garde, cadre de l'audit et statuts, synthèse,
-plan d'action par solution (engageable / à valider / en place / exclue, avec quantités relevées),
-alertes typées AL / VA, données manquantes, fiche détaillée de chaque local et espace, seuils utilisés.
-Il est généré par `surya/rapport.py` (reportlab), sans dépendance à l'interface.
+- **ce qu'il veut produire** :
+  - *Résultats de faisabilité* (équivalent de l'Excel) : Bâtiment → Façades → Locaux → Espaces
+    extérieurs → Vérification → Résultats (tableau, PDF des résultats, CSV) ;
+  - *Diagnostic complet* : Identification → Bâtiment → Façades → Locaux → Espaces extérieurs →
+    Vérification → Documents (compte rendu complet en PDF, PDF des résultats, CSV), avec en plus les
+    observations par local et espace et un commentaire général ;
+- **comment saisir les locaux et espaces** : *pas à pas* (un thème par écran, « Thème suivant ») ou
+  *fiches à onglets* (tous les thèmes accessibles librement). Modifiable à tout moment.
+
+On avance avec « Suivant » ; les étapes déjà vues restent accessibles dans la barre d'étapes. Rien
+n'est bloquant : chaque écran signale les questions sans réponse, et l'étape Vérification récapitule
+tout ce qui manque avec un bouton « Compléter ». Les documents se génèrent à la dernière étape.
+
+Le menu **⚙️ Réglages** (discret, en haut à droite) regroupe les seuils des règles (onglet
+`Paramètres` de l'Excel), l'exemple, l'import (JSON ou Excel de la méthode) et l'export de la saisie.
+
+**Compte rendu PDF** : page de garde, cadre de l'audit et statuts, synthèse, plan d'action par
+solution (engageable / à valider / en place / exclue, avec quantités relevées), alertes typées AL / VA,
+données manquantes, fiche détaillée de chaque local et espace, seuils utilisés. Il est généré par
+`surya/rapport.py` (reportlab), sans dépendance à l'interface.
 
 Les questions conditionnelles (« - si B-09 = Oui : … ») ne s'affichent que lorsqu'elles ont un objet.
 

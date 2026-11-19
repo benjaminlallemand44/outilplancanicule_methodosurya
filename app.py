@@ -1,9 +1,13 @@
-"""Interface Streamlit de la méthode SURYA — maquette (preuve de concept).
+"""Interface Streamlit de la méthode SURYA — parcours guidé (maquette).
 
 Lancement : streamlit run app.py
 
-Les réponses vivent dans ``st.session_state.donnees`` (aucune base de données) ; le calcul
-est délégué à ``surya.moteur`` qui ne dépend pas de l'interface.
+L'utilisateur choisit d'abord le type d'audit (résultats de faisabilité, équivalent de l'Excel, ou
+diagnostic complet avec compte rendu) et la façon de saisir les locaux, puis suit les étapes dans
+l'ordre ; les documents sont générés à la dernière étape.
+
+Les réponses vivent dans ``st.session_state.donnees`` (aucune base de données) ; le calcul est
+délégué à ``surya.moteur`` et le PDF à ``surya.rapport``, qui ne dépendent pas de l'interface.
 """
 from __future__ import annotations
 
@@ -16,18 +20,40 @@ import uuid
 from pathlib import Path
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from surya import moteur
 from surya.import_excel import lire_classeur
-from surya.moteur import NB_MURS_MAX, ORIENTATIONS, PARAMETRES_DEFAUT, REFERENTIEL, REGLES
+from surya.moteur import NB_MURS_MAX, ORIENTATIONS, REFERENTIEL, REGLES
+from surya.questions import (QUESTIONS_FACADE, QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE, SECTIONS_LOCAL,
+                             visible)
 from surya.rapport import CHAMPS_AUDIT, QUESTIONS_DU_CAS, generer_pdf
 from surya.rapport import donnee_manquante as _manquante
-from surya.questions import (QUESTIONS_FACADE, QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE,
-                             SECTIONS_LOCAL, avancement, visible)
 
 RACINE = Path(__file__).parent
-PAGES = ["Accueil", "Bâtiment", "Locaux", "Espaces extérieurs", "Résultats", "Paramètres"]
 
+MODES = {
+    "resultats": {
+        "titre": "Résultats de faisabilité",
+        "court": "Résultats",
+        "etapes": ["Bâtiment", "Façades", "Locaux", "Espaces extérieurs", "Vérification", "Résultats"],
+    },
+    "complet": {
+        "titre": "Diagnostic complet",
+        "court": "Diagnostic complet",
+        "etapes": ["Identification", "Bâtiment", "Façades", "Locaux", "Espaces extérieurs", "Vérification",
+                   "Documents"],
+    },
+}
+SAISIES = {
+    "guidee": ("Pas à pas",
+               "Chaque local est rempli thème par thème (usages, ouvertures en plafond, murs et baies, équipements, "
+               "éclairage…), un écran à la fois, avec « Thème suivant ». Le plus simple pendant ou juste après "
+               "la visite, en suivant l'ordre du carnet."),
+    "libre": ("Fiches à onglets",
+              "Chaque local est une fiche dont tous les thèmes sont accessibles par onglets, dans l'ordre de votre "
+              "choix. Pratique pour reprendre ou corriger une saisie, ou si vous connaissez bien la grille."),
+}
 # statut -> (fond, texte)
 COULEURS = {
     moteur.RECOMMANDE: ("#d3f0db", "#0f5a26"),
@@ -47,7 +73,9 @@ AIDES = {
     "MEX-32": "La pose de films solaires est la dernière solution à envisager, du fait de sa faible efficacité.",
 }
 
-st.set_page_config(page_title="Méthode SURYA — faisabilité d'actions d'adaptation", page_icon="🌡️", layout="wide")
+st.set_page_config(page_title="Méthode SURYA — faisabilité d'actions d'adaptation", page_icon="🌡️", layout="wide",
+                   initial_sidebar_state="collapsed")
+ss = st.session_state
 
 
 # ------------------------------------------------------------------ état
@@ -61,25 +89,47 @@ def charger(d: dict):
     base.update({k: v for k, v in d.items() if k in base})
     for x in base["locaux"] + base["espaces"]:
         x.setdefault("_id", uuid.uuid4().hex[:8])
-    st.session_state.donnees = base
-    st.session_state.generation = st.session_state.get("generation", 0) + 1
-    st.session_state.i_local = 0
-    st.session_state.i_espace = 0
+    ss.donnees = base
+    ss.generation = ss.get("generation", 0) + 1
+    ss.edition = {"locaux": None, "espaces": None}
+    ss.theme = {"locaux": 0, "espaces": 0}
 
 
-if "donnees" not in st.session_state:
+if "donnees" not in ss:
     charger(donnees_vides())
-D = st.session_state.donnees
+for k, v in (("mode", None), ("saisie", "guidee"), ("etape", 0), ("etape_max", 0), ("vue", "parcours"),
+             ("message", None), ("haut", False)):
+    ss.setdefault(k, v)
+D = ss.donnees
 
 
 def cle(*parts) -> str:
-    return ":".join(str(p) for p in (st.session_state.generation, *parts))
+    return ":".join(str(p) for p in (ss.generation, *parts))
+
+
+def etapes() -> list[str]:
+    return MODES[ss.mode]["etapes"] if ss.mode else []
+
+
+def aller(etape: str | int):
+    """Change d'étape du parcours (et remonte en haut de page)."""
+    n = etapes().index(etape) if isinstance(etape, str) else etape
+    ss.etape = n
+    ss.etape_max = max(ss.etape_max, n)
+    ss.vue = "parcours"
+    ss.haut = True
+    st.rerun()
+
+
+def nom_entite(x: dict, i: int, cle_liste: str) -> str:
+    cfg = ENTITES[cle_liste]
+    return x.get(cfg["code_nom"]) or f"{cfg['defaut']} {i + 1}"
 
 
 # ------------------------------------------------------------------ champs de saisie
 def _etiquette(q) -> str:
     unite = f" ({q['unite']})" if q.get("unite") else ""
-    code = 'MEX-01' if q['code'] == 'orientation' else q['code'].removesuffix('b')
+    code = "MEX-01" if q["code"] == "orientation" else q["code"].removesuffix("b")
     return f"{q['libelle']}{unite} :gray[· {code}]"
 
 
@@ -129,11 +179,8 @@ def _champ_nombre(q, d, k, aide):
 
 
 def section(s: dict, d: dict, etats, cb: dict, prefixe: str):
-    """Affiche les questions visibles d'une section, sur deux colonnes.
-
-    ``etats`` est une fonction : les états sont recalculés avant chaque question pour qu'une
-    question conditionnelle apparaisse dès que la réponse dont elle dépend vient d'être saisie.
-    """
+    """Questions visibles d'une section, sur deux colonnes. ``etats`` est recalculé avant chaque
+    question pour qu'une question conditionnelle apparaisse dès que sa condition est remplie."""
     cols = st.columns(2, gap="large")
     i = 0
     for q in s["questions"]:
@@ -141,6 +188,47 @@ def section(s: dict, d: dict, etats, cb: dict, prefixe: str):
             with cols[i % 2]:
                 champ(q, d, prefixe)
             i += 1
+
+
+def sans_reponse(sections, d: dict, etats, cb: dict) -> list[dict]:
+    """Questions affichées, utiles au calcul, et restées sans réponse."""
+    out = []
+    for s in sections:
+        for q in s["questions"]:
+            if q.get("info") or q["type"] == "case":
+                continue
+            if visible(q["code"], etats(), d, cb) and d.get(q["code"]) in (None, "", []):
+                out.append(q)
+    return out
+
+
+def murs_incomplets(l: dict) -> list[str]:
+    if l.get("aucune_baie"):
+        return []
+    murs = [m for m in (l.get("murs") or []) if m]
+    if not murs:
+        return ["aucun mur extérieur décrit (ou cocher « Aucune baie en façade »)"]
+    out = []
+    for i, m in enumerate(murs, start=1):
+        manque = [lib for k, lib in (("orientation", "orientation"), ("MEX-04", "position des baies"),
+                                     ("MEX-06", "état des menuiseries"), ("MEX-07", "débord"), ("baies", "types de baie"))
+                  if not m.get(k)]
+        if m.get("MEX-04") in ("Nu intérieur", "En tunnel") and m.get("MEX-05") is None:
+            manque.append("distance vitrage-façade")
+        if manque:
+            out.append(f"mur {i} : " + ", ".join(manque))
+    return out
+
+
+def avertir(questions: list[dict], autres: list[str] = ()):
+    """Signale ce qui reste à renseigner, sans bloquer."""
+    items = [f"{q['libelle']} ({q['code'].removesuffix('b')})" for q in questions] + list(autres)
+    if not items:
+        st.caption("✅ Tout est renseigné ici.")
+        return
+    with st.expander(f"⚠️ {len(items)} élément(s) sans réponse — vous pouvez continuer, la solution concernée "
+                     "passera « Sous réserve »"):
+        st.markdown("\n".join(f"- {html.escape(t)}" for t in items))
 
 
 def pastille(statut: str) -> str:
@@ -151,94 +239,195 @@ def pastille(statut: str) -> str:
             f"font-size:0.85em;font-weight:600;white-space:nowrap'>{html.escape(statut)}</span>")
 
 
-# ------------------------------------------------------------------ barre latérale
-with st.sidebar:
-    st.title("🌡️ Méthode SURYA")
-    st.caption("Audit de faisabilité d'actions d'adaptation aux fortes chaleurs — maquette")
-    page = st.radio("Étapes", PAGES, key="page", label_visibility="collapsed")
-    st.divider()
-    st.caption(f"{len(D['locaux'])} local(aux) · {len(D['espaces'])} espace(s) extérieur(s)")
-    with st.expander("Données"):
-        if st.button("Charger l'exemple de l'Excel", width="stretch"):
-            charger(json.loads((RACINE / "surya" / "exemple.json").read_text(encoding="utf-8")))
-            st.rerun()
-        st.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
-                           file_name="saisie_surya.json", mime="application/json", width="stretch")
-        fichier = st.file_uploader("Importer une saisie (JSON) ou un Excel de la méthode (.xlsx)",
-                                   type=["json", "xlsx"], key=cle("import"))
-        if fichier is not None and st.button("Importer ce fichier", type="primary", width="stretch"):
-            try:
-                charger(json.load(fichier) if fichier.name.endswith(".json") else lire_classeur(fichier))
-                st.rerun()
-            except Exception as e:  # fichier illisible ou d'un autre format
-                st.error(f"Import impossible : {e}")
-        if st.button("Tout effacer", width="stretch"):
-            charger(donnees_vides())
-            st.rerun()
-    st.caption("Maquette : les données ne sont pas enregistrées. Exportez la saisie pour la conserver.")
+def remonter():
+    """Remonte en haut de la page après un changement d'étape."""
+    if ss.haut:
+        ss.haut = False
+        ss.nonce = ss.get("nonce", 0) + 1
+        components.html(f"<script>/*{ss.nonce}*/const m=window.parent.document.querySelector('[data-testid=\"stMain\"]');"
+                        "if(m){m.scrollTo(0,0);}window.parent.scrollTo(0,0);</script>", height=0)
+
 
 CB = moteur.etats_batiment(D["batiment"], D["facades"])
 
 
-# ------------------------------------------------------------------ pages
-def page_accueil():
-    st.title("Audit de faisabilité d'actions d'adaptation")
-    st.markdown(
-        "Cet outil reprend la logique de l'Excel *« Outil d'aide au test de la méthode d'audit de faisabilité "
-        "d'actions d'adaptation »* : à partir des relevés du carnet de visite, il indique pour chaque local et "
-        "chaque espace extérieur le **statut de faisabilité** de chaque solution de confort d'été.")
-    c1, c2, c3 = st.columns(3)
-    c1.info("**1. Bâtiment**\n\nDonnées générales, ventilation mécanique, toiture et combles, façades.")
-    c2.info("**2. Locaux et espaces extérieurs**\n\nUne fiche par local visité et par espace extérieur.")
-    c3.info("**3. Résultats**\n\nStatut de chaque solution, règle retenue, données manquantes et alertes.")
-    st.markdown("Seules les questions utiles sont affichées : certaines n'apparaissent qu'en fonction des réponses "
-                "précédentes. Une réponse laissée vide est traitée comme une **donnée manquante** : la solution "
-                "concernée passe alors « Sous réserve ».")
-    st.subheader("Statuts possibles")
-    st.markdown(" ".join(pastille(s) for s in COULEURS), unsafe_allow_html=True)
-    st.subheader("Avancement de la saisie")
-    fait, total = avancement(SECTIONS_BATIMENT, CB, D["batiment"], CB)
-    a, b, c = st.columns(3)
-    a.metric("Bâtiment", f"{fait} / {total} questions")
-    b.metric("Locaux", len(D["locaux"]))
-    c.metric("Espaces extérieurs", len(D["espaces"]))
-    if not D["locaux"] and not D["batiment"]:
-        st.caption("Pour découvrir l'outil, chargez l'exemple depuis le menu « Données » de la barre latérale.")
+# ------------------------------------------------------------------ écran de départ
+def ecran_depart():
+    st.title("🌡️ Audit de faisabilité d'actions d'adaptation")
+    st.markdown("Méthode SURYA Ingénierie / ACTEE — plan rafraîchissement des écoles. À partir des relevés de visite, "
+                "l'outil établit pour chaque local et chaque espace extérieur le **statut de faisabilité** de chaque "
+                "solution de confort d'été.")
+
+    if D["locaux"] or D["espaces"] or D["batiment"]:
+        st.info(f"Une saisie est en cours ({len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)) : "
+                "elle sera conservée quel que soit votre choix.", icon="💾")
+
+    st.subheader("1. Comment voulez-vous remplir les locaux et les espaces extérieurs ?")
+    choix = st.radio("Mode de saisie", list(SAISIES), index=list(SAISIES).index(ss.saisie),
+                     format_func=lambda k: SAISIES[k][0], captions=[SAISIES[k][1] for k in SAISIES],
+                     label_visibility="collapsed", key="choix_saisie")
+    ss.saisie = choix
+    st.caption("Vous pourrez changer de mode à tout moment depuis l'étape Locaux.")
+
+    st.subheader("2. Que voulez-vous produire ?")
+    c1, c2 = st.columns(2, gap="large")
+    with c1.container(border=True, height="stretch"):
+        st.markdown("### 📊 Résultats de faisabilité")
+        st.markdown("L'équivalent de l'Excel de la méthode : vous saisissez le bâtiment, les façades, les locaux et "
+                    "les espaces extérieurs, et vous obtenez les statuts de chaque solution.")
+        st.markdown("**À la fin :** tableau des statuts à l'écran, **PDF des résultats** (2 à 3 pages), export CSV.")
+        st.markdown(f":gray[{len(MODES['resultats']['etapes'])} étapes : "
+                    f"{' → '.join(MODES['resultats']['etapes'])}]")
+        if st.button("Commencer — résultats", type="primary", width="stretch"):
+            demarrer("resultats")
+    with c2.container(border=True, height="stretch"):
+        st.markdown("### 📄 Diagnostic complet")
+        st.markdown("Même saisie, avec en plus l'identification de l'audit (établissement, auditeur, date), vos "
+                    "observations par local et espace et un commentaire général.")
+        st.markdown("**À la fin :** le **compte rendu complet** (page de garde, synthèse, plan d'action, alertes, "
+                    "fiches détaillées) et le PDF des résultats.")
+        st.markdown(f":gray[{len(MODES['complet']['etapes'])} étapes : {' → '.join(MODES['complet']['etapes'])}]")
+        if st.button("Commencer — diagnostic complet", type="primary", width="stretch"):
+            demarrer("complet")
+
+    with st.expander("Reprendre une saisie existante ou essayer avec un exemple"):
+        bloc_donnees(prefixe="depart")
     st.divider()
     st.caption(f"{REFERENTIEL['version']}. © 2026 ACTEE et SURYA Ingénierie — contenu de la méthode diffusé sous "
-               "licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr).")
+               "licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr). Maquette : les "
+               "données ne sont pas enregistrées sur un serveur ; exportez la saisie pour la conserver.")
 
 
-def page_batiment():
-    st.title("Bâtiment")
-    with st.container(border=True):
-        st.subheader("Identification de l'audit")
-        st.caption("Informations reprises en page de garde du compte rendu.")
-        a = D["audit"]
-        cols = st.columns(3)
-        for n, (k, lib) in enumerate(CHAMPS_AUDIT):
-            v = cols[n % 3].text_input(lib, value=a.get(k, ""), key=cle("audit", k)).strip()
-            if v:
-                a[k] = v
-            else:
-                a.pop(k, None)
+def demarrer(mode: str):
+    ss.mode = mode
+    ss.etape, ss.etape_max = 0, 0
+    if D["locaux"] or D["espaces"]:  # saisie reprise : toutes les étapes sont accessibles
+        ss.etape_max = len(etapes()) - 1
+    aller(0)
+
+
+def bloc_donnees(prefixe: str):
+    """Exemple, import, export, effacement."""
+    c1, c2 = st.columns(2)
+    if c1.button("Charger l'exemple de l'Excel", width="stretch", key=f"{prefixe}:exemple"):
+        charger(json.loads((RACINE / "surya" / "exemple.json").read_text(encoding="utf-8")))
+        ss.message = "Exemple chargé : 3 locaux et 1 espace extérieur."
+        ss.etape_max = len(etapes()) - 1 if ss.mode else 0
+        st.rerun()
+    c2.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
+                       file_name="saisie_surya.json", mime="application/json", width="stretch", key=f"{prefixe}:export")
+    fichier = st.file_uploader("Importer une saisie (JSON) ou un Excel de la méthode déjà rempli (.xlsx)",
+                               type=["json", "xlsx"], key=cle(prefixe, "import"))
+    if fichier is not None and st.button("Importer ce fichier", type="primary", key=f"{prefixe}:importer"):
+        try:
+            charger(json.load(fichier) if fichier.name.endswith(".json") else lire_classeur(fichier))
+            ss.message = f"Fichier importé : {len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)."
+            ss.etape_max = len(etapes()) - 1 if ss.mode else 0
+            st.rerun()
+        except Exception as e:  # fichier illisible ou d'un autre format
+            st.error(f"Import impossible : {e}")
+    if ss.message:
+        st.success(ss.message)
+        ss.message = None
+
+
+# ------------------------------------------------------------------ en-tête et navigation
+def entete():
+    c1, c2 = st.columns([5, 1.4], vertical_alignment="center")
+    c1.markdown(f"#### 🌡️ Audit de faisabilité d'actions d'adaptation · :green[{MODES[ss.mode]['titre']}]")
+    with c2.popover("⚙️ Réglages", width="stretch"):
+        if st.button("Seuils et données", width="stretch"):
+            ss.vue = "reglages"
+            st.rerun()
+        if st.button("Changer de type d'audit", width="stretch", help="Revenir à l'écran de départ ; la saisie est conservée."):
+            ss.mode = None
+            st.rerun()
+    cols = st.columns(len(etapes()))
+    for i, (col, nom) in enumerate(zip(cols, etapes())):
+        fait = "✓ " if i < ss.etape_max and i != ss.etape else ""
+        if col.button(f"{fait}{i + 1}. {nom}", key=f"nav:{i}", width="stretch", disabled=i > ss.etape_max,
+                      type="primary" if i == ss.etape else "secondary"):
+            ss.edition = {"locaux": None, "espaces": None}
+            aller(i)
+
+
+def pied(suivant_label: str | None = None, precedent: bool = True):
+    """Boutons Précédent / Suivant du parcours."""
+    st.divider()
+    c1, _, c3 = st.columns([1, 2, 1.3])
+    if precedent and ss.etape > 0 and c1.button("← Étape précédente", width="stretch"):
+        aller(ss.etape - 1)
+    if ss.etape < len(etapes()) - 1:
+        lib = suivant_label or f"Suivant : {etapes()[ss.etape + 1]} →"
+        if c3.button(lib, type="primary", width="stretch"):
+            aller(ss.etape + 1)
+
+
+# ------------------------------------------------------------------ étapes
+def etape_identification():
+    st.header("Identification de l'audit")
+    st.markdown("Ces informations figurent en page de garde du compte rendu. Elles n'interviennent pas dans le calcul.")
+    a = D["audit"]
+    cols = st.columns(2, gap="large")
+    for n, (k, lib) in enumerate(CHAMPS_AUDIT):
+        v = cols[n % 2].text_input(lib, value=a.get(k, ""), key=cle("audit", k)).strip()
+        if v:
+            a[k] = v
+        else:
+            a.pop(k, None)
+    manque = [lib for k, lib in CHAMPS_AUDIT if not a.get(k)]
+    avertir([], [f"{lib}" for lib in manque])
+    pied()
+
+
+def etape_batiment():
+    st.header("Bâtiment")
+    st.markdown("Données générales du bâtiment. Les questions en retrait n'apparaissent que si elles ont un objet.")
     b = D["batiment"]
+    etats = lambda: moteur.etats_batiment(b, D["facades"])  # noqa: E731
     for s in SECTIONS_BATIMENT:
         with st.container(border=True):
             st.subheader(s["titre"])
             if s["titre"] == "Ventilation mécanique":
                 st.caption("Cas technique : sans compétence suffisante, laissez les champs non évalués ; la ventilation "
                            "mécanique nocturne passera alors « Sous réserve ».")
-            section(s, b, lambda: moteur.etats_batiment(b, D["facades"]), CB, "bat")
-    with st.container(border=True):
-        st.subheader("Façades")
-        st.caption("Cochez les façades qui portent des baies visitées ou bordent un espace extérieur, puis décrivez-les. "
-                   "Les règles des locaux et des espaces utilisent la façade de même orientation.")
-        f01, autres = QUESTIONS_FACADE[0], QUESTIONS_FACADE[1:]
-        for o in ORIENTATIONS:
-            f = D["facades"].setdefault(o, {})
+            section(s, b, etats, CB, "bat")
+    avertir(sans_reponse(SECTIONS_BATIMENT, b, etats, CB))
+    pied()
+
+
+def orientations_utilisees() -> dict[str, list[str]]:
+    """Orientations citées par les murs des locaux et les espaces extérieurs."""
+    out: dict[str, list[str]] = {}
+    for i, l in enumerate(D["locaux"]):
+        if l.get("aucune_baie"):
+            continue
+        for m in l.get("murs") or []:
+            if m.get("orientation"):
+                out.setdefault(m["orientation"], []).append(nom_entite(l, i, "locaux"))
+    for i, e in enumerate(D["espaces"]):
+        for o in e.get("E-20") or []:
+            if o in ORIENTATIONS:
+                out.setdefault(o, []).append(nom_entite(e, i, "espaces"))
+    return out
+
+
+def etape_facades():
+    st.header("Façades")
+    st.markdown("Cochez chaque façade qui porte des baies des locaux visités ou qui borde un espace extérieur, puis "
+                "décrivez-la. Les règles des locaux (protections solaires) et des espaces (ombrage adossé) utilisent "
+                "la façade de **même orientation**.")
+    utilisees = orientations_utilisees()
+    if utilisees:
+        st.caption("Orientations citées dans la saisie : " + " · ".join(
+            f"**{o}** ({', '.join(dict.fromkeys(n))})" for o, n in sorted(utilisees.items(), key=lambda t: ORIENTATIONS.index(t[0]))))
+    f01, autres = QUESTIONS_FACADE[0], QUESTIONS_FACADE[1:]
+    for o in ORIENTATIONS:
+        f = D["facades"].setdefault(o, {})
+        with st.container(border=bool(f.get("F-01"))):
             cols = st.columns([1.1] + [2] * len(autres))
-            decrite = cols[0].checkbox(f"Façade **{o}**", value=bool(f.get("F-01")), key=cle("fac", o, "F-01"), help=f01["libelle"])
+            libelle = f"Façade **{o}**" + (" ·  :orange[citée]" if o in utilisees and not f.get("F-01") else "")
+            decrite = cols[0].checkbox(libelle, value=bool(f.get("F-01")), key=cle("fac", o, "F-01"), help=f01["libelle"])
             if decrite:
                 f["F-01"] = True
                 for col, q in zip(cols[1:], autres):
@@ -246,48 +435,187 @@ def page_batiment():
                         champ({**q, "type": "choix"}, f, f"fac:{o}")
             else:
                 f.pop("F-01", None)
+    oublis = [f"façade {o} citée par {', '.join(dict.fromkeys(n))} mais non décrite" for o, n in utilisees.items()
+              if not (D["facades"].get(o) or {}).get("F-01")]
+    incompletes = [f"façade {o} : {q['libelle']}" for o, f in D["facades"].items() if f.get("F-01")
+                   for q in autres if not f.get(q["code"])]
+    avertir([], oublis + incompletes)
+    pied()
 
 
-def _liste_entites(cle_liste: str, cle_index: str, code_nom: str, singulier: str, defaut: str):
-    """Sélecteur + boutons ajouter / dupliquer / supprimer. Renvoie l'entité sélectionnée ou None."""
-    liste = D[cle_liste]
-    c1, c2, c3, c4 = st.columns([4, 1.3, 1.3, 1.3], vertical_alignment="bottom")
-    if c2.button(f"➕ Ajouter", key=cle(cle_liste, "add"), width="stretch"):
-        liste.append({"_id": uuid.uuid4().hex[:8]})
-        st.session_state[cle_index] = len(liste) - 1
-        st.rerun()
+# --- locaux et espaces --------------------------------------------------------------------
+ENTITES = {
+    "locaux": {"code_nom": "L-01", "defaut": "Local", "un": "un local", "le": "le local", "titre": "Locaux",
+               "sections": SECTIONS_LOCAL, "etats": lambda x: moteur.etats_local(x, CB)},
+    "espaces": {"code_nom": "E-01", "defaut": "Espace", "un": "un espace extérieur", "le": "l'espace",
+                "titre": "Espaces extérieurs", "sections": SECTIONS_ESPACE, "etats": lambda x: moteur.etats_espace(x)},
+}
+
+
+def themes(cle_liste: str) -> list[tuple]:
+    th = [("section", s["titre"], s) for s in ENTITES[cle_liste]["sections"]]
+    if cle_liste == "locaux":
+        th.insert(2, ("murs", "Murs et baies en façade", None))
+    if ss.mode == "complet":
+        th.append(("observations", "Observations", None))
+    return th
+
+
+def manques_theme(cle_liste: str, x: dict, th: tuple) -> tuple[list[dict], list[str]]:
+    kind, _, s = th
+    if kind == "section":
+        return sans_reponse([s], x, lambda: ENTITES[cle_liste]["etats"](x), CB), []
+    if kind == "murs":
+        return [], murs_incomplets(x)
+    return [], []
+
+
+def nb_manques(cle_liste: str, x: dict) -> int:
+    return sum(len(a) + len(b) for a, b in (manques_theme(cle_liste, x, th) for th in themes(cle_liste)))
+
+
+def etape_entites(cle_liste: str):
+    i = ss.edition[cle_liste]
+    if i is not None and i < len(D[cle_liste]):
+        editeur(cle_liste, i)
+    else:
+        ss.edition[cle_liste] = None
+        liste_entites(cle_liste)
+
+
+def liste_entites(cle_liste: str):
+    cfg, liste = ENTITES[cle_liste], D[cle_liste]
+    st.header(cfg["titre"])
+    if cle_liste == "locaux":
+        st.markdown("Ajoutez chaque local visité (classe, dortoir, salle de motricité, bureau…). Pour chacun, "
+                    "les statuts sont calculés en direct.")
+    else:
+        st.markdown("Ajoutez chaque espace extérieur (cour, préau, jardin…). S'il n'y en a pas, passez à l'étape suivante.")
+    c1, c2 = st.columns([3, 2], vertical_alignment="center")
+    with c2:
+        mode = st.segmented_control("Mode de saisie", list(SAISIES), default=ss.saisie,
+                                    format_func=lambda k: SAISIES[k][0], key=f"saisie:{cle_liste}",
+                                    help=" · ".join(f"{v[0]} : {v[1]}" for v in SAISIES.values()))
+        if mode and mode != ss.saisie:
+            ss.saisie = mode
+            st.rerun()
+    if ss.message:
+        st.success(ss.message)
+        ss.message = None
+
     if not liste:
-        st.info(f"Aucun {singulier} pour l'instant : cliquez sur « Ajouter ».")
-        return None
-    i = min(st.session_state.get(cle_index, 0), len(liste) - 1)
-    noms = [x.get(code_nom) or f"{defaut} {n + 1}" for n, x in enumerate(liste)]
-    i = c1.selectbox(f"{defaut} affiché", range(len(liste)), index=i, format_func=lambda n: noms[n],
-                     key=cle(cle_liste, "sel", len(liste), i))
-    st.session_state[cle_index] = i
-    if c3.button("⧉ Dupliquer", key=cle(cle_liste, "dup"), width="stretch"):
-        copie = json.loads(json.dumps(liste[i]))
-        copie["_id"] = uuid.uuid4().hex[:8]
-        copie[code_nom] = f"{noms[i]} (copie)"
-        liste.insert(i + 1, copie)
-        st.session_state[cle_index] = i + 1
-        st.rerun()
-    if c4.button("🗑 Supprimer", key=cle(cle_liste, "del"), width="stretch"):
-        liste.pop(i)
-        st.session_state[cle_index] = max(0, i - 1)
-        st.rerun()
-    return liste[i]
+        st.info(f"Aucun {cfg['defaut'].lower()} pour l'instant.")
+    else:
+        res = moteur.calculer(D)[cle_liste]
+        cols = st.columns(3)
+        for i, x in enumerate(liste):
+            with cols[i % 3].container(border=True):
+                st.markdown(f"**{html.escape(nom_entite(x, i, cle_liste))}**")
+                sous_titre = x.get("L-02") if cle_liste == "locaux" else ", ".join(x.get("E-02") or [])
+                st.caption(sous_titre or "type non renseigné")
+                n = nb_manques(cle_liste, x)
+                st.markdown("✅ Complet" if n == 0 else f"⚠️ {n} élément(s) sans réponse")
+                compte = {}
+                for s in res[i]["solutions"]:
+                    compte[s["statut"]] = compte.get(s["statut"], 0) + 1
+                st.markdown(" ".join(f"{pastille(s)}&nbsp;<b>{compte[s]}</b>" for s in COULEURS if s in compte),
+                            unsafe_allow_html=True)
+                b1, b2, b3 = st.columns([1.4, 1, 1])
+                if b1.button("✏️ Modifier", key=f"mod:{cle_liste}:{x['_id']}", width="stretch"):
+                    ouvrir(cle_liste, i)
+                if b2.button("⧉", key=f"dup:{cle_liste}:{x['_id']}", width="stretch", help="Dupliquer"):
+                    copie = json.loads(json.dumps(x))
+                    copie["_id"] = uuid.uuid4().hex[:8]
+                    copie[cfg["code_nom"]] = f"{nom_entite(x, i, cle_liste)} (copie)"
+                    liste.insert(i + 1, copie)
+                    st.rerun()
+                if b3.button("🗑", key=f"del:{cle_liste}:{x['_id']}", width="stretch", help="Supprimer"):
+                    liste.pop(i)
+                    st.rerun()
+    if st.button(f"➕ Ajouter {cfg['un']}", type="primary" if not liste else "secondary"):
+        liste.append({"_id": uuid.uuid4().hex[:8]})
+        ouvrir(cle_liste, len(liste) - 1)
+    pied()
 
 
-def _apercu(solutions):
-    st.markdown("**Statuts (calcul en direct)**")
-    lignes = "".join(f"<div style='margin:0 0 9px 0;font-size:0.88em'>{html.escape(s['solution'])}<br>"
-                     f"{pastille(s['statut'])}</div>" for s in solutions)
-    st.markdown(lignes, unsafe_allow_html=True)
-    st.caption("Détail des règles dans la page Résultats.")
+def ouvrir(cle_liste: str, i: int, theme: int = 0):
+    ss.edition[cle_liste] = i
+    ss.theme[cle_liste] = theme
+    ss.haut = True
+    st.rerun()
+
+
+def fermer(cle_liste: str, i: int):
+    x = D[cle_liste][i]
+    ss.message = f"« {nom_entite(x, i, cle_liste)} » enregistré. Ajoutez-en un autre ou passez à l'étape suivante."
+    ss.edition[cle_liste] = None
+    ss.haut = True
+    st.rerun()
+
+
+def editeur(cle_liste: str, i: int):
+    cfg, x = ENTITES[cle_liste], D[cle_liste][i]
+    pid, nom_avant = f"{cle_liste}:{x['_id']}", x.get(cfg["code_nom"])
+    th = themes(cle_liste)
+    c1, c2 = st.columns([1.3, 4], vertical_alignment="center")
+    if c1.button(f"← Liste des {cfg['titre'].lower()}", width="stretch"):
+        ss.edition[cle_liste] = None
+        st.rerun()
+    c2.markdown(f"### {html.escape(nom_entite(x, i, cle_liste))} :gray[· {cfg['defaut'].lower()} {i + 1} sur {len(D[cle_liste])}]")
+
+    gauche, droite = st.columns([2.6, 1], gap="large")
+    with gauche:
+        if ss.saisie == "guidee":
+            t = min(ss.theme[cle_liste], len(th) - 1)
+            choix = st.segmented_control("Thème", range(len(th)), default=t, key=f"theme:{pid}:{t}",
+                                         format_func=lambda k: f"{k + 1}. {th[k][1]}", label_visibility="collapsed",
+                                         width="stretch")
+            if choix is not None and choix != t:
+                ouvrir(cle_liste, i, choix)
+            st.progress((t + 1) / len(th), text=f"Thème {t + 1} sur {len(th)} : **{th[t][1]}**")
+            with st.container(border=True):
+                afficher_theme(cle_liste, x, pid, th[t])
+            n1, _, n3 = st.columns([1, 1.5, 1.2])
+            if t > 0 and n1.button("← Thème précédent", width="stretch"):
+                ouvrir(cle_liste, i, t - 1)
+            if t < len(th) - 1:
+                if n3.button("Thème suivant →", type="primary", width="stretch", help=th[t + 1][1]):
+                    ouvrir(cle_liste, i, t + 1)
+            elif n3.button(f"✓ Terminer {cfg['le']}", type="primary", width="stretch"):
+                fermer(cle_liste, i)
+        else:
+            onglets = st.tabs([f"{k + 1}. {t[1]}" for k, t in enumerate(th)])
+            for onglet, t in zip(onglets, th):
+                with onglet:
+                    afficher_theme(cle_liste, x, pid, t)
+            if st.button(f"✓ Terminer {cfg['le']}", type="primary"):
+                fermer(cle_liste, i)
+    with droite:
+        n = nb_manques(cle_liste, x)
+        st.markdown("✅ Tout est renseigné" if n == 0 else f"⚠️ {n} élément(s) sans réponse")
+        res = moteur.calculer(D)[cle_liste][i]
+        st.markdown("**Statuts (calcul en direct)**")
+        st.markdown("".join(f"<div style='margin:0 0 9px 0;font-size:0.88em'>{html.escape(s['solution'])}<br>"
+                            f"{pastille(s['statut'])}</div>" for s in res["solutions"]), unsafe_allow_html=True)
+    if x.get(cfg["code_nom"]) != nom_avant:  # le nom vient de changer : met à jour l'en-tête
+        st.rerun()
+
+
+def afficher_theme(cle_liste: str, x: dict, pid: str, th: tuple):
+    kind, titre, s = th
+    if kind == "section":
+        section(s, x, lambda: ENTITES[cle_liste]["etats"](x), CB, pid)
+    elif kind == "murs":
+        _murs(x, pid)
+    else:
+        _observations(x, pid)
+    q, autres = manques_theme(cle_liste, x, th)
+    avertir(q, autres)
 
 
 def _murs(l: dict, pid: str):
     """Baies en façade : jusqu'à 4 murs extérieurs, un par orientation."""
+    st.caption("Décrivez chaque mur extérieur du local qui porte des baies (4 au maximum), un bloc par orientation.")
     aucune = st.checkbox("Aucune baie en façade :gray[· MEX-01]", value=bool(l.get("aucune_baie")), key=cle(pid, "aucune"))
     if aucune:
         l["aucune_baie"] = True
@@ -308,7 +636,7 @@ def _murs(l: dict, pid: str):
                     champ(q, m, f"{pid}:mur{i}")
             ori = m.get("orientation")
             if ori and not (D["facades"].get(ori) or {}).get("F-01"):
-                st.warning(f"La façade {ori} n'est pas décrite dans la page Bâtiment : les règles qui en dépendent "
+                st.warning(f"La façade {ori} n'est pas décrite (étape Façades) : les règles qui en dépendent "
                            "(alignement, accès, obstacles, désordres) resteront indéterminées.", icon="⚠️")
             anciens = m.get("baies") or {}
             types = st.multiselect("Types de baie présents sur ce mur :gray[· MEX-08]", q_baies["options"],
@@ -347,61 +675,67 @@ def _observations(x: dict, pid: str):
         x.pop("observations", None)
 
 
-def page_locaux():
-    st.title("Locaux")
-    l = _liste_entites("locaux", "i_local", "L-01", "local", "Local")
-    if l is None:
+def premier_theme_incomplet(cle_liste: str, x: dict) -> int:
+    for k, th in enumerate(themes(cle_liste)):
+        q, autres = manques_theme(cle_liste, x, th)
+        if q or autres:
+            return k
+    return 0
+
+
+# --- vérification ---------------------------------------------------------------------------
+def etape_verification():
+    st.header("Vérification avant les documents")
+    st.markdown("Récapitulatif de ce qui n'est pas renseigné. Vous pouvez générer les documents dès maintenant : "
+                "une donnée manquante fait passer la solution concernée « Sous réserve », comme dans la méthode.")
+    if not D["locaux"] and not D["espaces"]:
+        st.error("Aucun local ni espace extérieur : ajoutez-en au moins un pour obtenir des résultats.")
+        b1, b2 = st.columns(2)
+        if b1.button("Ajouter des locaux"):
+            aller("Locaux")
+        if b2.button("Ajouter des espaces extérieurs"):
+            aller("Espaces extérieurs")
+        pied(precedent=True)
         return
-    pid, nom = f"loc:{l['_id']}", l.get("L-01")
-    gauche, droite = st.columns([2.6, 1], gap="large")
-    with gauche:
-        titres = [s["titre"] for s in SECTIONS_LOCAL]
-        titres.insert(2, "Baies en façade")
-        titres.append("Observations")
-        onglets = st.tabs(titres)
-        sections = iter(SECTIONS_LOCAL)
-        for titre, onglet in zip(titres, onglets):
-            with onglet:
-                if titre == "Baies en façade":
-                    _murs(l, pid)
-                elif titre == "Observations":
-                    _observations(l, pid)
-                else:
-                    section(next(sections), l, lambda: moteur.etats_local(l, CB), CB, pid)
-    with droite:
-        c = moteur.etats_local(l, CB)
-        fait, total = avancement(SECTIONS_LOCAL, c, l, CB)
-        st.progress(fait / total if total else 0, text=f"{fait} / {total} questions renseignées (hors murs)")
-        r = moteur.regles_local(l, c, CB, D["batiment"], {**PARAMETRES_DEFAUT, **D["parametres"]})
-        _apercu(r["solutions"])
-    if l.get("L-01") != nom:  # le nom vient de changer : met à jour le sélecteur
-        st.rerun()
+    res = moteur.calculer(D)
+    total = 0
+
+    def ligne(cle_ligne, titre, n, detail, action):
+        nonlocal total
+        total += n
+        c1, c2, c3 = st.columns([3, 4, 1.3], vertical_alignment="center")
+        c1.markdown(f"{'✅' if n == 0 else '⚠️'} **{html.escape(titre)}**")
+        c2.markdown(html.escape(detail) if n else ":gray[complet]")
+        if n and c3.button("Compléter", key=f"verif:{cle_ligne}", width="stretch"):
+            action()
+
+    with st.container(border=True):
+        if ss.mode == "complet":
+            manque = [lib for k, lib in CHAMPS_AUDIT if not D["audit"].get(k)]
+            ligne("audit", "Identification", len(manque), ", ".join(manque), lambda: aller("Identification"))
+        q = sans_reponse(SECTIONS_BATIMENT, D["batiment"], lambda: moteur.etats_batiment(D["batiment"], D["facades"]), CB)
+        ligne("bat", "Bâtiment", len(q), f"{len(q)} question(s) sans réponse", lambda: aller("Bâtiment"))
+        oublis = [o for o in orientations_utilisees() if not (D["facades"].get(o) or {}).get("F-01")]
+        ligne("fac", "Façades", len(oublis), "façade(s) citée(s) mais non décrite(s) : " + ", ".join(oublis),
+              lambda: aller("Façades"))
+        for cle_liste in ("locaux", "espaces"):
+            for i, x in enumerate(D[cle_liste]):
+                n = nb_manques(cle_liste, x)
+                reserves = [s["solution"] for s in res[cle_liste][i]["solutions"] if _manquante(res[cle_liste][i], s)]
+                detail = f"{n} élément(s) sans réponse" + (f" · « Sous réserve » faute de données : {', '.join(reserves)}"
+                                                          if reserves else "")
+
+                def action(c=cle_liste, k=i, xx=x):
+                    ss.edition[c] = k
+                    ss.theme[c] = premier_theme_incomplet(c, xx)
+                    aller(ENTITES[c]["titre"])
+                ligne(f"{cle_liste}:{x['_id']}", nom_entite(x, i, cle_liste), n, detail, action)
+    if total == 0:
+        st.success("Tout est renseigné.")
+    pied(suivant_label="Générer les documents →" if ss.mode == "complet" else "Voir les résultats →")
 
 
-def page_espaces():
-    st.title("Espaces extérieurs")
-    e = _liste_entites("espaces", "i_espace", "E-01", "espace", "Espace")
-    if e is None:
-        return
-    pid, nom = f"esp:{e['_id']}", e.get("E-01")
-    gauche, droite = st.columns([2.6, 1], gap="large")
-    with gauche:
-        onglets = st.tabs([s["titre"] for s in SECTIONS_ESPACE] + ["Observations"])
-        for s, onglet in zip(SECTIONS_ESPACE, onglets):
-            with onglet:
-                section(s, e, lambda: moteur.etats_espace(e), CB, pid)
-        with onglets[-1]:
-            _observations(e, pid)
-    with droite:
-        c = moteur.etats_espace(e)
-        fait, total = avancement(SECTIONS_ESPACE, c, e, CB)
-        st.progress(fait / total if total else 0, text=f"{fait} / {total} questions renseignées")
-        res = moteur.calculer(D)["espaces"][D["espaces"].index(e)]
-        _apercu(res["solutions"])
-    if e.get("E-01") != nom:
-        st.rerun()
-
-
+# --- résultats / documents -------------------------------------------------------------------
 def _tableau(entites, defaut):
     """Tableau HTML solutions x entités."""
     noms = [html.escape(x["nom"] or f"{defaut} {i + 1}") for i, x in enumerate(entites)]
@@ -426,10 +760,10 @@ def _tableau(entites, defaut):
 
 def _detail(x, s):
     """Détail d'une solution : règle retenue, données manquantes, alertes, toutes les règles du bloc."""
-    st.markdown(pastille(s["statut"]), unsafe_allow_html=True)
+    st.markdown(f"**{html.escape(s['solution'])}** &nbsp; {pastille(s['statut'])}", unsafe_allow_html=True)
     if not s["blocs"]:
         if s["statut"] == moteur.NON_CONCERNE:
-            st.write("La solution ne concerne pas cet espace (ce n'est pas une cour de récréation).")
+            st.caption("La solution ne concerne pas cet espace (ce n'est pas une cour de récréation).")
         else:
             st.info(f"Cas non déterminé faute de données. À renseigner : {QUESTIONS_DU_CAS.get(s['solution'], '')}.", icon="❓")
     for b in s["blocs"]:
@@ -437,13 +771,12 @@ def _detail(x, s):
         code = bl["regle"]
         if code is None:
             st.info("Aucune règle n'a pu être vérifiée avec les données disponibles.", icon="❓")
-        else:
-            r = REGLES[code]
-            st.markdown(f"**Règle retenue — {code}** : {r['regle']}")
-            st.caption(f"Condition : {r['condition']}")
-            if bl["manquante"]:
-                st.info(f"Donnée manquante : la règle {code} n'a pas pu être tranchée. "
-                        f"Questions à compléter : {r['questions'] or '—'}.", icon="❓")
+            continue
+        r = REGLES[code]
+        st.markdown(f"Règle retenue **{code}** : {r['regle']}")
+        if bl["manquante"]:
+            st.info(f"Donnée manquante : la règle {code} n'a pas pu être tranchée. "
+                    f"Questions à compléter : {r['questions'] or '—'}.", icon="❓")
     for code in s["alertes"]:
         st.warning(f"**{code}** — {REGLES[code]['regle']}", icon="⚠️")
     for b in s["blocs"]:
@@ -466,81 +799,121 @@ def _export_csv(res) -> str:
     return out.getvalue()
 
 
-@st.cache_data(max_entries=20, show_spinner="Préparation du compte rendu…")
+@st.cache_data(max_entries=20, show_spinner="Préparation du document…")
 def _pdf(donnees_json: str, complet: bool) -> bytes:
     return generer_pdf(json.loads(donnees_json), complet=complet)
 
 
-def page_resultats():
-    st.title("Résultats — statuts de faisabilité")
+def etape_documents():
+    complet = ss.mode == "complet"
+    st.header("Documents" if complet else "Résultats")
     res = moteur.calculer(D)
     if not res["locaux"] and not res["espaces"]:
         st.info("Ajoutez au moins un local ou un espace extérieur pour obtenir des résultats.")
+        pied()
         return
+    a = D["audit"]
+    base = unicodedata.normalize("NFKD", a.get("etablissement", "audit")).encode("ascii", "ignore").decode()
+    suffixe = "".join(c if c.isalnum() else "_" for c in base).strip("_") + ".pdf"
     with st.container(border=True):
-        st.subheader("📄 Exporter en PDF")
-        st.markdown("Deux documents au choix :\n"
-                    "- **Résultats** (2 à 3 pages) : statuts de chaque solution par local et espace, alertes, "
-                    "données manquantes.\n"
-                    "- **Compte rendu complet** : page de garde, cadre de l'audit, synthèse, plan d'action par "
-                    "solution (engageable / à valider / en place / exclue, avec quantités), alertes AL / VA, données "
-                    "manquantes, fiche détaillée de chaque local et espace, seuils utilisés.")
-        a = D["audit"]
-        v = st.text_area("Commentaire général de l'auditeur (facultatif)", value=a.get("synthese", ""),
-                         key=cle("audit", "synthese")).strip()
-        if v:
-            a["synthese"] = v
+        if complet:
+            st.subheader("📄 Vos documents")
+            v = st.text_area("Commentaire général de l'auditeur (facultatif, repris dans le compte rendu)",
+                             value=a.get("synthese", ""), key=cle("audit", "synthese")).strip()
+            if v:
+                a["synthese"] = v
+            else:
+                a.pop("synthese", None)
         else:
-            a.pop("synthese", None)
-        base = unicodedata.normalize("NFKD", a.get("etablissement", "audit")).encode("ascii", "ignore").decode()
-        suffixe = "".join(c if c.isalnum() else "_" for c in base).strip("_") + ".pdf"
+            st.subheader("📄 Télécharger les résultats")
         donnees_json = json.dumps(D, ensure_ascii=False, sort_keys=True)
-        c1, c2, c3 = st.columns([1, 1, 0.7])
-        c1.download_button("Résultats (PDF)", _pdf(donnees_json, False), file_name="resultats_" + suffixe,
-                           mime="application/pdf", type="primary", width="stretch")
-        c2.download_button("Compte rendu complet (PDF)", _pdf(donnees_json, True), file_name="compte_rendu_" + suffixe,
-                           mime="application/pdf", type="primary", width="stretch")
-        c3.download_button("Tableau (CSV)", _export_csv(res).encode("utf-8-sig"),
-                           file_name="resultats_surya.csv", mime="text/csv", width="stretch")
-        if not a.get("etablissement"):
-            st.caption("Astuce : renseignez l'identification de l'audit (page Bâtiment) pour compléter la page de garde.")
+        cols = st.columns([1.3, 1, 0.7] if complet else [1, 0.6, 1.4])
+        if complet:
+            cols[0].download_button("Compte rendu complet (PDF)", _pdf(donnees_json, True),
+                                    file_name="compte_rendu_" + suffixe, mime="application/pdf", type="primary",
+                                    width="stretch")
+            cols[0].caption("Page de garde, cadre, synthèse, plan d'action, alertes, données manquantes, fiches détaillées.")
+            k_res, k_csv = 1, 2
+        else:
+            k_res, k_csv = 0, 1
+        cols[k_res].download_button("Résultats (PDF)", _pdf(donnees_json, False), file_name="resultats_" + suffixe,
+                                    mime="application/pdf", type="secondary" if complet else "primary", width="stretch")
+        cols[k_res].caption("Statuts, alertes et données manquantes (2 à 3 pages).")
+        cols[k_csv].download_button("Tableau (CSV)", _export_csv(res).encode("utf-8-sig"),
+                                    file_name="resultats_surya.csv", mime="text/csv", width="stretch")
+        if not complet:
+            with cols[2]:
+                st.caption("Besoin du compte rendu complet (page de garde, plan d'action, fiches, observations) ?")
+                if st.button("Passer au diagnostic complet", width="stretch"):
+                    ss.mode = "complet"
+                    ss.etape_max = len(etapes()) - 1
+                    ss.message = None
+                    aller("Identification")
     st.markdown(" ".join(pastille(s) for s in COULEURS), unsafe_allow_html=True)
     for titre, cle_, defaut in (("Locaux", "locaux", "Local"), ("Espaces extérieurs", "espaces", "Espace")):
         entites = res[cle_]
         if not entites:
             continue
-        st.header(titre)
+        st.subheader(titre)
         _tableau(entites, defaut)
-        st.subheader(f"Détail — {titre.lower()}")
-        noms = [x["nom"] or f"{defaut} {i + 1}" for i, x in enumerate(entites)]
-        i = st.selectbox(f"{defaut} à détailler", range(len(entites)), format_func=lambda n: noms[n], key=cle("res", cle_))
-        x = entites[i]
-        if x.get("EX-AL") == 1:
-            st.warning(f"**EX-AL** — {REGLES['EX-AL']['regle']}", icon="⚠️")
-        for s in x["solutions"]:
-            icone = "⚠️ " if s["alertes"] else ""
-            with st.expander(f"{icone}{s['solution']} — {s['statut']}"):
-                _detail(x, s)
+        for i, x in enumerate(entites):
+            with st.expander(f"Détail des règles — {x['nom'] or f'{defaut} {i + 1}'}"):
+                if x.get("EX-AL") == 1:
+                    st.warning(f"**EX-AL** — {REGLES['EX-AL']['regle']}", icon="⚠️")
+                for s in x["solutions"]:
+                    with st.container(border=True):
+                        _detail(x, s)
+    pied()
 
 
-def page_parametres():
-    st.title("Paramètres — seuils des règles")
-    st.caption("Valeurs de l'onglet « Paramètres » de l'Excel. Toute modification s'applique immédiatement aux règles citées.")
-    p = D["parametres"]
-    if st.button("Rétablir les valeurs par défaut"):
-        p.clear()
-        st.session_state.generation += 1
+# ------------------------------------------------------------------ réglages
+def vue_reglages():
+    if st.button("← Retour à l'audit"):
+        ss.vue = "parcours"
         st.rerun()
-    for q in REFERENTIEL["parametres"]:
-        c1, c2 = st.columns([1, 3], vertical_alignment="center")
-        v = c1.number_input(f"{q['nom']} ({q['unite']})" if q["unite"] else q["nom"], value=float(p.get(q["nom"], q["valeur"])),
-                            step=0.05 if q["valeur"] < 1 else 0.5, key=cle("param", q["nom"]))
-        c2.markdown(f"{q['signification']}  \n:gray[Règles : {q['regles']}]")
-        if v != q["valeur"]:
-            p[q["nom"]] = v
-        else:
-            p.pop(q["nom"], None)
+    st.title("Réglages")
+    t1, t2 = st.tabs(["Données", "Seuils des règles"])
+    with t1:
+        st.caption("Maquette : rien n'est enregistré sur un serveur. Exportez la saisie (JSON) pour la conserver et "
+                   "la réimporter plus tard.")
+        bloc_donnees(prefixe="reglages")
+        st.divider()
+        if st.button("🗑 Tout effacer et recommencer"):
+            charger(donnees_vides())
+            ss.mode, ss.vue = None, "parcours"
+            st.rerun()
+    with t2:
+        st.caption("Valeurs de l'onglet « Paramètres » de l'Excel. Toute modification s'applique immédiatement aux "
+                   "règles citées et est signalée dans le compte rendu.")
+        p = D["parametres"]
+        if st.button("Rétablir les valeurs par défaut"):
+            p.clear()
+            ss.generation += 1
+            st.rerun()
+        for q in REFERENTIEL["parametres"]:
+            c1, c2 = st.columns([1, 3], vertical_alignment="center")
+            v = c1.number_input(f"{q['nom']} ({q['unite']})" if q["unite"] else q["nom"],
+                                value=float(p.get(q["nom"], q["valeur"])), step=0.05 if q["valeur"] < 1 else 0.5,
+                                key=cle("param", q["nom"]))
+            c2.markdown(f"{q['signification']}  \n:gray[Règles : {q['regles']}]")
+            if v != q["valeur"]:
+                p[q["nom"]] = v
+            else:
+                p.pop(q["nom"], None)
 
 
-{"Accueil": page_accueil, "Bâtiment": page_batiment, "Locaux": page_locaux, "Espaces extérieurs": page_espaces,
- "Résultats": page_resultats, "Paramètres": page_parametres}[page]()
+# ------------------------------------------------------------------ aiguillage
+ETAPES = {"Identification": etape_identification, "Bâtiment": etape_batiment, "Façades": etape_facades,
+          "Locaux": lambda: etape_entites("locaux"), "Espaces extérieurs": lambda: etape_entites("espaces"),
+          "Vérification": etape_verification, "Résultats": etape_documents, "Documents": etape_documents}
+
+if ss.mode is None:
+    ecran_depart()
+elif ss.vue == "reglages":
+    entete()
+    vue_reglages()
+else:
+    ss.etape = min(ss.etape, len(etapes()) - 1)
+    entete()
+    ETAPES[etapes()[ss.etape]]()
+remonter()
