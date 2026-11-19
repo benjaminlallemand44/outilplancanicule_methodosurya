@@ -332,16 +332,21 @@ def demarrer(mode: str):
 
 def bloc_donnees(prefixe: str):
     """Exemple, import, export, effacement."""
-    c1, c2 = st.columns(2)
-    if c1.button("Charger l'exemple de l'Excel", width="stretch", key=f"{prefixe}:exemple"):
-        exemple = json.loads((RACINE / "surya" / "exemple.json").read_text(encoding="utf-8"))
-        exemple["questionnaires"] = [dict(r, source="exemple (fictif)") for r in
-                                     QU.lire_csv((RACINE / "surya" / "exemple_questionnaires.csv").read_bytes())[0]]
-        charger(exemple)
-        ss.message = ("Exemple chargé : 3 locaux, 1 espace extérieur et 14 questionnaires usagers fictifs.")
-        ss.etape_max = len(etapes()) - 1 if ss.mode else 0
-        st.rerun()
-    c2.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
+    c1, c2, c3 = st.columns(3)
+    for col, fichier_ex, cle_ex, libelle, msg in (
+            (c1, "exemple.json", "exemple", "Charger l'exemple de l'Excel",
+             "Exemple de l'Excel chargé : 3 locaux, 1 espace extérieur"),
+            (c2, "exemple_ecole_sud.json", "ecole_sud", "Charger l'école type du Sud",
+             "École type du Sud chargée (fictive, ≈ 1 000 m²) : 6 locaux, 1 espace extérieur")):
+        if col.button(libelle, width="stretch", key=f"{prefixe}:{cle_ex}"):
+            exemple = json.loads((RACINE / "surya" / fichier_ex).read_text(encoding="utf-8"))
+            exemple["questionnaires"] = [dict(r, source="exemple (fictif)") for r in
+                                         QU.lire_csv((RACINE / "surya" / "exemple_questionnaires.csv").read_bytes())[0]]
+            charger(exemple)
+            ss.message = msg + " et 14 questionnaires usagers fictifs."
+            ss.etape_max = len(etapes()) - 1 if ss.mode else 0
+            st.rerun()
+    c3.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
                        file_name="saisie_surya.json", mime="application/json", width="stretch", key=f"{prefixe}:export")
     fichier = st.file_uploader("Importer une saisie (JSON) ou un Excel de la méthode déjà rempli (.xlsx)",
                                type=["json", "xlsx"], key=cle(prefixe, "import"))
