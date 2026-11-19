@@ -16,6 +16,7 @@ from __future__ import annotations
 import datetime as dt
 import html
 import io
+import re
 from collections import Counter, defaultdict
 
 from reportlab.lib import colors
@@ -93,7 +94,26 @@ def donnee_manquante(x: dict, s: dict) -> bool:
     """Le statut « Sous réserve » de la solution ``s`` vient-il d'une donnée manquante ?"""
     if s["statut"] != SOUS_RESERVE:
         return False
-    return not s["blocs"] or any(x["blocs"][b]["manquante"] for b in s["blocs"])
+    if not s["blocs"]:  # aucun bloc applicable : faute de donnée, ou cas non prévu par la méthode
+        return s.get("cas_inconnu", True)
+    return any(x["blocs"][b]["manquante"] for b in s["blocs"])
+
+
+def questions_vides(x: dict, codes: str) -> str:
+    """Parmi les questions citées par une règle (« PL-03, BA-12 »), celles qui restent sans réponse."""
+    etats = {**(x.get("etats_batiment") or {}), **(x.get("etats") or {})}
+    murs = (x.get("etats") or {}).get("murs") or []
+    vides = []
+    for c in [c.strip() for c in (codes or "").split(",") if c.strip()]:
+        if c in etats:
+            if etats[c] == moteur.INC:
+                vides.append(c)
+        elif c.startswith(("MEX-0", "F-0")) and murs:  # questions des murs et des façades : par mur
+            if any(m.get(c) == moteur.INC or (c == "MEX-01" and not m.get("orientation")) for m in murs):
+                vides.append(c)
+        else:
+            vides.append(c)
+    return ", ".join(vides) or codes
 
 
 def justification(x: dict, s: dict) -> tuple[str, str]:
@@ -101,6 +121,9 @@ def justification(x: dict, s: dict) -> tuple[str, str]:
     if not s["blocs"]:
         if s["statut"] == NON_CONCERNE:
             return "", "L'espace ne comporte pas de cour de récréation."
+        if not s.get("cas_inconnu", True):
+            return "", ("Configuration non prévue par les règles de la méthode (aucun cas ne s'applique) : "
+                        "à examiner au cas par cas.")
         return "", f"Cas non déterminé : renseigner {QUESTIONS_DU_CAS.get(s['solution'], '—')}."
     codes, textes = [], []
     for b in s["blocs"]:
@@ -111,7 +134,8 @@ def justification(x: dict, s: dict) -> tuple[str, str]:
         r = REGLES[bl["regle"]]
         codes.append(bl["regle"])
         if bl["manquante"]:
-            textes.append(f"Donnée manquante pour la règle « {r['regle']} » : compléter {r['questions'] or '—'}.")
+            textes.append(f"Donnée manquante pour la règle « {r['regle']} » : compléter "
+                          f"{questions_vides(x, r['questions']) or '—'}.")
         else:
             textes.append(r["regle"])
     return ", ".join(codes), " ".join(textes)
@@ -132,7 +156,8 @@ def _baies_par_orientation(l: dict) -> str:
             continue
         for n in (m.get("baies") or {}).values():
             if isinstance(n, (int, float)) and not isinstance(n, bool):
-                total[o] += int(n)
+                if n > 0:
+                    total[o] += int(n)
             else:
                 non_comptes.add(o)
     orientations = [o for o in moteur.ORIENTATIONS if o in total or o in non_comptes]
@@ -148,8 +173,17 @@ def _baies_par_orientation(l: dict) -> str:
 
 def _nb(v, unite=""):
     if isinstance(v, (int, float)) and not isinstance(v, bool):
-        return f"{v:g}{unite}"
+        return f"{_dec(v)}{unite}"
     return "n.r."
+
+
+def _dec(v, signe=False, decimales=None) -> str:
+    """Nombre à la française : virgule décimale."""
+    if decimales is not None:
+        t = f"{v:+.{decimales}f}" if signe else f"{v:.{decimales}f}"
+    else:
+        t = f"{v:+g}" if signe else f"{v:g}"
+    return t.replace(".", ",")
 
 
 def quantites(solution: str, entree: dict) -> str:
@@ -173,10 +207,24 @@ def quantites(solution: str, entree: dict) -> str:
 # ------------------------------------------------------------------ mise en page
 def _t(texte) -> str:
     """Texte -> XML de Paragraph, avec les seuls caractères des polices standard."""
-    s = html.escape(str(texte if texte is not None else ""), quote=False)
-    for a, b in (("≤", "&lt;="), ("≥", "&gt;="), ("√", "racine "), ("▶", ""), ("\n", "<br/>")):
+    s = str(texte if texte is not None else "")
+    for a, b in (("≤", "<="), ("≥", ">="), ("√", "racine "), ("▶", ""), ("→", "->"), ("−", "-")):
         s = s.replace(a, b)
-    return s
+    s = _imprimable(s)
+    return html.escape(s, quote=False).replace("\n", "<br/>")
+
+
+def _imprimable(s: str) -> str:
+    """Retire les caractères que les polices standard des PDF ne savent pas afficher (emojis…)."""
+    out = []
+    for ch in s:
+        try:
+            ch.encode("cp1252")
+            out.append(ch)
+        except UnicodeEncodeError:
+            if ch in "\u00a0\u202f":
+                out.append(" ")
+    return re.sub(r"[ \t]{2,}", " ", "".join(out))
 
 
 def _styles():
@@ -425,7 +473,7 @@ def _reponse(v):
     if isinstance(v, bool):
         return "oui" if v else "non"
     if isinstance(v, float):
-        return f"{v:g}"
+        return _dec(v)
     return str(v)
 
 
@@ -473,7 +521,7 @@ def _usagers(d, res, S, num):
     for cle_i, (lib, unite) in (("sensation_moyenne", ("Sensation thermique moyenne (Q4), de −3 très froide à +3 très chaude", "")),
                                 ("preference_moyenne", ("Préférence moyenne (Q6), de −3 beaucoup plus froide à +3 beaucoup plus chaude", ""))):
         v = ind[cle_i]
-        data.append([Paragraph(_t(lib), S["cellule"]), Paragraph("—" if v is None else f"{v:+.1f}", S["cellule"]), ""])
+        data.append([Paragraph(_t(lib), S["cellule"]), Paragraph("—" if v is None else _dec(v, signe=True, decimales=1), S["cellule"]), ""])
     for cle_i, lib in QU.LIBELLES_INDICATEURS.items():
         v = ind[cle_i]
         data.append([Paragraph(_t(lib), S["cellule"]),
@@ -495,7 +543,7 @@ def _usagers(d, res, S, num):
         el.append(KeepTogether(bloc))
 
     el.append(Paragraph("Correspondance ressenti / préconisations", S["h2"]))
-    el.append(Paragraph(f"Proposition de matrice (à valider) : chaque ressenti est jugé « signalé » au-delà de "
+    el.append(Paragraph(f"Proposition de matrice (à valider) : chaque ressenti est jugé « signalé » à partir de "
                         f"{m['seuil']:.0%} des répondants, et rapproché des statuts de l'audit pour l'ensemble des "
                         f"locaux. Cohérent : ressenti et préconisation concordent. À vérifier : contradiction entre "
                         f"le ressenti et l'audit. Non corroboré : préconisation sans ressenti signalé (elle reste "
@@ -556,8 +604,6 @@ def _fiches(res, d, S, num=6):
                                        S["cellule"])])
                 style.append(("BACKGROUND", (1, len(data) - 1), (1, len(data) - 1), _fond(s["statut"])))
             el.append(_tableau(data, [45 * mm, 27 * mm, 108 * mm], style))
-            if x.get("EX-AL") == 1:
-                el.append(Paragraph(f"<b>EX-AL</b> : {_t(REGLES['EX-AL']['regle'])}", S["petit"]))
             if entree.get("observations"):
                 el += [Paragraph("Observations de l'auditeur", S["h3"]), Paragraph(_t(entree["observations"]), S["base"])]
             el.append(CondPageBreak(40 * mm))
@@ -581,7 +627,10 @@ def _table_murs(l, questions_mur, S):
             + [Paragraph("Baies (nombre)", S["entete"])]]
     for i, m in enumerate(murs, start=1):
         baies = ", ".join(f"{t} : {n if isinstance(n, (int, float)) else 'n.r.'}" for t, n in (m.get("baies") or {}).items())
-        data.append([Paragraph(str(i), S["cellule"])] + [Paragraph(_t(_reponse(m.get(q["code"]))), S["cellule"]) for q in qs]
+        # MEX-05 n'a d'objet que pour des baies au nu intérieur ou en tunnel
+        vis = lambda q: q["code"] != "MEX-05" or m.get("MEX-04") in ("Nu intérieur", "En tunnel")  # noqa: E731
+        data.append([Paragraph(str(i), S["cellule"])]
+                    + [Paragraph(_t(_reponse(m.get(q["code"]) if vis(q) else None)), S["cellule"]) for q in qs]
                     + [Paragraph(_t(baies or "—"), S["cellule"])])
     largeurs = [10 * mm, 18 * mm, 24 * mm, 20 * mm, 30 * mm, 22 * mm, 56 * mm]
     return KeepTogether([Paragraph("Baies en façade", S["h3"]), _tableau(data, largeurs[:len(data[0])])])
@@ -595,7 +644,7 @@ def _annexe(d, S):
         v = p[q["nom"]]
         modifie = v != q["valeur"]
         data.append([Paragraph(_t(q["nom"]), S["cellule"]),
-                     Paragraph(f"{'<b>' if modifie else ''}{v:g} {_t(q['unite'])}{' (modifié)</b>' if modifie else ''}",
+                     Paragraph(f"{'<b>' if modifie else ''}{_dec(v)} {_t(q['unite'])}{' (modifié)</b>' if modifie else ''}",
                                S["cellule"]),
                      Paragraph(_t(q["signification"]), S["cellule"]), Paragraph(_t(q["regles"]), S["cellule"])])
     el.append(_tableau(data, [32 * mm, 30 * mm, 93 * mm, 25 * mm]))
@@ -662,7 +711,7 @@ def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
         el += [PageBreak(), Paragraph("Aucun local ni espace extérieur n'a été saisi.", S["base"])]
     if audit.get("synthese"):
         el += [Paragraph("Commentaire général de l'auditeur", S["h2"]), Paragraph(_t(audit["synthese"]), S["base"])]
-    num = 6
+    num = 6 if (res["locaux"] or res["espaces"]) else 2  # numérotation continue des parties
     if donnees.get("questionnaires"):
         el += _usagers(donnees, res, S, num)
         num += 1

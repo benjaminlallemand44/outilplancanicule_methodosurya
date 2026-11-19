@@ -125,7 +125,7 @@ def _cp1252(c):
         c.encode("cp1252")
         return c
     except UnicodeEncodeError:
-        return "n"  # reportlab remplace le caractère par un carré noir (« n » de ZapfDingbats) : voir ANO-16
+        return ""  # caractère que les polices standard ne savent pas afficher : retiré des PDF (correctif ANO-16)
 
 
 def _norm(s):
@@ -184,9 +184,6 @@ def test_csv_identique_au_moteur(sortie, jeu):
     assert not any(TECHNIQUE.search(v or "") for l in lignes for k, v in l.items() if k != "Nom")
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-10 : l'alerte EX-AL (surface d'ombrage insuffisante) figure dans le PDF "
-                                       "mais pas dans le CSV, ni dans les marqueurs (!) des tableaux, quand l'espace n'a "
-                                       "pas de préau")
 def test_ex_al_dans_toutes_les_sorties():
     d = donnees(espace={"E-02": ["Cour de récréation"], "E-14": 20})
     res = moteur.calculer(d)
@@ -275,7 +272,6 @@ def test_quantites_somme_des_baies_a_la_main():
     assert quantites("Protections verticales", l) == "E : 1 baie + nombre non relevé ; S : 5 baies"
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-11 : un nombre de baies égal à 0 affiche « NO : » (orientation sans texte)")
 def test_quantites_zero_baie():
     from surya.rapport import quantites
     l = fusion(LOCAL, {"murs": [mur(orientation="NO", baies={"Vitrage fixe": 0})]})
@@ -297,9 +293,12 @@ def test_donnees_manquantes_et_alertes(sortie, jeu):
                         b = [x["blocs"][k] for k in s["blocs"]]
                         regles = [bl["regle"] for bl in b if bl["regle"]]
                         ligne = next(l for l in dm if (_norm(l[0]), l[1]) == (_norm(nom), s["solution"]))
+                        # « À compléter » ne cite que des questions de la règle, et au moins une (ANO-35)
                         for r in regles:
-                            for q in re.findall(r"[A-Z]{1,3}-\d+", moteur.REGLES[r]["questions"]):
-                                assert q in ligne[2], (nom, s["solution"], q, ligne[2])
+                            prevues = re.findall(r"[A-Z]{1,3}-\d+", moteur.REGLES[r]["questions"])
+                            citees = re.findall(r"[A-Z]{1,3}-\d+", ligne[2].split("compléter")[-1])
+                            if prevues:
+                                assert citees and set(citees) <= set(prevues), (nom, s["solution"], citees, ligne[2])
         assert [(_norm(l[0]), l[1]) for l in dm] == attendu
         # alertes : code -> entités concernées
         al = [l for t in tabs if t and t[0] == ["Type", "Code", "Alerte", "Concerne"] for l in t[1:]]
@@ -379,8 +378,6 @@ def test_fiches_reprennent_les_reponses_sans_question_masquee(sortie, jeu):
             assert fiches[nom] == att, nom
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-13 : le tableau des murs de la fiche affiche la distance vitrage-façade "
-                                       "(MEX-05) même quand la question est masquée (baies au nu extérieur)")
 def test_tableau_des_murs_sans_question_masquee():
     d = donnees(local={"murs": [mur(MEX_04="Nu extérieur", MEX_05=7)]})
     t = sorties.texte(generer_pdf(d))
@@ -404,11 +401,9 @@ def test_page_de_garde_et_annexe(sortie):
         assert "(modifié)" in ligne, ligne
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-14 : nombres décimaux affichés avec un point (« 2.5 vol/h », « 0.15 ») "
-                                       "dans les PDF, au lieu de la virgule")
 def test_decimales_a_la_francaise(sortie):
     d, res, _, pdf = sortie("seuils modifiés")
-    annexe = sorties.texte(pdf).split("Annexe — seuils utilisés")[1]
+    annexe = sorties.texte(pdf).split("Annexe — seuils utilisés")[1].split("Méthode : ©")[0]  # hors « CC BY-SA 4.0 »
     assert not re.search(r"\d\.\d", annexe)
 
 
@@ -427,8 +422,6 @@ def test_partie_usagers_et_numerotation(sortie):
     assert "Ressenti des usagers" not in ts and "6. Fiches détaillées" in ts
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-15 : sans local ni espace, le compte rendu saute de « 1. Cadre » à "
-                                       "« 6. Fiches détaillées »")
 def test_numerotation_sans_entite():
     t = sorties.texte(generer_pdf({"batiment": {"B-01": "Avant 1948"}}))
     assert "6. Fiches détaillées" not in t
@@ -441,8 +434,6 @@ def test_pdf_cas_degeneres():
             assert generer_pdf(d, complet=complet).startswith(b"%PDF")
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-16 : les emojis et caractères hors Windows-1252 des noms et textes libres "
-                                       "deviennent des carrés noirs dans les PDF")
 def test_emojis_lisibles_dans_les_pdf(sortie):
     import io
     import pdfplumber
@@ -453,18 +444,12 @@ def test_emojis_lisibles_dans_les_pdf(sortie):
 
 
 # ------------------------------------------------------------------ ergonomie des « données manquantes »
-@pytest.mark.xfail(strict=True, reason="ANO-34 : toiture à pentes sans combles (B2) avec une saisie complète : la "
-                                       "solution est listée en « Données manquantes » et demande de renseigner L-09, "
-                                       "B-18, B-21, B-22, déjà renseignées")
 def test_toiture_sans_bloc_n_est_pas_une_donnee_manquante():
     from cas_base import DERNIER, solution
     x = moteur.calculer(donnees(bat={"B-21": "Non"}, local=DERNIER))["locaux"][0]
     assert not donnee_manquante(x, solution(x, "Toiture"))
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-35 : « À compléter » liste toutes les questions de la règle, y compris "
-                                       "celles déjà renseignées (VM-7 : B-16, B-10, B-12, L-03, PL-03 alors que seul "
-                                       "BA-18 manque)")
 def test_a_completer_ne_cite_que_les_questions_vides():
     from cas_base import SUPPR as S_, solution
     from surya.rapport import justification

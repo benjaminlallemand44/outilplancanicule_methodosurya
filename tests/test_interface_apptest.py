@@ -356,8 +356,8 @@ def _importer(at, contenu: bytes, nom: str, prefixe="depart"):
 
 def _import_direct(fichier):
     """Reproduit le bloc ``try`` du bouton « Importer ce fichier »."""
-    from surya.import_excel import lire_classeur
-    return json.load(fichier) if fichier.name.endswith(".json") else lire_classeur(fichier)
+    from surya.import_excel import importer
+    return importer(fichier.name, fichier.getvalue())[0]
 
 
 def test_export_import_json_aller_retour_statuts_identiques():
@@ -390,20 +390,18 @@ def test_imports_invalides_message_sans_plantage(contenu, nom):
         assert msg
 
 
-def test_import_autre_excel_message_peu_clair():
-    """Un autre classeur Excel (sans onglets Saisie_*) donne « Import impossible : 'Worksheet Saisie_Bâtiment
-    does not exist.' » : message technique en anglais (ANO-29, mineur)."""
+def test_import_autre_excel_message_clair():
+    """Un autre classeur Excel (sans onglets Saisie_*) donne un message en clair (correctif ANO-29)."""
     import openpyxl
+    from surya.import_excel import ImportImpossible
     wb = openpyxl.Workbook()
     buf = io.BytesIO()
     wb.save(buf)
-    with pytest.raises(KeyError) as e:
+    with pytest.raises(ImportImpossible) as e:
         _import_direct(Fichier(buf.getvalue(), "autre.xlsx"))
-    assert "does not exist" in str(e.value)
+    assert "n'est pas un Excel de la méthode" in str(e.value)
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-30 : un import JSON avec E-30 = 5 (ou une valeur négative) fait planter "
-                                       "l'éditeur de l'espace (StreamlitAPIException : valeur hors bornes)")
 def test_import_valeur_hors_bornes_ne_fait_pas_planter_l_editeur():
     at = app()
     charger(at, {"espaces": [{"E-01": "Cour", "E-02": ["Préau"], "E-30": 5}]})
@@ -413,8 +411,6 @@ def test_import_valeur_hors_bornes_ne_fait_pas_planter_l_editeur():
     assert not at.exception
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-31 : afficher la fiche d'un local importé modifie silencieusement les "
-                                       "données (effectif 25,5 → 25 ; réponse hors liste effacée)")
 def test_afficher_une_fiche_ne_modifie_pas_les_donnees():
     at = app()
     charger(at, {"locaux": [{"L-01": "A", "L-04": 25.5, "L-02": "Salle de classe"}]})
@@ -425,7 +421,6 @@ def test_afficher_une_fiche_ne_modifie_pas_les_donnees():
     assert D(at)["locaux"][0] == avant
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-07 : un seuil importé en texte fait planter l'onglet « Seuils des règles »")
 def test_import_seuil_texte_reglages():
     at = app()
     charger(at, {"locaux": [{}], "parametres": {"P_HSP_MIN": "2,4"}})
@@ -459,8 +454,6 @@ def test_page_usager_via_lien():
     assert at.session_state["usager_envoye"]["Q11"] == ["Rideaux"]
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-32 : « Supprimer cette réponse » ne supprime rien pour les réponses de "
-                                       "l'exemple ou d'un JSON importé (pas d'identifiant _id)")
 def test_supprimer_une_reponse_de_l_exemple():
     at = app()
     clic(at, key="depart:exemple")
@@ -535,18 +528,16 @@ def test_tableau_ecran_identique_au_moteur(jeu):
     assert lu == attendu
 
 
-def test_noms_en_double_ecrasent_les_colonnes():
-    """Deux locaux de même nom : rien ne les distingue à l'écran ni dans les documents (ANO-33, mineur)."""
+def test_noms_en_double_signales():
+    """Deux locaux de même nom : un avertissement invite à les renommer (correctif ANO-33)."""
     at = app()
     charger(at, {"locaux": [{"L-01": "Classe"}, {"L-01": "Classe", "L-03": 50}]})
     demarrer(at, "resultats")
     clic(at, key="nav:4")
-    assert not any("même nom" in m.value or "doublon" in m.value for m in list(at.markdown) + list(at.warning))
+    assert any("même nom" in m.value for m in at.warning)
 
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-06 : la légende des statuts n'est pas dans le même ordre à l'écran "
-                                       "(Recommandé, En place, À optimiser…) et dans les PDF (Recommandé, À optimiser, En place…)")
 def test_legende_meme_ordre_que_les_pdf():
     import re
     from surya.rapport import STATUTS
@@ -558,7 +549,6 @@ def test_legende_meme_ordre_que_les_pdf():
     assert re.findall(r">([^<>]+)</span>", legende) == STATUTS
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-36 : l'étape Questionnaires annonce « 23 questions » ; il y en a 24 (Q24 ajoutée)")
 def test_nombre_de_questions_annonce():
     from surya import questionnaire as QU
     at = app()
@@ -571,8 +561,6 @@ def test_nombre_de_questions_annonce():
     assert f"{len(QU.QUESTIONS)} questions" in texte
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-37 : la Vérification cite les questions de façade par leur code (« S : F-03 "
-                                       "sans réponse ») alors que l'étape Façades n'affiche que les libellés")
 def test_verification_facades_en_clair():
     at = app()
     charger(at, {"locaux": [{"murs": [{"orientation": "S"}]}], "facades": {"S": {"F-01": True}}})

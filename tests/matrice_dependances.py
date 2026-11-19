@@ -70,6 +70,9 @@ def attendues() -> dict[str, set[str]]:
             att[q].add("Ombrage adossé")
     att["F-01"] = att["F-02"] | att["F-03"] | att["F-04"] | att["F-05"]  # « façade décrite »
     att["EX-AL"] = set()
+    # EX-AL est rattachée à « Ombrage autoportant ou végétal de la cour » (correctif ANO-10)
+    for q in ("E-04", "E-06", "E-07", "E-14"):
+        att[q].add("Ombrage cour")
     return att
 
 

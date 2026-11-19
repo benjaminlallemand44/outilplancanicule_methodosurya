@@ -256,8 +256,6 @@ def test_une_regle(bloc, regle, statut, bat, fac, local, espace, param):
 
 
 # ------------------------------------------------------------------ cas qui révèlent un écart
-@pytest.mark.xfail(strict=True, reason="ANO-02 : surface ou hauteur nulle → division par zéro traitée comme « fausse » → "
-                                       "VM-11 « Recommandé » ; seule façon d'atteindre VM-11")
 @pytest.mark.parametrize("patch", [{"L-03": 0}, {"PL-03": 0}], ids=["surface 0", "hauteur 0"])
 def test_vm_volume_nul_ne_donne_pas_recommande(patch):
     regle, statut, manquante, _ = evaluer(donnees(local=patch), "VM")
@@ -336,7 +334,9 @@ def test_alertes_locaux(ident, attendu, kw):
 ])
 def test_alertes_espaces(ident, attendu, ex_al, kw):
     a, x = alertes(donnees(**kw), "espaces")
-    assert (a, x["EX-AL"]) == (attendu, ex_al)
+    # EX-AL est rattachée à la solution « Ombrage autoportant ou végétal de la cour » (correctif ANO-10)
+    assert (a - {"EX-AL"}, x["EX-AL"]) == (attendu, ex_al)
+    assert ("EX-AL" in a) == (ex_al == 1)
 
 
 def test_oa_al1_mutualisation():

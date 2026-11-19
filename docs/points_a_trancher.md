@@ -1,13 +1,14 @@
 # Points à trancher — outil méthode SURYA
 
-Mise à jour du 19/11/2026. Relevé établi en portant dans l'outil :
+Mise à jour du 20/11/2026, après la campagne de tests n° 1 (`docs/rapport_tests.md`). Relevé établi en
+portant dans l'outil :
 
 - toutes les formules de l'Excel `2611111_outil_aide_test_methode-1.xlsx` (règles « version du
   27/10/2026 ») ;
 - le document « Méthode de l'audit de faisabilité d'actions d'adaptation » (version 01 du 27/10/2026) ;
 - le « Questionnaire confort estival » (version 01 du 11/11/2026).
 
-Chaque point a été revérifié sur l'outil à cette date. Cinq catégories :
+Chaque point a été revérifié sur l'outil, et par la campagne de tests. Six catégories :
 
 - **A. Erreurs de l'Excel** : des références cassées. La correction ne fait pas débat, mais elle change
   des résultats ; à valider.
@@ -16,6 +17,7 @@ Chaque point a été revérifié sur l'outil à cette date. Cinq catégories :
 - **C. Points mineurs** : cohérence des libellés, questions sans effet.
 - **D. Écarts entre l'Excel et le document de méthode.**
 - **E. Questionnaire usagers** : matrice de correspondance proposée et points à préciser.
+- **F. Questions de méthode issues de la campagne de tests.**
 
 Les décisions déjà prises sont regroupées à la fin.
 
@@ -27,10 +29,20 @@ Pour chaque point, la colonne « Dans l'outil » indique ce que fait la maquette
 |---|---|---|---|
 | A1 | Les formules des **murs extérieurs 2, 3 et 4** lisent `Saisie_Locaux` une ligne trop bas : pour le mur 2, MEX-04 lit la ligne 61 (la distance MEX-05) au lieu de la ligne 60, et ainsi de suite jusqu'aux types de baie. Un type de baie est en `#REF!`. Seul le mur 1 est donc correctement pris en compte. | `Calc_Locaux`, lignes 26 à 37 et 76 à 90 | Les 4 murs sont lus correctement. |
 | A2 | **MEX-17** (type de commande des baies en plafond) est en `#REF!` : la question est passée de cases à cocher à une liste, les formules n'ont pas suivi. La règle FT-7 est cassée dès que MEX-16 = Oui. | `Calc_Locaux` ligne 15, `Règles_Locaux` ligne 109 | FT-7 teste « MEX-17 n'est ni Électrique ni Automatique ». |
-| A3 | **BA-18** (débit maximal de ventilation) est utilisée par VM-7, VM-9 et VM-10 mais n'a aucune ligne de saisie (`#REF!`). Dans l'Excel, ces trois règles sont en erreur et ignorées : un local ventilé mécaniquement ressort « Recommandé » sans que le débit soit jamais vérifié. | `Calc_Locaux` ligne 65 | Question ajoutée, en m³/h (unité confirmée). Débit non renseigné : « Sous réserve » (VM-9). |
+| A3 | **BA-18** (débit maximal de ventilation) est utilisée par VM-7, VM-9 et VM-10 mais n'a aucune ligne de saisie (`#REF!`). Dans l'Excel, ces trois règles sont en erreur et ignorées : un local ventilé mécaniquement ressort « Recommandé » sans que le débit soit jamais vérifié. | `Calc_Locaux` ligne 65 | Question ajoutée, en m³/h (unité confirmée). Débit non renseigné : « Sous réserve » (par VM-7 indéterminée, et non VM-9 : voir F1). |
+| A4 | **Cas limites traités autrement que dans l'Excel** (corrigés après la campagne de tests) : (1) une valeur pile sur un seuil calculé (2 vol/h, ratio 0,15, rapport 0,4, 0,8 m²/enfant) pouvait basculer du mauvais côté à cause de l'arithmétique des ordinateurs : les rapports sont maintenant arrondis avant comparaison, comme le fait un tableur ; (2) une surface, une hauteur, un diamètre ou un nombre de brasseurs égal à 0 rendait la règle « fausse » (dans l'Excel aussi) et menait à « Recommandé » en ventilation mécanique : c'est maintenant une donnée invalide, donc « Sous réserve ». | `Règles_Locaux`, `Règles_Extérieurs` | Arrondi des rapports ; division par zéro → « Sous réserve ». |
 
-Conséquence sur l'exemple fourni dans l'Excel : la « Classe CM1 » passe de « Sous réserve » à
-« Recommandé » en ventilation naturelle nocturne (A1).
+Conséquence sur l'exemple fourni dans l'Excel : **quatre statuts** diffèrent de l'onglet `Résultats`
+de l'Excel actuel, tous dus à A1 et A2 :
+
+| Local | Solution | Excel actuel | Outil |
+|---|---|---|---|
+| Classe CM1 (étage) | Ventilation naturelle nocturne | Sous réserve | Recommandé |
+| Classe CM1 (étage) | Protections horizontales | Sous réserve | Recommandé |
+| Salle de motricité | Protections horizontales | Sous réserve | À optimiser |
+| Salle de classe | Sur fenêtres de toiture | Recommandé | Sous réserve |
+
+Avec les références réparées, l'Excel recalculé donne exactement les résultats de l'outil.
 
 ## B. Points de méthode à trancher
 
@@ -82,8 +94,9 @@ dédoubler les questions ?
 
 Rien n'empêche de cocher « Aucun » avec une autre option (L-10, MEX-18, MEX-29, MEX-36, BA-19, E-10,
 E-20, B-28). Les règles donnent alors la priorité à l'option cochée (par exemple CQ-1 voit un
-équipement même si « Aucun » est coché). **À trancher** : rendre « Aucun » exclusif dans l'outil ?
-(Recommandé ; simple à faire.)
+équipement même si « Aucun » est coché), **sauf pour E-20** : « Aucune » y masque les questions E-21 à
+E-25, et l'ombrage adossé tombe sur OA-11 « Sous réserve » (comme dans l'Excel). **À trancher** :
+rendre « Aucun » exclusif dans l'outil ? (Recommandé ; simple à faire, et règle le cas E-20.)
 
 ### B7. Une règle indéterminée masque les règles suivantes
 
@@ -150,8 +163,8 @@ un électricien) est « toujours » vraie, y compris quand les brasseurs sont no
 ## D. Écarts entre l'Excel et le document de méthode
 
 Relevés en comparant l'Excel au document « Méthode de l'audit de faisabilité d'actions d'adaptation »
-(SURYA, version 01 du 27/10/2026, copie dans `reference/`). Les règles elles-mêmes sont identiques
-dans les deux documents ; les écarts portent sur le cadre de l'audit.
+(SURYA, version 01 du 27/10/2026, copie dans `reference/`). Les règles sont pour l'essentiel identiques
+dans les deux documents (exceptions : voir F2) ; les autres écarts portent sur le cadre de l'audit.
 
 ### D1. Type des alertes (AL / VA) non renseigné dans l'Excel
 
@@ -285,6 +298,67 @@ Le questionnaire s'adresse-t-il uniquement aux adultes (enseignants, personnel) 
 
 Pour la version avec base de données (Supabase) : anonymat des répondants, durée de conservation,
 hébergement des données (RGPD), limitation du nombre de réponses par lien. Voir `docs/supabase.md`.
+
+## F. Questions de méthode issues de la campagne de tests
+
+Relevées par la campagne de tests n° 1 (`docs/rapport_tests.md`, § 2.4). L'outil se comporte comme
+l'Excel sur tous ces points ; ils demandent une décision de méthode.
+
+### F1. Ventilation mécanique : VM-9 et VM-11 ne sont jamais retenues
+
+Avec un débit inconnu, c'est VM-7 (indéterminée, faute de débit) qui donne « Sous réserve », avant
+VM-9 (« débit maximal inconnu ») : le statut est juste, mais la règle citée ne l'est pas. VM-11
+« Recommandé » n'est atteinte par aucune saisie valide : dès que B-16 est renseignée, VM-6, VM-7 ou
+VM-10 s'appliquent. **À trancher** : placer VM-9 avant VM-7 ? Dans quel cas la ventilation mécanique
+nocturne doit-elle être « Recommandé » ?
+
+### F2. Règles « aucune baie » présentes dans l'Excel seulement
+
+PV-0, PH-0 et FS-0 (« Non concerné » quand le local n'a aucune baie), ainsi que la condition « et
+MEX-14 = Non » de VN-1, n'existent que dans l'Excel. Sans elles, un local aveugle serait
+« Recommandé » pour des protections solaires. **À reporter dans le document de méthode.**
+
+### F3. Toiture : B-18 vide avec des combles perdus décrits
+
+Le bloc « combles perdus » s'applique avec un statut certain, alors qu'une toiture-terrasse,
+prioritaire (B3), n'est pas exclue. À traiter avec B3.
+
+### F4. Alertes de l'ombrage adossé quand le statut est « Sous réserve » faute de donnée
+
+OA-AL1, OA-AL2 et OA-AL3 (prévues pour un statut « Recommandé ou Sous réserve ») ne se déclenchent
+pas quand ce « Sous réserve » vient d'une donnée manquante. Voulu ?
+
+### F5. EX-AL indéterminée
+
+Quand l'effectif ou la surface d'ombrage manque, EX-AL n'est ni déclenchée ni signalée « à vérifier ».
+Une alerte indéterminée doit-elle apparaître ?
+
+### F6. VV-AL et les puits de lumière
+
+L'alerte de tenue structurelle (VV-AL) ne vise que les vérandas et verrières, pas les « puits de
+lumière, atrium », pourtant concernés par le bloc VV. Étendre l'alerte ?
+
+### F7. Matrice : « Sous réserve » compté comme une préconisation
+
+Un audit vide (tout « Sous réserve » faute de données) est jugé « Cohérent » sur M1 à M5 dès que le
+ressenti est signalé, avec un indicateur à 100 % : conclusion trompeuse. Exclure les « Sous réserve »
+dus à une donnée manquante du croisement ?
+
+### F8. Matrice : M8 sans seuil de 30 %
+
+M8 conclut « À vérifier » dès qu'un seul usager déclare un équipement non relevé (sur au moins 3
+réponses). Appliquer aussi le seuil de 30 % ?
+
+### F9. CP-6 et la période de construction
+
+La colonne « Questions » de CP-6 cite B-01 (période de construction), que ni l'Excel ni l'outil
+n'utilisent ; la méthode parle de « suspicion d'amiante ». Déduire la suspicion d'une construction
+d'avant 1997, comme PR-AL3 ?
+
+### F10. Équation 1 des brasseurs : bornes incluses ou non ?
+
+L'Excel lit « 0,2 < diamètre / (√surface / nombre) < 0,4 » avec des bornes exclues ; l'image de
+l'équation dans la méthode (III.a.i-4) ne permet pas de le confirmer.
 
 ## Décisions déjà prises
 

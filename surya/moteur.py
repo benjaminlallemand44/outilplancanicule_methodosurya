@@ -105,8 +105,37 @@ def calcul(test, *etats):
         return 0.5
     try:
         return 1 if test(*etats) else 0
-    except (ZeroDivisionError, TypeError, ValueError):
+    except ZeroDivisionError:
+        return 0.5  # surface, hauteur, diamètre ou nombre nul : donnée invalide, donc indéterminée
+    except (TypeError, ValueError):
         return 0
+
+
+def _r(x: float) -> float:
+    """Rapport calculé, arrondi avant comparaison à un seuil : neutralise l'arithmétique flottante
+    (45 × 2,70 = 121,50000000000001), comme le fait un tableur."""
+    return round(x, 9)
+
+
+def _nombre(v):
+    """Seuil saisi ou importé : nombre, ou texte « 2,4 » converti ; None si inexploitable."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return v
+    try:
+        return float(str(v).strip().replace(",", "."))
+    except ValueError:
+        return None
+
+
+def parametres(valeurs: dict | None) -> dict:
+    """Seuils de la méthode, avec les valeurs modifiées valides (les autres sont ignorées)."""
+    p = dict(PARAMETRES_DEFAUT)
+    for k, v in (valeurs or {}).items():
+        if k in p and _nombre(v) is not None:
+            p[k] = _nombre(v)
+    return p
 
 
 def bloc(regles):
@@ -120,9 +149,11 @@ def bloc(regles):
     return {"regle": None, "manquante": True, "statut": SOUS_RESERVE, "valeurs": dict(regles)}
 
 
-def _solution(groupe, nom, statut, blocs, alertes=()):
-    """Ligne de résultat. ``blocs`` : blocs de règles évalués (dans l'ordre de lecture)."""
-    return {"groupe": groupe, "solution": nom, "statut": statut, "blocs": blocs,
+def _solution(groupe, nom, statut, blocs, alertes=(), cas_inconnu=False):
+    """Ligne de résultat. ``blocs`` : blocs de règles évalués (dans l'ordre de lecture).
+    ``cas_inconnu`` : aucun bloc ne s'applique faute de donnée (et non parce que la méthode ne prévoit
+    pas le cas)."""
+    return {"groupe": groupe, "solution": nom, "statut": statut, "blocs": blocs, "cas_inconnu": cas_inconnu,
             "alertes": [c for c, v in alertes if v == 1],
             "alertes_a_verifier": [c for c, v in alertes if v == 0.5]}
 
@@ -217,7 +248,8 @@ def etats_local(l: dict, cb: dict) -> dict:
     for m in murs_saisis:
         actif = 1 if (not aucune and m.get("orientation")) else 0
         ori = m.get("orientation")
-        baies = [t for t, n in (m.get("baies") or {}).items() if n not in (None, "", False)]
+        # un type de baie est présent dès que sa case est remplie, même avec 0 (comme NBVAL dans l'Excel)
+        baies = [t for t, n in (m.get("baies") or {}).items() if n is not None and n != "" and n is not False]
         ntypes = len(baies)
         nonfixe = len([t for t in baies if t not in BAIES_FIXES])
         e = {"actif": actif, "orientation": ori}
@@ -257,9 +289,9 @@ def regles_local(l: dict, c: dict, cb: dict, b: dict, p: dict) -> dict:
     R["BP"] = bloc([
         ("BP-1", t3(c["BA-05"], c["BA-05"] == "Présent, hors service")),
         ("BP-2", t3(c["BA-11"], c["BA-11"] == "Non")),
-        ("BP-3", calcul(lambda h, pale, d: (h * 100 - pale) / d <= p["P_PALE_PLAFOND"], c["PL-03"], c["BA-12"], c["BA-09"])),
+        ("BP-3", calcul(lambda h, pale, d: _r((h * 100 - pale) / d) <= p["P_PALE_PLAFOND"], c["PL-03"], c["BA-12"], c["BA-09"])),
         ("BP-4", max(
-            calcul(lambda d, s, n: not (p["P_DIAM_MIN"] < (d / 100) / (math.sqrt(s) / n) < p["P_DIAM_MAX"]),
+            calcul(lambda d, s, n: not (p["P_DIAM_MIN"] < _r((d / 100) / (math.sqrt(s) / n)) < p["P_DIAM_MAX"]),
                    c["BA-09"], c["L-03"], c["BA-06"]),
             calcul(lambda mur, d: mur <= d, c["BA-13"], c["BA-09"]),
             calcul(lambda e, d: e <= p["P_ENTRAXE"] * d, c["BA-14"], c["BA-09"]))),
@@ -285,7 +317,7 @@ def regles_local(l: dict, c: dict, cb: dict, b: dict, p: dict) -> dict:
     else:
         statut, blocs = SOUS_RESERVE, []
     S = [_solution("Brasseurs d'air plafonniers", "Mise en place de brasseurs d'air plafonniers", statut, blocs,
-                   [("BR-AL", 1)])]
+                   [("BR-AL", 1)], cas_inconnu=not blocs)]
 
     # --- Ventilation naturelle nocturne ---------------------------------------------
     R["VN"] = bloc([
@@ -315,7 +347,7 @@ def regles_local(l: dict, c: dict, cb: dict, b: dict, p: dict) -> dict:
 
     # --- Ventilation mécanique nocturne ---------------------------------------------
     double_flux = t3(cb["B-10"], cb["B-10"] == "Double flux")
-    debit = lambda test: calcul(lambda q, s, h: test(q / (s * h)), c["BA-18"], c["L-03"], c["PL-03"])  # noqa: E731
+    debit = lambda test: calcul(lambda q, s, h: test(_r(q / (s * h))), c["BA-18"], c["L-03"], c["PL-03"])  # noqa: E731
     R["VM"] = bloc([
         ("VM-1", max(t3(cb["B-09"], cb["B-09"] == "Non"), t3(c["BA-15"], c["BA-15"] == "Non"))),
         ("VM-2", min(t3(cb["B-10"], cb["B-10"] == "Simple flux"), t3(cb["B-14"], cb["B-14"] == "Non"))),
@@ -460,14 +492,16 @@ def regles_local(l: dict, c: dict, cb: dict, b: dict, p: dict) -> dict:
         statut, blocs = R["CA"]["statut"], ["CA"]
     else:
         statut, blocs = SOUS_RESERVE, []
-    S.append(_solution("Réduction de la surchauffe par la toiture", "Toiture", statut, blocs))
+    # Sans bloc applicable : donnée manquante si l'un des cas est indéterminé, sinon cas non prévu (PàT B2)
+    S.append(_solution("Réduction de la surchauffe par la toiture", "Toiture", statut, blocs,
+                       cas_inconnu=not blocs and 0.5 in (cas_tt, cas_cp, cas_ca)))
 
     # --- Charges internes ------------------------------------------------------------------
     R["CO"] = bloc([
         ("CO-1", min(t3(c["L-02"], c["L-02"] == "Bureau, salle des maîtres, salle de réunion"),
-                     calcul(lambda s, n: n > 0 and s / n < p["P_BUREAU_M2"], c["L-03"], c["L-04"]))),
+                     calcul(lambda s, n: n > 0 and _r(s / n) < p["P_BUREAU_M2"], c["L-03"], c["L-04"]))),
         ("CO-2", min(t3(c["L-02"], c["L-02"] == "Classe"),
-                     calcul(lambda s, n: n > 0 and s / n < p["P_CLASSE_M2"], c["L-03"], c["L-04"]))),
+                     calcul(lambda s, n: n > 0 and _r(s / n) < p["P_CLASSE_M2"], c["L-03"], c["L-04"]))),
         ("CO-3", 1),
     ])
     S.append(_solution("Réduction des charges internes", "Occupation", R["CO"]["statut"], ["CO"]))
@@ -521,7 +555,7 @@ def regles_espace(e: dict, c: dict, cb: dict, orientations_mut: set, p: dict) ->
     R = {}
     ex_al = max(
         min(t3(c["E-04"], a(e.get("E-04"), "Élémentaire")),
-            calcul(lambda s, n: n > 0 and s / n < p["P_OMBRE_ELEM"], c["E-14"], c["E-06"])),
+            calcul(lambda s, n: n > 0 and _r(s / n) < p["P_OMBRE_ELEM"], c["E-14"], c["E-06"])),
         min(t3(c["E-04"], a(e.get("E-04"), "Maternelle")),
             max(calcul(lambda n, s: n <= p["P_OMBRE_MAT_CL"] and s < p["P_OMBRE_MAT_1"], c["E-07"], c["E-14"]),
                 calcul(lambda n, s: n > p["P_OMBRE_MAT_CL"] and s < p["P_OMBRE_MAT_2"], c["E-07"], c["E-14"]))))
@@ -593,7 +627,9 @@ def regles_espace(e: dict, c: dict, cb: dict, orientations_mut: set, p: dict) ->
         statut, blocs = SOUS_RESERVE, []
     else:
         statut, blocs = R["OC"]["statut"], ["OC"]
-    S.append(_solution("Adaptation des espaces extérieurs", "Ombrage autoportant ou végétal de la cour", statut, blocs))
+    # EX-AL (surface d'ombrage insuffisante) invite à compléter par un ombrage de la cour : rattachée à cette solution
+    S.append(_solution("Adaptation des espaces extérieurs", "Ombrage autoportant ou végétal de la cour", statut, blocs,
+                       [("EX-AL", ex_al)], cas_inconnu=cas_oc == 0.5))
     return {"blocs": R, "solutions": S, "EX-AL": ex_al}
 
 
@@ -604,7 +640,7 @@ def calculer(donnees: dict) -> dict:
     ``donnees`` = {"batiment": {...}, "facades": {...}, "locaux": [...], "espaces": [...],
     "parametres": {...}} (voir ``exemple.py`` pour un jeu complet).
     """
-    p = {**PARAMETRES_DEFAUT, **(donnees.get("parametres") or {})}
+    p = parametres(donnees.get("parametres"))
     b = donnees.get("batiment") or {}
     cb = etats_batiment(b, donnees.get("facades") or {})
 
@@ -613,10 +649,11 @@ def calculer(donnees: dict) -> dict:
         c = etats_local(l, cb)
         r = regles_local(l, c, cb, b, p)
         orientations_mut.update(r.pop("orientations_mutualisables"))
-        locaux.append({"nom": l.get("L-01") or "", "etats": c, **r})
+        locaux.append({"nom": l.get("L-01") or "", "etats": c, "etats_batiment": cb, **r})
 
     espaces = []
     for e in donnees.get("espaces") or []:
         c = etats_espace(e)
-        espaces.append({"nom": e.get("E-01") or "", "etats": c, **regles_espace(e, c, cb, orientations_mut, p)})
+        espaces.append({"nom": e.get("E-01") or "", "etats": c, "etats_batiment": cb,
+                        **regles_espace(e, c, cb, orientations_mut, p)})
     return {"batiment": cb, "locaux": locaux, "espaces": espaces}

@@ -24,7 +24,7 @@ import streamlit.components.v1 as components
 
 from surya import moteur
 from surya import questionnaire as QU
-from surya.import_excel import lire_classeur
+from surya.import_excel import ImportImpossible, importer
 from surya.stockage import DepotMemoire
 from surya.moteur import NB_MURS_MAX, ORIENTATIONS, REFERENTIEL, REGLES
 from surya.questions import (QUESTIONS_FACADE, QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE, SECTIONS_LOCAL,
@@ -48,6 +48,7 @@ MODES = {
                    "Documents"],
     },
 }
+COURTS = {"Espaces extérieurs": "Espaces ext.", "Questionnaires usagers": "Questionnaires"}  # barre d'étapes
 SAISIES = {
     "guidee": ("Pas à pas",
                "Le bâtiment puis chaque local et chaque espace sont remplis bloc par bloc (usages, ouvertures en "
@@ -59,10 +60,10 @@ SAISIES = {
               "connaissez bien la grille."),
 }
 # statut -> (fond, texte)
-COULEURS = {
+COULEURS = {  # même ordre que la légende des PDF
     moteur.RECOMMANDE: ("#d3f0db", "#0f5a26"),
-    moteur.EN_PLACE: ("#d6e6fb", "#0e4a8a"),
     moteur.A_OPTIMISER: ("#ffe2c2", "#8a4300"),
+    moteur.EN_PLACE: ("#d6e6fb", "#0e4a8a"),
     moteur.SOUS_RESERVE: ("#fff2b3", "#6b5300"),
     moteur.NON_RECOMMANDE: ("#f9d2d0", "#8c1d18"),
     moteur.NON_CONCERNE: ("#e6e6e6", "#4d4d4d"),
@@ -92,7 +93,7 @@ def charger(d: dict):
     """Remplace toutes les données (exemple, import) et réinitialise les champs affichés."""
     base = donnees_vides()
     base.update({k: v for k, v in d.items() if k in base})
-    for x in base["locaux"] + base["espaces"]:
+    for x in base["locaux"] + base["espaces"] + base["questionnaires"]:
         x.setdefault("_id", uuid.uuid4().hex[:8])
     ss.donnees = base
     ss.generation = ss.get("generation", 0) + 1
@@ -126,6 +127,12 @@ def aller(etape: str | int):
     st.rerun()
 
 
+def doublons(cle_liste: str) -> list[str]:
+    """Noms portés par plusieurs locaux (ou espaces) : indiscernables dans les tableaux et documents."""
+    noms = [x.get(ENTITES[cle_liste]["code_nom"]) for x in D[cle_liste]]
+    return sorted({n for n in noms if n and noms.count(n) > 1})
+
+
 def nom_entite(x: dict, i: int, cle_liste: str) -> str:
     cfg = ENTITES[cle_liste]
     return x.get(cfg["code_nom"]) or f"{cfg['defaut']} {i + 1}"
@@ -135,7 +142,7 @@ def nom_entite(x: dict, i: int, cle_liste: str) -> str:
 def _etiquette(q) -> str:
     unite = f" ({q['unite']})" if q.get("unite") else ""
     code = "MEX-01" if q["code"] == "orientation" else q["code"].removesuffix("b")
-    return f"{q['libelle']}{unite} :gray[· {code}]"
+    return f"{q['libelle']}{unite} · {code}"
 
 
 def champ(q: dict, d: dict, prefixe: str):
@@ -145,13 +152,17 @@ def champ(q: dict, d: dict, prefixe: str):
     actuel = d.get(code)
     if typ == "choix":
         opts = q["options"]
-        if actuel not in opts:
+        hors_liste = actuel if actuel is not None and actuel not in opts else None
+        if hors_liste is not None:
             actuel = None
         if sum(len(o) for o in opts) <= 26:
             v = st.segmented_control(_etiquette(q), opts, default=actuel, key=k, help=aide)
         else:
             v = st.selectbox(_etiquette(q), opts, index=opts.index(actuel) if actuel else None,
                              placeholder="Choisir…", key=k, help=aide)
+        if hors_liste is not None and v is None:  # valeur importée hors liste : conservée tant qu'on ne la change pas
+            st.caption(f"⚠️ Réponse importée hors liste : « {hors_liste} ». Choisissez une réponse de la liste.")
+            v = hors_liste
     elif typ == "multi":
         st.markdown(f":small[{_etiquette(q)} :gray[— plusieurs réponses possibles]]", help=aide)
         v = [o for n, o in enumerate(q["options"])
@@ -169,15 +180,22 @@ def champ(q: dict, d: dict, prefixe: str):
 def _champ_nombre(q, d, k, aide):
     actuel, unite = d.get(q["code"]), q.get("unite", "")
     if q["code"] == "B-24":  # nombre en cm ou « inconnu »
-        inconnu = st.checkbox("Épaisseur d'isolant inconnue (non visible) :gray[· B-24]", value=actuel == "inconnu",
+        inconnu = st.checkbox("Épaisseur d'isolant inconnue (non visible) · B-24", value=actuel == "inconnu",
                               key=k + ":inconnu")
         if inconnu:
             return "inconnu"
     if not isinstance(actuel, (int, float)) or isinstance(actuel, bool):
         actuel = None
-    if unite in ("", "pers.", "0 à 4"):
-        return st.number_input(_etiquette(q), min_value=0, max_value=4 if unite == "0 à 4" else None, step=1,
+    haut = 4 if unite == "0 à 4" else None
+    hors_bornes = actuel is not None and (actuel < 0 or (haut is not None and actuel > haut))
+    if hors_bornes:
+        st.caption(f"⚠️ Valeur importée hors des valeurs possibles : {actuel}.")
+    entier = actuel is None or float(actuel).is_integer()
+    if unite in ("", "pers.", "0 à 4") and entier and not hors_bornes:
+        return st.number_input(_etiquette(q), min_value=0, max_value=haut, step=1,
                                value=None if actuel is None else int(actuel), placeholder="—", key=k, help=aide)
+    if hors_bornes:  # pas de bornes imposées : la valeur importée reste affichée telle quelle
+        return st.number_input(_etiquette(q), value=float(actuel), key=k, help=aide)
     pas, fmt = (0.1, "%.2f") if unite == "m" else (1.0, "%.1f")
     return st.number_input(_etiquette(q), min_value=0.0, step=pas, format=fmt,
                            value=None if actuel is None else float(actuel), placeholder="—", key=k, help=aide)
@@ -329,15 +347,25 @@ def bloc_donnees(prefixe: str):
                                type=["json", "xlsx"], key=cle(prefixe, "import"))
     if fichier is not None and st.button("Importer ce fichier", type="primary", key=f"{prefixe}:importer"):
         try:
-            charger(json.load(fichier) if fichier.name.endswith(".json") else lire_classeur(fichier))
+            d, notes = importer(fichier.name, fichier.getvalue())
+        except ImportImpossible as e:
+            st.error(f"Import impossible : {e}")
+        except Exception:  # cas non prévu : message générique plutôt qu'une trace Python
+            st.error("Import impossible : fichier illisible. Utilisez un fichier exporté par l'outil (.json) ou "
+                     "l'Excel de la méthode (.xlsx).")
+        else:
+            charger(d)
             ss.message = f"Fichier importé : {len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)."
+            ss.notes_import = notes
             ss.etape_max = len(etapes()) - 1 if ss.mode else 0
             st.rerun()
-        except Exception as e:  # fichier illisible ou d'un autre format
-            st.error(f"Import impossible : {e}")
     if ss.message:
         st.success(ss.message)
         ss.message = None
+    notes = ss.pop("notes_import", None)
+    if notes:
+        with st.expander(f"⚠️ {len(notes)} correction(s) apportée(s) au fichier importé", expanded=True):
+            st.markdown("\n".join(f"- {html.escape(n)}" for n in notes))
 
 
 # ------------------------------------------------------------------ en-tête et navigation
@@ -351,13 +379,18 @@ def entete():
         if st.button("Changer de type d'audit", width="stretch", help="Revenir à l'écran de départ ; la saisie est conservée."):
             ss.mode = None
             st.rerun()
-    cols = st.columns(len(etapes()))
-    for i, (col, nom) in enumerate(zip(cols, etapes())):
-        fait = "✓ " if i < ss.etape_max and i != ss.etape else ""
-        if col.button(f"{fait}{i + 1}. {nom}", key=f"nav:{i}", width="stretch", disabled=i > ss.etape_max,
-                      type="primary" if i == ss.etape else "secondary"):
-            ss.edition = {"locaux": None, "espaces": None}
-            aller(i)
+    # Barre d'étapes : sur une seule ligne, défilable horizontalement sur téléphone
+    st.html("<style>.st-key-etapes [data-testid='stHorizontalBlock']{flex-wrap:nowrap;overflow-x:auto;gap:.4rem}"
+            ".st-key-etapes [data-testid='stColumn']{min-width:max-content;flex:1 0 auto}"
+            ".st-key-etapes button p{white-space:nowrap}</style>")
+    with st.container(key="etapes"):
+        cols = st.columns(len(etapes()))
+        for i, (col, nom) in enumerate(zip(cols, etapes())):
+            fait = "✓ " if i < ss.etape_max and i != ss.etape else ""
+            if col.button(f"{fait}{i + 1}. {COURTS.get(nom, nom)}", key=f"nav:{i}", width="stretch",
+                          disabled=i > ss.etape_max, type="primary" if i == ss.etape else "secondary", help=nom):
+                ss.edition = {"locaux": None, "espaces": None}
+                aller(i)
 
 
 def pied(suivant_label: str | None = None, precedent: bool = True):
@@ -577,6 +610,9 @@ def liste_entites(cle_liste: str):
     c1, c2 = st.columns([3, 2], vertical_alignment="center")
     with c2:
         selecteur_saisie(cle_liste)
+    for n in doublons(cle_liste):
+        st.warning(f"Plusieurs {cfg['titre'].lower()} portent le même nom « {n} » : donnez-leur des noms distincts "
+                   "pour les reconnaître dans les tableaux et les documents.", icon="⚠️")
     if ss.message:
         st.success(ss.message)
         ss.message = None
@@ -699,9 +735,9 @@ def _murs(l: dict, pid: str):
         l["aucune_baie"] = True
         return
     l.pop("aucune_baie", None)
-    murs = l.setdefault("murs", [])
-    if not murs:
-        murs.append({})
+    murs = l.get("murs") or []
+    if not murs:  # mur affiché pour la saisie, enregistré seulement s'il est rempli
+        murs = [{}]
     q_baies = next(q for q in QUESTIONS_MUR if q["type"] == "baies")
     for i, m in enumerate(murs):
         with st.container(border=True):
@@ -733,8 +769,11 @@ def _murs(l: dict, pid: str):
                 m["baies"] = baies
             else:
                 m.pop("baies", None)
+    if l.get("murs") is not murs and any(murs):  # le mur affiché vient d'être rempli : on l'enregistre
+        l["murs"] = murs
     c1, c2, _ = st.columns([1.5, 1.8, 4])
     if len(murs) < NB_MURS_MAX and c1.button("➕ Ajouter un mur", key=cle(pid, "addmur")):
+        l["murs"] = murs
         murs.append({})
         st.rerun()
     if len(murs) > 1 and c2.button("🗑 Supprimer le dernier mur", key=cle(pid, "delmur")):
@@ -797,7 +836,7 @@ def etape_verification():
             aller("Bâtiment")
         ligne("bat", "Bâtiment", len(q), f"{len(q)} question(s) sans réponse", vers_batiment)
         oublis = [f"{o} non décrite" for o in orientations_utilisees() if not (D["facades"].get(o) or {}).get("F-01")]
-        oublis += [f"{o} : {q['code']} sans réponse" for o, f in D["facades"].items() if f.get("F-01")
+        oublis += [f"{o} : « {q['libelle']} » sans réponse" for o, f in D["facades"].items() if f.get("F-01")
                    for q in QUESTIONS_FACADE[1:] if not f.get(q["code"])]
         ligne("fac", "Façades", len(oublis), " · ".join(oublis), lambda: aller("Façades"))
         for cle_liste in ("locaux", "espaces"):
@@ -820,6 +859,10 @@ def etape_verification():
                                            f" — facultatif ; la synthèse demande au moins {QU.MIN_REPONDANTS} réponses"))
         if n < QU.MIN_REPONDANTS and c3.button("Ajouter", key="verif:quest", width="stretch"):
             aller("Questionnaires usagers")
+    for c in ("locaux", "espaces"):
+        for n in doublons(c):
+            st.warning(f"Plusieurs {ENTITES[c]['titre'].lower()} portent le même nom « {n} » : renommez-les pour les "
+                       "distinguer dans les documents.", icon="⚠️")
     if total == 0:
         st.success("Tout est renseigné.")
     pied(suivant_label="Générer les documents →" if ss.mode == "complet" else "Voir les résultats →")
@@ -888,7 +931,7 @@ def page_usager(code: str):
 
 def etape_questionnaires():
     st.header("Questionnaires usagers")
-    st.markdown("Le questionnaire confort estival (23 questions, 5 minutes) recueille le ressenti des occupants : "
+    st.markdown(f"Le questionnaire confort estival ({len(QU.QUESTIONS)} questions, 5 minutes) recueille le ressenti des occupants : "
                 "ressenti thermique, gênes, pratiques d'adaptation, moments d'inconfort. Ses résultats sont "
                 "**indicatifs** (enquête déclarative) et servent à vérifier la cohérence des préconisations. "
                 "La synthèse est faite pour tout l'établissement. Cette étape est facultative.")
@@ -1103,8 +1146,6 @@ def etape_documents():
         _tableau(entites, defaut)
         for i, x in enumerate(entites):
             with st.expander(f"Détail des règles — {x['nom'] or f'{defaut} {i + 1}'}"):
-                if x.get("EX-AL") == 1:
-                    st.warning(f"**EX-AL** — {REGLES['EX-AL']['regle']}", icon="⚠️")
                 for s in x["solutions"]:
                     with st.container(border=True):
                         _detail(x, s)
@@ -1138,7 +1179,7 @@ def vue_reglages():
         for q in REFERENTIEL["parametres"]:
             c1, c2 = st.columns([1, 3], vertical_alignment="center")
             v = c1.number_input(f"{q['nom']} ({q['unite']})" if q["unite"] else q["nom"],
-                                value=float(p.get(q["nom"], q["valeur"])), step=0.05 if q["valeur"] < 1 else 0.5,
+                                value=float(moteur.parametres(p)[q["nom"]]), step=0.05 if q["valeur"] < 1 else 0.5,
                                 key=cle("param", q["nom"]))
             c2.markdown(f"{q['signification']}  \n:gray[Règles : {q['regles']}]")
             if v != q["valeur"]:

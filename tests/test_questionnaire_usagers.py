@@ -61,9 +61,6 @@ def test_entetes_avec_libelle_separateur_virgule(forme):
     assert QU.lire_csv(_csv(lignes, ",", ent)) == ([ATTENDU_R1], [])
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-17 : en-têtes « Q4 - libellé » + séparateur « ; » : le séparateur est "
-                                       "déduit à tort de la première ligne (« , » des libellés) ; tout part dans Q1, "
-                                       "sans avertissement")
 @pytest.mark.parametrize("forme", ["{c} - {lib}", "{c}. {lib}"])
 def test_entetes_avec_libelle_separateur_point_virgule(forme):
     ent = [forme.format(c=q["code"], lib=q["libelle"]) for q in QU.QUESTIONS]
@@ -77,8 +74,6 @@ def test_colonnes_desordre_manquantes():
     assert r == [dict(ATTENDU_R1, horodatage="2026-06-01 10:00")] and av == []
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-18 : une colonne inconnue (« Commentaire », « Q99 ») est ignorée sans être "
-                                       "signalée")
 def test_colonne_inconnue_signalee():
     r, av = QU.lire_csv("Q4;Commentaire;Q99\nChaude;rien;x\n")
     assert r == [{"Q4": "Chaude"}] and av
@@ -88,8 +83,9 @@ def test_accents_apostrophes_casse():
     texte = ("Q4;Q13;Q18\nTRÈS CHAUDE;Elles gênent la ventilation ou l’aération (claquent, bloquent l’ouverture des "
              "fenêtres);Non, pour des raisons de sécurité (intrusion, nuisibles, pluie…)\n")
     r, av = QU.lire_csv(texte)
-    # Q13 est masquée (Q11 absente) mais conservée : voir ANO-19
-    assert r[0]["Q4"] == "Très chaude" and r[0]["Q18"] == OPT["Q18"][1] and not av
+    # Q13 est masquée (Q11 absente) : retirée et signalée (correctif ANO-19)
+    assert r[0]["Q4"] == "Très chaude" and r[0]["Q18"] == OPT["Q18"][1] and "Q13" not in r[0]
+    assert len(av) == 1 and "Q13" in av[0]
 
 
 def test_reponses_hors_liste_signalees():
@@ -107,8 +103,6 @@ def test_lignes_vides_fichier_vide_mauvais_fichier():
         assert r == [] and av
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-26 : plantage (csv.Error non rattrapée) sur un CSV à fins de ligne CR "
-                                       "(« CSV Macintosh » d'Excel) ou un fichier binaire renommé en .csv")
 @pytest.mark.parametrize("contenu", [b"Q4;Q5\rChaude;Confortable\r", "xlsx", "pdf"])
 def test_import_sans_plantage(contenu):
     if contenu == "xlsx":
@@ -119,14 +113,12 @@ def test_import_sans_plantage(contenu):
     assert r or av
 
 
-def test_points_de_suspension_non_reconnus():
-    """Observé (mineur, ANO-25) : « ... » au lieu de « … » à l'intérieur d'une option la rend « hors liste »."""
+def test_points_de_suspension_reconnus():
+    """« ... » au lieu de « … » à l'intérieur d'une option est reconnu (correctif ANO-25)."""
     r, av = QU.lire_csv("Q18\nNon, pour des raisons de sécurité (intrusion, nuisibles, pluie...)\n")
-    assert r == [] and av
+    assert r == [{"Q18": OPT["Q18"][1]}] and not av
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-20 : un CSV enregistré par Excel (« CSV séparateur point-virgule », "
-                                       "encodage Windows-1252) perd toutes les réponses accentuées")
 def test_csv_excel_windows_1252():
     contenu = QU.vers_csv([{"Q4": "Très chaude", "Q5": "Légèrement inconfortable", "Q8": "Très souvent"}]).encode("cp1252")
     r, av = QU.lire_csv(contenu)
@@ -135,7 +127,7 @@ def test_csv_excel_windows_1252():
 
 def test_multi_option_avec_virgule_dans_un_csv_virgule():
     """Réponses multiples séparées par « ; » dont une option contient une virgule, dans un CSV « , »."""
-    texte = ('Q11,Q13\n"Stores intérieurs","Elles gênent la ventilation ou l\'aération (claquent, bloquent '
+    texte = ('Q11,Q12,Q13\n"Stores intérieurs",Jamais,"Elles gênent la ventilation ou l\'aération (claquent, bloquent '
              'l\'ouverture des fenêtres) ; Autre"\n')
     r, av = QU.lire_csv(texte)
     assert r[0]["Q13"] == [OPT["Q13"][3], "Autre"] and not av
@@ -190,17 +182,15 @@ def test_visibilite(r, visibles):
         assert QU.visible(code, r) == v, code
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-19 : une réponse à une question masquée (Q12 alors que Q11 = Aucune) est "
-                                       "conservée à l'import CSV et comptée dans la synthèse et la matrice")
 def test_reponse_masquee_ni_conservee_ni_comptee():
     r, _ = QU.lire_csv("Q11;Q12;Q15\nAucune;Jamais;Pas du tout efficaces\n")
     assert "Q12" not in r[0] and "Q15" not in r[0]
 
 
-def test_reponse_masquee_comptee_dans_la_synthese():
-    """Observé : la synthèse compte les réponses masquées présentes dans les données (via l'import)."""
+def test_reponse_masquee_non_comptee_dans_la_synthese():
+    """La synthèse ne compte pas les réponses à des questions masquées (correctif ANO-19)."""
     reps = [{"Q11": ["Aucune"], "Q12": "Jamais"}] * 3
-    assert QU.synthese(reps)["indicateurs"]["protections_peu_utilisees"]["sur"] == 3
+    assert QU.synthese(reps)["indicateurs"]["protections_peu_utilisees"]["sur"] == 0
 
 
 # ------------------------------------------------------------------ synthèse (jeu construit à la main)
@@ -348,8 +338,6 @@ def test_matrice_m6(reps, audit, attendu):
     assert _ligne(QU.matrice(reps, _res(audit)), "M6")["resultat"] == attendu
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-21 : M6 conclut « À vérifier » sur un indicateur calculé avec moins de 3 "
-                                       "réponses (1 seule réponse à Q15), le minimum n'étant vérifié que sur Q12")
 def test_matrice_m6_minimum_par_indicateur():
     reps = [dict(BIEN_UTIL) for _ in range(9)]
     for r in reps:
@@ -381,14 +369,10 @@ def test_matrice_m8(n, etats, attendu):
     assert _ligne(QU.matrice(_reps(*n, *CLIM), _res([PROTEGE_R], etats)), "M8")["resultat"] == attendu
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-22 : M8 est évalué (« À vérifier ») avec une seule réponse, alors que § E1 "
-                                       "prévoit « Non évaluable » en dessous de 3 réponses")
 def test_matrice_m8_minimum_trois_reponses():
     assert _ligne(QU.matrice(_reps(1, 0, *CLIM), _res([PROTEGE_R])), "M8")["resultat"] == QU.NON_EVALUABLE
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-23 : M8 sans aucun local dans l'audit conclut « À vérifier » au lieu de "
-                                       "« Non évaluable » (aucun local concerné)")
 def test_matrice_m8_sans_local():
     assert _ligne(QU.matrice(_reps(5, 5, *CLIM), _res([])), "M8")["resultat"] == QU.NON_EVALUABLE
 
@@ -429,4 +413,4 @@ def test_audit_vide_tout_sous_reserve_juge_coherent():
 def test_libelle_seuil_coherent_avec_le_calcul():
     """Le PDF annonce « signalé au-delà de 30 % » ; le calcul retient « au moins 30 % » (≥), comme § E1."""
     t = " ".join(sorties.texte(generer_pdf(dict(copy.deepcopy(EXEMPLE), questionnaires=JEU))).split())
-    assert "au-delà de 30%" in t  # libellé ambigu (ANO-24, mineur) : « au-delà » se lit « strictement plus de »
+    assert "à partir de 30%" in t and "au-delà de 30%" not in t  # correctif ANO-24 (≥, comme § E1)

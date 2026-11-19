@@ -88,11 +88,9 @@ def test_import_excel_copies_modifiees(tmp_path):
     wb.save(tmp_path / "copie.xlsx")
     d = lire_classeur(tmp_path / "copie.xlsx")
     assert d["locaux"][1]["L-02"] == "Classe"
-    assert d["locaux"][0]["L-03"] == "60"   # importé tel quel (texte) : voir ANO-08
+    assert d["locaux"][0]["L-03"] == 60     # converti à l'import (correctif ANO-08)
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-08 : un nombre saisi en texte dans l'Excel (« 60 », « 2,5 ») est importé "
-                                       "sans conversion ni avertissement ; la règle passe « Sous réserve »")
 def test_import_excel_nombre_en_texte_converti(tmp_path):
     warnings.simplefilter("ignore")
     wb = openpyxl.load_workbook(REF)
@@ -102,9 +100,6 @@ def test_import_excel_nombre_en_texte_converti(tmp_path):
     assert lire_classeur(tmp_path / "copie.xlsx")["locaux"][0]["PL-03"] == 2.5
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-27 : une réponse hors liste dans l'Excel (« oui » en minuscules, ancienne "
-                                       "option) est importée sans avertissement ; elle est ensuite traitée comme une "
-                                       "réponse « différente » (règle fausse) et effacée dès que la fiche est affichée")
 def test_import_excel_reponse_hors_liste_signalee(tmp_path):
     warnings.simplefilter("ignore")
     wb = openpyxl.load_workbook(REF)
@@ -144,8 +139,6 @@ BORNES_EXCEL = {
 
 @pytest.mark.excel
 @soffice
-@pytest.mark.xfail(strict=True, reason="ANO-01 et ANO-09 : écarts entre le moteur et l'Excel recalculé aux valeurs pile "
-                                       "sur un seuil, et pour un nombre de baies égal à 0")
 def test_bornes_recalculees_par_libreoffice():
     ecarts = _recalcul(list(BORNES_EXCEL.values()))
     assert not any(ecarts), dict(zip(BORNES_EXCEL, ecarts))

@@ -250,8 +250,6 @@ def test_seuils_ex_al(nom, val, attendu):
     assert avant != apres and apres == attendu
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-07 : un seuil importé en texte (JSON) est accepté ; toutes les comparaisons "
-                                       "qui l'utilisent deviennent silencieusement « fausses »")
 def test_seuil_texte_refuse_ou_converti():
     d = donnees(local={"PL-03": 2.2}, param={"P_HSP_MIN": "2,4"})
     from cas_base import evaluer

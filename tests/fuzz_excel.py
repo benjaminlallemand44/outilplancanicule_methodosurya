@@ -171,6 +171,12 @@ def tirage(rnd) -> dict:
     for i in range(len(d["espaces"])):
         if rnd.random() < 0.5:
             d["espaces"][i] = _muter(BASE_ESPACE, R["espaces"], rnd)
+    # Diviseurs nuls : l'outil les traite volontairement comme une donnée invalide (« Sous réserve »),
+    # là où l'Excel les ignore (PàT A4). Ils sont exclus de la comparaison avec l'Excel.
+    for l in d["locaux"]:
+        for k in ("L-03", "PL-03", "BA-09", "BA-06"):
+            if l.get(k) == 0:
+                l[k] = 1
     return d
 
 

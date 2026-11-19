@@ -167,27 +167,41 @@ def lire_csv(contenu: bytes | str) -> tuple[list[dict], list[str]]:
     (« Q4 - Dans le local… », « Q4. … »), comme dans l'export d'un formulaire en ligne. Les réponses
     hors liste sont ignorées et signalées.
     """
+    illisible = "Fichier illisible : enregistrez-le au format CSV à partir du modèle fourni."
     if isinstance(contenu, bytes):
-        contenu = contenu.decode("utf-8-sig", errors="replace")
-    contenu = contenu.lstrip("﻿")
+        if b"\x00" in contenu[:4096] or contenu[:4] in (b"PK\x03\x04", b"%PDF"):
+            return [], [illisible]
+        try:
+            contenu = contenu.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            contenu = contenu.decode("cp1252", errors="replace")  # CSV enregistré par Excel sous Windows
+    contenu = contenu.lstrip("\ufeff")
     if not contenu.strip():
         return [], ["Fichier vide."]
+    premiere = contenu.splitlines()[0]
+    # Séparateur qui isole le plus d'en-têtes « Qn » (les libellés des questions contiennent des virgules)
+    delim = max(";,\t", key=lambda sep: (sum(bool(re.match(r'^\s*"?\s*Q\s*\d+', h, re.I)) for h in premiere.split(sep)),
+                                         sep == ";"))
     try:
-        dialecte = csv.Sniffer().sniff(contenu.splitlines()[0], delimiters=";,\t")
-        delim = dialecte.delimiter
+        lignes = list(csv.reader(io.StringIO(contenu, newline=""), delimiter=delim))
     except csv.Error:
-        delim = ";"
-    lignes = list(csv.reader(io.StringIO(contenu), delimiter=delim))
+        return [], [illisible]
+    if not lignes:
+        return [], ["Fichier vide."]
     entete, avert = lignes[0], []
-    index = {}
+    index, inconnues = {}, []
     for k, h in enumerate(entete):
         m = re.match(r"^\s*Q\s*(\d+)\b", h or "", re.I)
         if m and f"Q{int(m.group(1))}" in PAR_CODE:
             index[f"Q{int(m.group(1))}"] = k
         elif (h or "").strip().lower() in ("horodatage", "timestamp", "date"):
             index["horodatage"] = k
+        elif (h or "").strip():
+            inconnues.append(h.strip())
     if not any(c in index for c in COLONNES):
         return [], ["Aucune colonne Q1 à Q24 reconnue : utilisez le modèle de fichier fourni."]
+    if inconnues:
+        avert.append("Colonne(s) non reconnue(s), ignorée(s) : " + ", ".join(f"« {h[:40]} »" for h in inconnues) + ".")
     reponses = []
     for n, ligne in enumerate(lignes[1:], start=2):
         if not any(c.strip() for c in ligne):
@@ -218,13 +232,16 @@ def lire_csv(contenu: bytes | str) -> tuple[list[dict], list[str]]:
                     r[code] = [o for o in q["options"] if o in vals]
                 if inconnus:
                     avert.append(f"Ligne {n}, {code} : « {' ; '.join(inconnus)} » hors liste, ignoré.")
+        for k in [k for k in r if k in PAR_CODE and not visible(k, r)]:
+            del r[k]
+            avert.append(f"Ligne {n}, {k} : sans objet d'après les réponses précédentes, ignorée.")
         if any(k != "horodatage" for k in r):
             reponses.append(r)
     return reponses, avert
 
 
 def _simplifier(s: str) -> str:
-    s = s.lower().replace("’", "'").replace("œ", "oe")
+    s = s.lower().replace("’", "'").replace("œ", "oe").replace("...", "…")
     s = re.sub(r"[…\.]+$", "", s)
     return re.sub(r"\s+", " ", s).strip()
 
@@ -243,7 +260,9 @@ def _part(n, total):
 
 
 def synthese(reponses: list[dict]) -> dict:
-    """Synthèse globale : répartitions par question et indicateurs de ressenti."""
+    """Synthèse globale : répartitions par question et indicateurs de ressenti.
+    Les réponses à des questions sans objet (conditions non remplies) ne sont pas comptées."""
+    reponses = [{k: v for k, v in r.items() if k not in PAR_CODE or visible(k, r)} for r in reponses]
     n = len(reponses)
     repartition = {}
     for q in QUESTIONS:
@@ -396,14 +415,14 @@ def matrice(reponses: list[dict], res: dict, seuil: float = SEUIL_SIGNAL, minimu
     # M6 : protections relevées « En place » mais peu utilisées ou jugées peu efficaces
     en_place = [s for s in _statuts(res, PROTECTIONS) if s == moteur.EN_PLACE]
     i_util, i_eff = ind["protections_peu_utilisees"], ind["protections_peu_efficaces"]
-    sur = max(i_util["sur"], i_eff["sur"])
+    exploitables = [x for x in (i_util, i_eff) if x["sur"] >= minimum]  # minimum de réponses par indicateur
     txt = f"utilisation rare {fmt(i_util)} ; peu efficaces {fmt(i_eff)}"
-    if not en_place or sur < minimum:
+    if not en_place or not exploitables:
         ajouter("M6", "Protections solaires en place peu utilisées ou peu efficaces", txt,
                 f"{len(en_place)} protection(s) « En place »", NON_EVALUABLE,
                 "Aucune protection relevée « En place »." if not en_place else "Moins de %d réponses." % minimum)
     else:
-        mauvais = any(x["part"] is not None and x["part"] >= seuil for x in (i_util, i_eff))
+        mauvais = any(x["part"] >= seuil for x in exploitables)
         raisons = Counter(o for r in reponses for o in (r.get("Q13") or []))
         detail = ", ".join(f"{o} ({n})" for o, n in raisons.most_common(3))
         ajouter("M6", "Protections solaires en place peu utilisées ou peu efficaces", txt,
@@ -435,9 +454,9 @@ def matrice(reponses: list[dict], res: dict, seuil: float = SEUIL_SIGNAL, minimu
                       "Oui, un ventilateur d'appoint mobile": ("BA-01", "ventilateur sur pied"),
                       "Oui, un climatiseur mobile": ("BA-02", "climatisation mobile"),
                       "Oui, un climatiseur fixe": ("BA-04", "climatisation fixe")}
-    if sum(declares.values()) == 0 and len([r for r in reponses if r.get("Q20")]) < minimum:
+    if len([r for r in reponses if r.get("Q20")]) < minimum or not res["locaux"]:
         ajouter("M8", "Équipements de rafraîchissement", "—", "relevé BA-01 à BA-05", NON_EVALUABLE,
-                "Moins de %d réponses." % minimum)
+                "Moins de %d réponses." % minimum if res["locaux"] else "Aucun local dans l'audit.")
     else:
         manquants = [f"{lib} ({n} usager(s))" for eq, n in declares.items() for code, lib in [correspondance[eq]]
                      if not releve[code]]

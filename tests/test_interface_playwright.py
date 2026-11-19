@@ -119,18 +119,13 @@ def test_import_invalide_message_clair(scenarios):
     assert d["message"] and d["message"][0].startswith("Import impossible")
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-03 : sur téléphone (375 px), les 7 ou 8 boutons d'étapes empilés occupent "
-                                       "l'écran : le titre de l'étape commence au-delà de 600 px")
 def test_telephone_contenu_visible_sans_defiler(scenarios):
     assert scenarios[0]["telephone"]["details"]["titre_y"] < 400
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-04 : libellés d'étapes tronqués à 1440 px (« 4. Espaces extér… », "
-                                       "« 6. Questionnair… »)")
 def test_libelles_d_etapes_lisibles(scenarios):
     assert not scenarios[0]["complet_pas_a_pas"]["details"]["etapes_tronquees"]
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-05 : le nom accessible des infobulles contient la syntaxe « :gray[· L-01] »")
 def test_infobulles_sans_balisage(scenarios):
     assert not scenarios[0]["complet_pas_a_pas"]["details"]["aria_balisage"]

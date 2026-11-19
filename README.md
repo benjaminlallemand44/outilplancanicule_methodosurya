@@ -59,6 +59,7 @@ surya/questions.py          questionnaire et conditions d'affichage
 surya/import_excel.py       lecture d'un Excel de la méthode
 surya/rapport.py            compte rendu PDF
 surya/questionnaire.py      questionnaire usagers : questions, CSV, synthèse, matrice
+surya/validation.py         contrôle et normalisation des saisies importées (JSON, Excel)
 surya/stockage.py           stockage des réponses (mémoire ; Supabase plus tard)
 surya/referentiel.json      textes extraits de l'Excel (questions, options, règles, seuils)
 surya/exemple.json          jeu d'exemple (celui de l'Excel)
@@ -81,11 +82,22 @@ exactement ce qu'il faudra stocker plus tard (par exemple une colonne JSON par a
 
 ## Vérification
 
-Campagne de tests complète : prompt prêt à l'emploi dans `docs/prompt_tests.md`.
+Environ 890 tests (pytest), issus de la campagne de tests n° 1 : rapport dans `docs/rapport_tests.md`,
+corrections dans `docs/suivi_corrections.md`, prompt de campagne dans `docs/prompt_tests.md`.
 
 ```bash
-python -m pytest tests
+pip install -r requirements.txt pytest pdfplumber
 ```
+
+```bash
+python -m pytest tests -m "not excel and not interface"
+```
+
+```bash
+python -m pytest tests -m "excel or interface"
+```
+
+Le marqueur `excel` demande LibreOffice ; `interface` demande Node et Playwright.
 
 ```bash
 python tests/fuzz_excel.py 80

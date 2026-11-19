@@ -14,8 +14,7 @@ from surya.questions import QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE, S
 R, AO, EP, SR, NR, NC = (moteur.RECOMMANDE, moteur.A_OPTIMISER, moteur.EN_PLACE, moteur.SOUS_RESERVE,
                          moteur.NON_RECOMMANDE, moteur.NON_CONCERNE)
 BP = BRASSEURS_EN_PLACE
-FLOTTANT = pytest.mark.xfail(strict=True, reason="ANO-01 : comparaison en virgule flottante sans tolérance "
-                                                 "(l'Excel recalculé donne le résultat attendu)")
+FLOTTANT = ()  # ANO-01 corrigée : rapports arrondis avant comparaison
 
 
 def b(ident, bloc, attendu, marks=(), **kw):
@@ -119,7 +118,6 @@ def test_bornes_ex_al(entree, attendu):
     assert moteur.calculer(donnees(espace=e))["espaces"][0]["EX-AL"] == attendu
 
 
-@FLOTTANT
 @pytest.mark.parametrize("s,n", [(22.4, 28), (9.6, 12), (40.8, 51)])
 def test_ex_al_pile_0_8_par_enfant(s, n):
     assert moteur.calculer(donnees(espace={"E-14": s, "E-06": n}))["espaces"][0]["EX-AL"] == 0
@@ -248,11 +246,12 @@ def test_facade_non_decrite_donne_sous_reserve():
     assert evaluer(d, "PH")[:3] == ("PH-4", SR, True) or evaluer(d, "PH")[1] == SR
 
 
-def test_ex_al_indeterminee_n_est_signalee_nulle_part():
-    """EX-AL vaut 0,5 quand l'effectif manque ; ni l'écran, ni les PDF, ni PR-AL4 ne le signalent (QM-05)."""
+def test_ex_al_indeterminee_n_est_pas_affichee():
+    """EX-AL vaut 0,5 quand l'effectif manque : rangée « à vérifier » mais ni déclenchée ni affichée (QM-05,
+    PàT F5 : question de méthode)."""
     x = moteur.calculer(donnees(espace={"E-06": SUPPR}))["espaces"][0]
     assert x["EX-AL"] == 0.5
-    assert not any(s["alertes_a_verifier"] for s in x["solutions"])
+    assert not any("EX-AL" in s["alertes"] for s in x["solutions"])
 
 
 # ------------------------------------------------------------------ questions masquées
@@ -422,8 +421,6 @@ def test_baies_comptees_ou_non():
     assert a == b2
 
 
-@pytest.mark.xfail(strict=True, reason="ANO-09 : un nombre de baies égal à 0 (import JSON / Excel) est ignoré par le "
-                                       "moteur, alors que l'Excel compte le type comme présent")
 def test_zero_baie_comme_l_excel():
     regle, statut, _, _ = evaluer(donnees(local={"murs": [mur(baies={"Fenêtre à la française": 0})]}), "VN")
     assert (regle, statut) == ("VN-10", SR)  # résultat de l'Excel recalculé

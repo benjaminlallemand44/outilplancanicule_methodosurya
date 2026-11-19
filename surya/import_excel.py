@@ -91,14 +91,57 @@ def lire_colonne(ws, plan, col) -> dict:
     return d
 
 
-def lire_classeur(source) -> dict:
-    """``source`` : chemin ou fichier binaire d'un .xlsx de la méthode."""
+class ImportImpossible(ValueError):
+    """Fichier qui n'est pas une saisie de la méthode (message destiné à l'utilisateur)."""
+
+
+def lire_classeur(source, avertissements: list | None = None) -> dict:
+    """``source`` : chemin ou fichier binaire d'un .xlsx de la méthode.
+
+    La saisie est contrôlée et normalisée (``surya.validation``) ; les corrections apportées sont
+    ajoutées à ``avertissements`` si la liste est fournie."""
     import openpyxl
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        wb = openpyxl.load_workbook(source, data_only=True)
+    from .validation import valider
 
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            wb = openpyxl.load_workbook(source, data_only=True)
+    except Exception as e:
+        raise ImportImpossible("Ce fichier ne peut pas être ouvert comme un classeur Excel (.xlsx).") from e
+    manquants = [n for n in ("Saisie_Bâtiment", "Saisie_Locaux", "Saisie_Extérieurs") if n not in wb.sheetnames]
+    if manquants:
+        raise ImportImpossible("Ce classeur n'est pas un Excel de la méthode SURYA : onglet(s) "
+                               + ", ".join(f"« {n} »" for n in manquants) + " introuvable(s).")
+    brut = _lire(wb)
+    d, notes = valider(brut)
+    if avertissements is not None:
+        avertissements.extend(notes)
+    return {k: d[k] for k in brut}
+
+
+def importer(nom: str, contenu: bytes) -> tuple[dict, list[str]]:
+    """Import d'une saisie (.json exporté par l'outil, ou .xlsx de la méthode) : (données, corrections).
+    Lève ``ImportImpossible`` avec un message en clair si le fichier n'est pas exploitable."""
+    import io
+    import json
+
+    from .validation import valider
+
+    if nom.lower().endswith(".json"):
+        try:
+            brut = json.loads(contenu.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            raise ImportImpossible("Ce fichier JSON est illisible : ce n'est pas une saisie exportée par l'outil.") from e
+        if not isinstance(brut, dict) or not any(k in brut for k in ("batiment", "locaux", "espaces", "facades")):
+            raise ImportImpossible("Ce fichier JSON n'est pas une saisie exportée par l'outil.")
+        return valider(brut)
+    notes: list[str] = []
+    return lire_classeur(io.BytesIO(contenu), notes), notes
+
+
+def _lire(wb) -> dict:
     ws = wb["Saisie_Bâtiment"]
     ligne_facades = next(r for r in range(DEBUT, ws.max_row + 1) if ws.cell(r, 1).value == "F-01") - 1
     batiment = lire_colonne(ws, plan_feuille(ws, fin=ligne_facades - 2), 4)
