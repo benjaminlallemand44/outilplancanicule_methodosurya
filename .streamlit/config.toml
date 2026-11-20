@@ -1,0 +1,60 @@
+# Charte graphique ACTEE (design system ACTEE, octobre 2024)
+[server]
+enableStaticServing = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#0a17a6"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f2f4f1"
+textColor = "#000000"
+linkColor = "#0a17a6"
+borderColor = "#000000"
+font = "Schibsted Grotesk, Arial, sans-serif"
+headingFont = "Bitter, Georgia, serif"
+headingFontWeights = 900
+baseRadius = "none"
+buttonRadius = "none"
+
+[[theme.fontFaces]]
+family = "Schibsted Grotesk"
+url = "app/static/fonts/SchibstedGrotesk-Medium.ttf"
+weight = "400"
+
+[[theme.fontFaces]]
+family = "Schibsted Grotesk"
+url = "app/static/fonts/SchibstedGrotesk-Medium.ttf"
+weight = "500"
+
+[[theme.fontFaces]]
+family = "Schibsted Grotesk"
+url = "app/static/fonts/SchibstedGrotesk-Bold.ttf"
+weight = "600"
+
+[[theme.fontFaces]]
+family = "Schibsted Grotesk"
+url = "app/static/fonts/SchibstedGrotesk-Bold.ttf"
+weight = "700"
+
+[[theme.fontFaces]]
+family = "Schibsted Grotesk"
+url = "app/static/fonts/SchibstedGrotesk-ExtraBold.ttf"
+weight = "800"
+
+[[theme.fontFaces]]
+family = "Schibsted Grotesk"
+url = "app/static/fonts/SchibstedGrotesk-Black.ttf"
+weight = "900"
+
+[[theme.fontFaces]]
+family = "Bitter"
+url = "app/static/fonts/Bitter-ExtraBold.ttf"
+weight = "800"
+
+[[theme.fontFaces]]
+family = "Bitter"
+url = "app/static/fonts/Bitter-Black.ttf"
+weight = "900"

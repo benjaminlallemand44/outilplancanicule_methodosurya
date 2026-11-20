@@ -60,14 +60,9 @@ SAISIES = {
               "connaissez bien la grille."),
 }
 # statut -> (fond, texte)
-COULEURS = {  # même ordre que la légende des PDF
-    moteur.RECOMMANDE: ("#d3f0db", "#0f5a26"),
-    moteur.A_OPTIMISER: ("#ffe2c2", "#8a4300"),
-    moteur.EN_PLACE: ("#d6e6fb", "#0e4a8a"),
-    moteur.SOUS_RESERVE: ("#fff2b3", "#6b5300"),
-    moteur.NON_RECOMMANDE: ("#f9d2d0", "#8c1d18"),
-    moteur.NON_CONCERNE: ("#e6e6e6", "#4d4d4d"),
-}
+# Statuts aux couleurs de la charte ACTEE (contrastes de la charte : texte noir sur couleurs claires,
+# texte blanc sur brun). Même ordre et mêmes couleurs que dans les PDF (surya/rapport.py).
+from surya.rapport import COULEURS  # noqa: E402
 # Aides à la saisie tirées du document de méthode (SURYA, version 01 du 27/10/2026)
 AIDES = {
     "MEX-07": "Estimé à l'œil ou sur photo, sans mesure. Aucun ; Faible : profondeur inférieure à la moitié de la "
@@ -78,8 +73,29 @@ AIDES = {
     "MEX-32": "La pose de films solaires est la dernière solution à envisager, du fait de sa faible efficacité.",
 }
 
-st.set_page_config(page_title="Méthode SURYA — faisabilité d'actions d'adaptation", page_icon="🌡️", layout="wide",
+st.set_page_config(page_title="ACTEE — Audit de faisabilité d'actions d'adaptation",
+                   page_icon=str(RACINE / "static" / "logos" / "actee-favicon.png"), layout="wide",
                    initial_sidebar_state="collapsed")
+LOGO = RACINE / "static" / "logos" / "actee-fnccr-couleur.png"
+BLEU, ORANGE, NOIR = "#0a17a6", "#ff5400", "#000000"
+
+
+def charte():
+    """Charte ACTEE : titres en Bitter Black avec séparateur, labeur en Schibsted Grotesk, angles droits."""
+    st.html("""<style>
+    h1, h2 { font-family: Bitter, Georgia, serif !important; font-weight: 900 !important; color: #000 !important; }
+    h1 { border-bottom: 8px solid #000; padding-bottom: .25em !important; margin-bottom: .6em !important; }
+    h2 { border-bottom: 5px solid #000; padding-bottom: .2em !important; margin-bottom: .5em !important; }
+    h3, h4, h5 { font-family: "Schibsted Grotesk", Arial, sans-serif !important; font-weight: 800 !important; color: #000 !important; }
+    .actee-chapo { font-weight: 800; font-size: 1.05rem; }
+    .actee-mode { color: #0a17a6; }
+    [data-testid="stExpander"] details, [data-testid="stVerticalBlockBorderWrapper"] { border-radius: 0 !important; }
+    </style>""")
+
+
+def logo():
+    """Logo ACTEE + FNCCR officiel, en haut à gauche (jamais centré)."""
+    st.image(str(LOGO), width=190)
 ss = st.session_state
 
 
@@ -258,7 +274,7 @@ def pastille(statut: str) -> str:
     if not statut:
         return "<span style='color:#999'>—</span>"
     fond, texte = COULEURS.get(statut, ("#eee", "#333"))
-    return (f"<span style='background:{fond};color:{texte};padding:2px 10px;border-radius:12px;"
+    return (f"<span class='actee-statut' style='background:{fond};color:{texte};padding:2px 10px;"
             f"font-size:0.85em;font-weight:600;white-space:nowrap'>{html.escape(statut)}</span>")
 
 
@@ -276,7 +292,8 @@ CB = moteur.etats_batiment(D["batiment"], D["facades"])
 
 # ------------------------------------------------------------------ écran de départ
 def ecran_depart():
-    st.title("🌡️ Audit de faisabilité d'actions d'adaptation")
+    logo()
+    st.title("Audit de faisabilité d'actions d'adaptation")
     st.markdown("Méthode SURYA Ingénierie / ACTEE — plan rafraîchissement des écoles. À partir des relevés de visite, "
                 "l'outil établit pour chaque local et chaque espace extérieur le **statut de faisabilité** de chaque "
                 "solution de confort d'été.")
@@ -295,7 +312,7 @@ def ecran_depart():
     st.subheader("2. Que voulez-vous produire ?")
     c1, c2 = st.columns(2, gap="large")
     with c1.container(border=True, height="stretch"):
-        st.markdown("### 📊 Résultats de faisabilité")
+        st.markdown("### Résultats de faisabilité")
         st.markdown("L'équivalent de l'Excel de la méthode : vous saisissez le bâtiment, les façades, les locaux et "
                     "les espaces extérieurs, et vous obtenez les statuts de chaque solution.")
         st.markdown("**À la fin :** tableau des statuts à l'écran, **PDF des résultats** (2 à 3 pages), export CSV.")
@@ -304,7 +321,7 @@ def ecran_depart():
         if st.button("Commencer — résultats", type="primary", width="stretch"):
             demarrer("resultats")
     with c2.container(border=True, height="stretch"):
-        st.markdown("### 📄 Diagnostic complet")
+        st.markdown("### Diagnostic complet")
         st.markdown("Même saisie, avec en plus l'identification de l'audit (établissement, auditeur, date), vos "
                     "observations par local et espace, les **questionnaires usagers** (confort estival) et un "
                     "commentaire général.")
@@ -376,7 +393,13 @@ def bloc_donnees(prefixe: str):
 # ------------------------------------------------------------------ en-tête et navigation
 def entete():
     c1, c2 = st.columns([5, 1.4], vertical_alignment="center")
-    c1.markdown(f"#### 🌡️ Audit de faisabilité d'actions d'adaptation · :green[{MODES[ss.mode]['titre']}]")
+    with c1:
+        l1, l2 = st.columns([1, 4.2], vertical_alignment="center")
+        with l1:
+            logo()
+        l2.markdown(f"<div style='font-family:Bitter,Georgia,serif;font-weight:900;font-size:1.35rem;line-height:1.2'>"
+                    f"Audit de faisabilité d'actions d'adaptation<br><span class='actee-mode'>"
+                    f"{MODES[ss.mode]['titre']}</span></div>", unsafe_allow_html=True)
     with c2.popover("⚙️ Réglages", width="stretch"):
         if st.button("Seuils et données", width="stretch"):
             ss.vue = "reglages"
@@ -909,6 +932,7 @@ def formulaire_usager(r: dict, prefixe: str):
 
 def page_usager(code: str):
     """Questionnaire en ligne, tel qu'un usager le voit (lien ?questionnaire=<code>)."""
+    logo()
     st.title("Questionnaire confort estival")
     st.markdown("Ce questionnaire, anonyme, prend 5 minutes. Il porte sur la **période estivale** (mai, juin et "
                 "septembre) et sur le **local que vous occupez principalement**. Vos réponses aideront à choisir les "
@@ -942,7 +966,7 @@ def etape_questionnaires():
                 "La synthèse est faite pour tout l'établissement. Cette étape est facultative.")
     depot = DepotMemoire(D["questionnaires"])
     code = code_audit()
-    t1, t2, t3 = st.tabs(["📨 Questionnaire en ligne", "📥 Importer des réponses (CSV)", "✍️ Saisir un questionnaire papier"])
+    t1, t2, t3 = st.tabs(["Questionnaire en ligne", "Importer des réponses (CSV)", "Saisir un questionnaire papier"])
     with t1:
         st.markdown("Lien à diffuser aux enseignants et au personnel :")
         st.code(f"<adresse de l'application>/?questionnaire={code}", language=None)
@@ -1110,7 +1134,7 @@ def etape_documents():
     suffixe = "".join(c if c.isalnum() else "_" for c in base).strip("_") + ".pdf"
     with st.container(border=True):
         if complet:
-            st.subheader("📄 Vos documents")
+            st.subheader("Vos documents")
             v = st.text_area("Commentaire général de l'auditeur (facultatif, repris dans le compte rendu)",
                              value=a.get("synthese", ""), key=cle("audit", "synthese")).strip()
             if v:
@@ -1118,7 +1142,7 @@ def etape_documents():
             else:
                 a.pop("synthese", None)
         else:
-            st.subheader("📄 Télécharger les résultats")
+            st.subheader("Télécharger les résultats")
         donnees_json = json.dumps(D, ensure_ascii=False, sort_keys=True)
         cols = st.columns([1.3, 1, 0.7] if complet else [1, 0.6, 1.4])
         if complet:
@@ -1199,6 +1223,7 @@ ETAPES = {"Identification": etape_identification, "Bâtiment": etape_batiment, "
           "Questionnaires usagers": etape_questionnaires,
           "Vérification": etape_verification, "Résultats": etape_documents, "Documents": etape_documents}
 
+charte()
 if st.query_params.get("questionnaire"):
     page_usager(st.query_params["questionnaire"])
 elif ss.mode is None:

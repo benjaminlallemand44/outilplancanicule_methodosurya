@@ -545,7 +545,7 @@ def test_legende_meme_ordre_que_les_pdf():
     clic(at, key="depart:exemple")
     demarrer(at, "resultats")
     clic(at, key="nav:5")
-    legende = next(m.value for m in at.markdown if m.value.count("border-radius:12px") == 6)
+    legende = next(m.value for m in at.markdown if m.value.count("actee-statut") == 6)
     assert re.findall(r">([^<>]+)</span>", legende) == STATUTS
 
 

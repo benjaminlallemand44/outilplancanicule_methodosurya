@@ -104,7 +104,16 @@ async function aller(page, numero, nomEtape) {
       etapes.push((await page.locator('h2').first().innerText().catch(() => '')).trim());
       const suivant = page.getByRole('button', { name: /^(Suivant :|Générer les documents|Bloc suivant)/ });
       if (!(await suivant.count())) break;
-      await suivant.first().click();
+      // un recalcul en cours peut remplacer le bouton (« element was detached ») : on réessaie
+      let fini = false;
+      for (let essai = 0; ; essai++) {
+        try { await suivant.first().click({ timeout: 5000 }); break; } catch (e) {
+          if (essai >= 3) throw e;
+          await attendre(page);
+          if (!(await suivant.count())) { fini = true; break; }  // le recalcul a changé d'étape
+        }
+      }
+      if (fini) break;
       await attendre(page);
     }
     d.etapes = [...new Set(etapes)];

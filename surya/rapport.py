@@ -18,14 +18,18 @@ import html
 import io
 import re
 from collections import Counter, defaultdict
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import (CondPageBreak, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer,
-                                Table, TableStyle)
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+from reportlab.platypus import (CondPageBreak, Flowable, Image, KeepTogether, PageBreak, Paragraph,
+                                SimpleDocTemplate, Spacer, Table, TableStyle)
 
 from . import moteur
 from .moteur import (A_OPTIMISER, EN_PLACE, NON_CONCERNE, NON_RECOMMANDE, PARAMETRES_DEFAUT, RECOMMANDE, REFERENTIEL,
@@ -41,15 +45,40 @@ DEFINITIONS_STATUTS = {  # méthode, § II.ii
     EN_PLACE: "Solution déjà présente et satisfaisante",
     RECOMMANDE: "Solution absente, sans obstacle identifié : à recommander",
 }
-COULEURS = {  # fond, texte (identiques à l'interface)
-    RECOMMANDE: ("#d3f0db", "#0f5a26"),
-    EN_PLACE: ("#d6e6fb", "#0e4a8a"),
-    A_OPTIMISER: ("#ffe2c2", "#8a4300"),
-    SOUS_RESERVE: ("#fff2b3", "#6b5300"),
-    NON_RECOMMANDE: ("#f9d2d0", "#8c1d18"),
-    NON_CONCERNE: ("#e6e6e6", "#4d4d4d"),
+# Charte graphique ACTEE : couleurs de la gamme complémentaire, contrastes de la charte
+# (texte blanc uniquement sur bleu, noir, vert foncé ou brun). Identiques à l'interface.
+COULEURS = {  # fond, texte
+    RECOMMANDE: ("#5bba50", "#000000"),
+    A_OPTIMISER: ("#ff5400", "#000000"),
+    EN_PLACE: ("#8dc8f8", "#000000"),
+    SOUS_RESERVE: ("#ffc300", "#000000"),
+    NON_RECOMMANDE: ("#634123", "#ffffff"),
+    NON_CONCERNE: ("#e0e6de", "#000000"),
 }
-VERT = colors.HexColor("#1f5e3b")
+BLEU = colors.HexColor("#0a17a6")
+NOIR = colors.black
+GRIS = colors.HexColor("#e0e6de")
+STATIQUE = Path(__file__).resolve().parent.parent / "static"
+LOGO = STATIQUE / "logos" / "actee-fnccr-couleur.png"
+
+
+def _polices():
+    """Bitter (titrage) et Schibsted Grotesk (labeur) ; Helvetica en substitut si absentes."""
+    polices = {"titre": "Bitter-Black", "titre2": "Bitter-ExtraBold", "texte": "Schibsted-Medium",
+               "gras": "Schibsted-Bold", "extra": "Schibsted-ExtraBold"}
+    fichiers = {"Bitter-Black": "Bitter-Black.ttf", "Bitter-ExtraBold": "Bitter-ExtraBold.ttf",
+                "Schibsted-Medium": "SchibstedGrotesk-Medium.ttf", "Schibsted-Bold": "SchibstedGrotesk-Bold.ttf",
+                "Schibsted-ExtraBold": "SchibstedGrotesk-ExtraBold.ttf"}
+    try:
+        for nom, f in fichiers.items():
+            if nom not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(nom, str(STATIQUE / "fonts" / f)))
+        pdfmetrics.registerFontFamily("Schibsted-Medium", normal="Schibsted-Medium", bold="Schibsted-Bold",
+                           italic="Schibsted-Medium", boldItalic="Schibsted-Bold")
+    except Exception:  # polices absentes : substituts
+        return {"titre": "Helvetica-Bold", "titre2": "Helvetica-Bold", "texte": "Helvetica",
+                "gras": "Helvetica-Bold", "extra": "Helvetica-Bold"}
+    return polices
 
 # Type de chaque alerte de l'Excel, selon le tableau « Limites déclenchant une alerte maîtrise
 # d'œuvre » de la méthode (§ I.e). AL : étude par une maîtrise d'œuvre avant de consulter ;
@@ -227,37 +256,66 @@ def _imprimable(s: str) -> str:
     return re.sub(r"[ \t]{2,}", " ", "".join(out))
 
 
+class Titre1(Flowable):
+    """Titre 1 de la charte : Bitter Black noir et séparateur noir (≈ 1/6 du corps)."""
+
+    def __init__(self, texte, style):
+        super().__init__()
+        self.p = Paragraph(texte, style)
+        self.style = style
+        self.trait = max(2.5, style.fontSize / 6)
+
+    def wrap(self, aw, ah):
+        self.aw = aw
+        _, self.hp = self.p.wrap(aw, ah)
+        return aw, self.hp + self.trait + 4
+
+    def draw(self):
+        self.p.drawOn(self.canv, 0, self.trait + 4)
+        self.canv.setFillColor(NOIR)
+        self.canv.rect(0, 0, min(self.aw, 40 * mm), self.trait, stroke=0, fill=1)
+
+    def getSpaceBefore(self):
+        return self.style.spaceBefore
+
+    def getSpaceAfter(self):
+        return self.style.spaceAfter
+
+
 def _styles():
     ss = getSampleStyleSheet()
-    base = ParagraphStyle("base", parent=ss["Normal"], fontName="Helvetica", fontSize=9, leading=12)
+    P = _polices()
+    base = ParagraphStyle("base", parent=ss["Normal"], fontName=P["texte"], fontSize=9, leading=12,
+                          textColor=NOIR)
     return {
         "base": base,
         "petit": ParagraphStyle("petit", parent=base, fontSize=7.5, leading=9.5),
         "cellule": ParagraphStyle("cellule", parent=base, fontSize=7.5, leading=9),
         "statut": ParagraphStyle("statut", parent=base, fontSize=7, leading=8.5, alignment=TA_CENTER,
-                                 fontName="Helvetica-Bold"),
+                                 fontName=P["gras"]),
         "entete": ParagraphStyle("entete", parent=base, fontSize=7.5, leading=9, alignment=TA_CENTER,
-                                 fontName="Helvetica-Bold"),
-        "h1": ParagraphStyle("h1", parent=base, fontName="Helvetica-Bold", fontSize=15, leading=19, textColor=VERT,
-                             spaceBefore=4, spaceAfter=8),
-        "h2": ParagraphStyle("h2", parent=base, fontName="Helvetica-Bold", fontSize=11.5, leading=15, textColor=VERT,
-                             spaceBefore=10, spaceAfter=5),
-        "h3": ParagraphStyle("h3", parent=base, fontName="Helvetica-Bold", fontSize=9.5, leading=13, spaceBefore=7,
+                                 fontName=P["gras"], textColor=colors.white),
+        "h1": ParagraphStyle("h1", parent=base, fontName=P["titre"], fontSize=16, leading=20, spaceBefore=4,
+                             spaceAfter=9),
+        "h2": ParagraphStyle("h2", parent=base, fontName=P["titre"], fontSize=12, leading=15, spaceBefore=10,
+                             spaceAfter=5),
+        "h3": ParagraphStyle("h3", parent=base, fontName=P["extra"], fontSize=9.5, leading=13, spaceBefore=7,
                              spaceAfter=3),
-        "titre": ParagraphStyle("titre", parent=base, fontName="Helvetica-Bold", fontSize=22, leading=28,
-                                textColor=VERT, alignment=TA_CENTER),
-        "sous_titre": ParagraphStyle("sous_titre", parent=base, fontSize=13, leading=17, alignment=TA_CENTER),
+        "type_doc": ParagraphStyle("type_doc", parent=base, fontName=P["extra"], fontSize=11, leading=14,
+                                   textColor=BLEU),
+        "titre": ParagraphStyle("titre", parent=base, fontName=P["titre"], fontSize=26, leading=31),
+        "sous_titre": ParagraphStyle("sous_titre", parent=base, fontName=P["extra"], fontSize=12.5, leading=16),
         "puce": ParagraphStyle("puce", parent=base, leftIndent=10, bulletIndent=2),
     }
 
 
 def _tableau(data, largeurs, style=(), entete=True):
     t = Table(data, colWidths=largeurs, repeatRows=1 if entete else 0)
-    cmds = [("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#b8b8b8")),
+    cmds = [("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#9aa39a")),
             ("TOPPADDING", (0, 0), (-1, -1), 2.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
             ("LEFTPADDING", (0, 0), (-1, -1), 3), ("RIGHTPADDING", (0, 0), (-1, -1), 3)]
     if entete:
-        cmds.append(("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e9f1ec")))
+        cmds.append(("BACKGROUND", (0, 0), (-1, 0), BLEU))
     t.setStyle(TableStyle(cmds + list(style)))
     return t
 
@@ -272,17 +330,58 @@ def _p_statut(statut, S):
 
 
 # ------------------------------------------------------------------ sections
+class Couverture(Flowable):
+    """Illustration de couverture : grille 2×2 de carrés aux couleurs ACTEE, chacun portant une forme."""
+
+    def __init__(self, cote=34 * mm):
+        super().__init__()
+        self.c = cote
+
+    def wrap(self, aw, ah):
+        return 2 * self.c, 2 * self.c
+
+    def draw(self):
+        c, k = self.canv, self.c
+        bleu, orange, cyan, lila = BLEU, colors.HexColor("#ff5400"), colors.HexColor("#0dcccc"), colors.HexColor("#d1bffc")
+        for x, y, fond in ((0, k, bleu), (k, k, orange), (0, 0, cyan), (k, 0, lila)):
+            c.setFillColor(fond)
+            c.rect(x, y, k, k, stroke=0, fill=1)
+        c.setFillColor(orange)  # disque (énergie)
+        c.circle(k / 2, 1.5 * k, k * 0.3, stroke=0, fill=1)
+        c.setFillColor(bleu)  # quart de cercle (mouvement)
+        c.wedge(k, -k, 3 * k, k, 90, 90, stroke=0, fill=1)
+        c.setFillColor(colors.white)  # T / maison (bâtiment)
+        c.rect(0.2 * k, 0.62 * k, 0.6 * k, 0.16 * k, stroke=0, fill=1)
+        c.rect(0.42 * k, 0.15 * k, 0.16 * k, 0.5 * k, stroke=0, fill=1)
+        c.setFillColor(lila)
+        c.circle(1.5 * k, 1.5 * k, k * 0.22, stroke=0, fill=1)
+
+
+def _logo(largeur=48 * mm):
+    if not LOGO.exists():
+        return Spacer(1, 15 * mm)
+    img = Image(str(LOGO), width=largeur, height=largeur * 500 / 1600)
+    img.hAlign = "LEFT"
+    return img
+
+
 def _page_de_garde(audit, res, S):
-    el = [Spacer(1, 45 * mm), Paragraph("Audit de faisabilité d'actions d'adaptation", S["titre"]),
-          Spacer(1, 4 * mm), Paragraph("Plan rafraîchissement des écoles — compte rendu de visite", S["sous_titre"]),
-          Spacer(1, 18 * mm)]
+    el = [_logo(), Spacer(1, 22 * mm), Paragraph("Compte rendu de visite", S["type_doc"]), Spacer(1, 2 * mm),
+          Titre1("Audit de faisabilité d'actions d'adaptation", S["titre"]),
+          Spacer(1, 2 * mm), Paragraph("Plan rafraîchissement des écoles", S["sous_titre"]),
+          Spacer(1, 10 * mm)]
+    couverture = Couverture()
+    couverture.hAlign = "LEFT"
+    el += [couverture, Spacer(1, 12 * mm)]
     lignes = [[Paragraph(f"<b>{_t(lib)}</b>", S["base"]), Paragraph(_t(audit.get(k) or "—"), S["base"])]
               for k, lib in CHAMPS_AUDIT]
     lignes.append([Paragraph("<b>Périmètre visité</b>", S["base"]),
                    Paragraph(f"{len(res['locaux'])} local(aux), {len(res['espaces'])} espace(s) extérieur(s)", S["base"])])
     lignes.append([Paragraph("<b>Édité le</b>", S["base"]), Paragraph(dt.date.today().strftime("%d/%m/%Y"), S["base"])])
-    el.append(_tableau(lignes, [55 * mm, 110 * mm], entete=False))
-    el += [Spacer(1, 18 * mm),
+    t = _tableau(lignes, [55 * mm, 125 * mm], entete=False)
+    t.hAlign = "LEFT"
+    el.append(t)
+    el += [Spacer(1, 8 * mm),
            Paragraph(_t(f"Méthode SURYA Ingénierie / ACTEE — {REFERENTIEL['version']}."), S["petit"]),
            Paragraph("Document établi à partir d'observations factuelles relevées lors de la visite. Il s'agit d'une "
                      "faisabilité de principe, qui ne vaut pas validation technique : l'audit n'est pas une mission "
@@ -292,7 +391,7 @@ def _page_de_garde(audit, res, S):
 
 
 def _cadre(S):
-    el = [Paragraph("1. Cadre de l'audit", S["h1"]),
+    el = [Titre1("1. Cadre de l'audit", S["h1"]),
           Paragraph("L'audit est un <b>audit de faisabilité d'actions d'adaptation</b> à l'aléa « vagues de chaleur », "
                     "et non un diagnostic thermique. Il établit, pour chaque local et espace extérieur visité, quelles "
                     "solutions sont réalistes ou exclues compte tenu des usages et des contraintes constatées, ce qui "
@@ -325,7 +424,7 @@ def _cadre(S):
 
 
 def _synthese(res, S, titre="2. Synthèse des statuts", saut=True):
-    el = ([PageBreak()] if saut else []) + [Paragraph(titre, S["h1"])]
+    el = ([PageBreak()] if saut else []) + [Titre1(titre, S["h1"])]
     compte = Counter(s["statut"] for x in res["locaux"] + res["espaces"] for s in x["solutions"])
     data = [[_p_statut(st, S) for st in STATUTS], [Paragraph(f"<b>{compte.get(st, 0)}</b>", S["entete"]) for st in STATUTS]]
     el.append(_tableau(data, [30 * mm] * 6, [("BACKGROUND", (i, 0), (i, 0), _fond(st)) for i, st in enumerate(STATUTS)],
@@ -354,7 +453,7 @@ def _tableau_statuts(entites, debut, defaut, S):
             groupe = s["groupe"]
             data.append([Paragraph(f"<b>{_t(groupe)}</b>", S["cellule"])] + [""] * n)
             r = len(data) - 1
-            style += [("SPAN", (0, r), (-1, r)), ("BACKGROUND", (0, r), (-1, r), colors.HexColor("#f4f4f4"))]
+            style += [("SPAN", (0, r), (-1, r)), ("BACKGROUND", (0, r), (-1, r), GRIS)]
         ligne = [Paragraph(_t(s["solution"]), S["cellule"])]
         r = len(data)
         for i, x in enumerate(entites):
@@ -368,7 +467,7 @@ def _tableau_statuts(entites, debut, defaut, S):
 
 def _plan_action(res, d, S):
     """§ 3 : par solution, ce qui est engageable, à valider, en place, exclu."""
-    el = [PageBreak(), Paragraph("3. Plan d'action par solution", S["h1"]),
+    el = [PageBreak(), Titre1("3. Plan d'action par solution", S["h1"]),
           Paragraph("Pour chaque solution, les locaux et espaces sont classés selon la suite à donner. "
                     "« Engageable » : statut Recommandé ou À optimiser sans alerte maîtrise d'œuvre — la solution peut "
                     "faire l'objet d'une consultation d'entreprises ou de travaux en régie, après levée des éventuels "
@@ -422,7 +521,7 @@ def _plan_action(res, d, S):
 
 
 def _alertes(res, S, titre="4. Alertes et points de vigilance", saut=True):
-    el = ([PageBreak()] if saut else []) + [Paragraph(titre, S["h1"]),
+    el = ([PageBreak()] if saut else []) + [Titre1(titre, S["h1"]),
           Paragraph("Le type d'alerte (AL / VA) est proposé par l'outil d'après le tableau « Limites déclenchant une "
                     "alerte maîtrise d'œuvre » de la méthode.", S["petit"])]
     concernes = defaultdict(list)
@@ -453,7 +552,7 @@ def _donnees_manquantes(res, S, titre="5. Données manquantes"):
             for s in x["solutions"]:
                 if donnee_manquante(x, s):
                     lignes.append((nom(x, i, defaut), s["solution"], justification(x, s)[1]))
-    el = [Paragraph(titre, S["h1"])]
+    el = [Titre1(titre, S["h1"])]
     if not lignes:
         return el + [Paragraph("Aucune : tous les statuts sont établis sur des données renseignées.", S["base"])]
     el.append(Paragraph("Ces statuts « Sous réserve » ne traduisent pas un obstacle constaté mais une information "
@@ -496,7 +595,7 @@ def _table_reponses(lignes, S):
         if code == "section":
             data.append([Paragraph(f"<b>{_t(lib)}</b>", S["cellule"]), ""])
             style += [("SPAN", (0, len(data) - 1), (1, len(data) - 1)),
-                      ("BACKGROUND", (0, len(data) - 1), (1, len(data) - 1), colors.HexColor("#f4f4f4"))]
+                      ("BACKGROUND", (0, len(data) - 1), (1, len(data) - 1), GRIS)]
         else:
             data.append([Paragraph(f"{_t(lib)} <font color='#888888'>· {_t(code.removesuffix('b'))}</font>", S["cellule"]),
                          Paragraph(_t(_reponse(v)), S["cellule"])])
@@ -510,7 +609,7 @@ def _usagers(d, res, S, num):
     reponses = d.get("questionnaires") or []
     m = QU.matrice(reponses, res)
     syn, ind = m["synthese"], m["synthese"]["indicateurs"]
-    el = [PageBreak(), Paragraph(f"{num}. Ressenti des usagers", S["h1"]),
+    el = [PageBreak(), Titre1(f"{num}. Ressenti des usagers", S["h1"]),
           Paragraph(f"Questionnaire confort estival : <b>{syn['repondants']} répondant(s)</b>, synthèse pour l'ensemble "
                     "de l'établissement. Enquête déclarative ponctuelle : elle ne remplace pas une campagne de mesures ; "
                     "ses résultats sont indicatifs et servent à orienter et vérifier les préconisations.", S["base"])]
@@ -548,7 +647,7 @@ def _usagers(d, res, S, num):
                         f"locaux. Cohérent : ressenti et préconisation concordent. À vérifier : contradiction entre "
                         f"le ressenti et l'audit. Non corroboré : préconisation sans ressenti signalé (elle reste "
                         f"valable). Indicateur de cohérence : part des croisements évalués sans incohérence.", S["petit"]))
-    couleurs = {QU.COHERENT: "#d3f0db", QU.A_VERIFIER: "#ffe2c2", QU.NON_CORROBORE: "#e6e6e6", QU.NON_EVALUABLE: "#ffffff"}
+    couleurs = {QU.COHERENT: "#5bba50", QU.A_VERIFIER: "#ff5400", QU.NON_CORROBORE: "#e0e6de", QU.NON_EVALUABLE: "#ffffff"}
     data = [[Paragraph(h, S["entete"]) for h in ("Croisement", "Usagers", "Audit", "Résultat", "Commentaire")]]
     style = []
     for l in m["lignes"]:
@@ -571,7 +670,7 @@ def _fiches(res, d, S, num=6):
     from .questions import QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE, SECTIONS_LOCAL
 
     cb = res["batiment"]
-    el = [PageBreak(), Paragraph(f"{num}. Fiches détaillées", S["h1"]), Paragraph(f"{num}.1 Bâtiment", S["h2"])]
+    el = [PageBreak(), Titre1(f"{num}. Fiches détaillées", S["h1"]), Paragraph(f"{num}.1 Bâtiment", S["h2"])]
     el.append(_table_reponses(_questions_renseignees(SECTIONS_BATIMENT, d.get("batiment") or {}, cb, cb), S))
     facades = [(o, f) for o, f in (d.get("facades") or {}).items() if f.get("F-01")]
     if facades:
@@ -592,7 +691,7 @@ def _fiches(res, d, S, num=6):
             el.append(PageBreak())
             if i == 0:
                 el.append(Paragraph(titre, S["h2"]))
-            el.append(Paragraph(_t(nom(x, i, defaut)), S["h1"]))
+            el.append(Titre1(_t(nom(x, i, defaut)), S["h1"]))
             data = [[Paragraph(h, S["entete"]) for h in ("Solution", "Statut", "Justification (règle retenue)")]]
             style = []
             for s in x["solutions"]:
@@ -638,7 +737,7 @@ def _table_murs(l, questions_mur, S):
 
 def _annexe(d, S):
     p = {**PARAMETRES_DEFAUT, **(d.get("parametres") or {})}
-    el = [PageBreak(), Paragraph("Annexe — seuils utilisés", S["h1"])]
+    el = [PageBreak(), Titre1("Annexe — seuils utilisés", S["h1"])]
     data = [[Paragraph(h, S["entete"]) for h in ("Seuil", "Valeur", "Signification", "Règles")]]
     for q in REFERENTIEL["parametres"]:
         v = p[q["nom"]]
@@ -656,7 +755,7 @@ def _annexe(d, S):
 
 def _entete_resultats(audit, res, S):
     """En-tête du PDF « résultats seuls » : titre, identification, légende des statuts."""
-    el = [Paragraph("Résultats de l'audit de faisabilité d'actions d'adaptation", S["h1"])]
+    el = [Titre1("Résultats de l'audit de faisabilité d'actions d'adaptation", S["h1"])]
     ident = [f"<b>{_t(lib)}</b> : {_t(audit[k])}" for k, lib in CHAMPS_AUDIT if audit.get(k)]
     ident.append(f"<b>Périmètre</b> : {len(res['locaux'])} local(aux), {len(res['espaces'])} espace(s) extérieur(s)")
     ident.append(f"<b>Édité le</b> : {dt.date.today().strftime('%d/%m/%Y')}")
@@ -684,12 +783,13 @@ def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
 
     def pied(canvas, doc):
         canvas.saveState()
-        canvas.setFont("Helvetica", 7)
-        canvas.setFillColor(colors.HexColor("#666666"))
+        canvas.setFont(_polices()["texte"], 7)
+        canvas.setFillColor(NOIR)
         canvas.drawString(15 * mm, 9 * mm, f"Audit de faisabilité d'actions d'adaptation — {titre_pied}"
                           .encode("cp1252", "replace").decode("cp1252"))
         canvas.drawRightString(A4[0] - 15 * mm, 9 * mm, f"p. {doc.page}")
-        canvas.setStrokeColor(VERT)
+        canvas.setStrokeColor(BLEU)
+        canvas.setLineWidth(1.2)
         canvas.line(15 * mm, 12 * mm, A4[0] - 15 * mm, 12 * mm)
         canvas.restoreState()
 
