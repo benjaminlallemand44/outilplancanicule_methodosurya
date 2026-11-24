@@ -14,8 +14,24 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Dans la barre latérale, menu **Données** : charger l'exemple de l'Excel, importer un Excel de la
-méthode déjà rempli (`.xlsx`), exporter / réimporter une saisie (`.json`).
+Menu **Réglages** (en haut à droite) : charger un exemple, importer un Excel de la méthode déjà rempli
+(`.xlsx`), exporter / réimporter une saisie (`.json`, ou `.zip` avec les photos), notice d'utilisation.
+
+## Version, déploiement et gouvernance
+
+- **Branche de référence : `main`.** L'application Streamlit Cloud doit être déployée depuis `main`.
+  Les versions sont taguées (`v0.1-poc`, …) ; le numéro (`VERSION`) et le commit déployé sont affichés
+  en bas de chaque page de l'application.
+- **Dépendances figées** dans `requirements.txt` ; outils de test dans `requirements-dev.txt`.
+- **Intégration continue** (`.github/workflows/tests.yml`) : à chaque push, les tests hors recalcul de
+  l'Excel par LibreOffice et hors navigateur réel (`pytest -m "not excel and not interface"`).
+- **Page de présentation** statique dans `site/`, publiée par GitHub Pages
+  (`.github/workflows/pages.yml`).
+- **Notice d'utilisation** : `docs/notice_utilisation.md` (données, hébergement et mesure d'audience
+  de la plateforme, écarts avec l'Excel), aussi affichée dans l'application.
+- **Licences** : code sous licence MIT (`LICENSE`) ; contenu de la méthode © ACTEE et SURYA
+  Ingénierie, CC BY-SA 4.0 ; polices Bitter et Schibsted Grotesk sous SIL OFL 1.1
+  (`static/fonts/OFL-*.txt`) ; logos ACTEE et FNCCR hors licence MIT.
 
 ## Ce que fait l'outil
 

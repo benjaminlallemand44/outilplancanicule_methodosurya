@@ -251,11 +251,11 @@ def svg(donnees: dict, res: dict, largeur: float = 180 * mm) -> str | None:
     from pathlib import Path
     polices = Path(__file__).resolve().parent.parent / "static" / "fonts"
     faces = []
-    for fichier, graisse in (("SchibstedGrotesk-Medium.ttf", 500), ("SchibstedGrotesk-Bold.ttf", 700)):
+    for fichier, graisse in (("SchibstedGrotesk-Medium.woff2", 500), ("SchibstedGrotesk-Bold.woff2", 700)):
         if (polices / fichier).exists():
             b64 = base64.b64encode((polices / fichier).read_bytes()).decode()
             faces.append(f"@font-face{{font-family:'Schibsted Grotesk';font-weight:{graisse};"
-                         f"src:url(data:font/ttf;base64,{b64}) format('truetype');}}")
+                         f"src:url(data:font/woff2;base64,{b64}) format('woff2');}}")
     for nom, graisse in (("Schibsted-Medium", 500), ("Schibsted-Bold", 700), ("Helvetica-Bold", 700), ("Helvetica", 500)):
         s = s.replace(f"font-family: {nom};", f"font-family: 'Schibsted Grotesk', Arial, sans-serif; font-weight: {graisse};")
     if faces:

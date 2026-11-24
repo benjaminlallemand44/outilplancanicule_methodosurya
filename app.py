@@ -23,7 +23,7 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-from surya import moteur, plan
+from surya import moteur, plan, version
 from surya import questionnaire as QU
 from surya.import_excel import ImportImpossible, importer
 from surya.stockage import DepotMemoire
@@ -334,10 +334,17 @@ def ecran_depart():
 
     with st.expander("Reprendre une saisie existante ou essayer avec un exemple"):
         bloc_donnees(prefixe="depart")
+    with st.expander("Notice d'utilisation : vos données, l'hébergement, le lien avec l'Excel"):
+        notice()
     st.divider()
     st.caption(f"{REFERENTIEL['version']}. © 2026 ACTEE et SURYA Ingénierie — contenu de la méthode diffusé sous "
                "licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr). Maquette : les "
                "données ne sont pas enregistrées sur un serveur ; exportez la saisie pour la conserver.")
+
+
+def notice():
+    texte = (RACINE / "docs" / "notice_utilisation.md").read_text(encoding="utf-8")
+    st.markdown(texte.split("\n", 1)[1].replace("\n## ", "\n#### "))
 
 
 def demarrer(mode: str):
@@ -1193,7 +1200,9 @@ def vue_reglages():
         ss.vue = "parcours"
         st.rerun()
     st.title("Réglages")
-    t1, t2 = st.tabs(["Données", "Seuils des règles"])
+    t1, t2, t3 = st.tabs(["Données", "Seuils des règles", "Notice d'utilisation"])
+    with t3:
+        notice()
     with t1:
         st.caption("Maquette : rien n'est enregistré sur un serveur. Exportez la saisie (JSON) pour la conserver et "
                    "la réimporter plus tard.")
@@ -1241,4 +1250,5 @@ else:
     ss.etape = min(ss.etape, len(etapes()) - 1)
     entete()
     ETAPES[etapes()[ss.etape]]()
+st.caption(f"<div style='text-align:right;margin-top:2rem'>{version.libelle()}</div>", unsafe_allow_html=True)
 remonter()

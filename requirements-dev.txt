@@ -1,0 +1,3 @@
+# Outils de test (en plus de requirements.txt). Les tests lisent aussi les PDF avec pdftotext (poppler-utils).
+pytest==9.2.0
+pdfplumber==0.11.10

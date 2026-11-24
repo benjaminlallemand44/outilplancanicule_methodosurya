@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit de faisabilité d'actions d'adaptation — ACTEE</title>
+<meta name="description" content="Outil de test de la méthode SURYA Ingénierie / ACTEE : statut de faisabilité des solutions de confort d'été pour chaque local et espace extérieur d'une école, compte rendu orienté décision.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Audit de faisabilité d'actions d'adaptation — ACTEE">
+<meta property="og:description" content="Plan rafraîchissement des écoles : outil de test de la méthode SURYA Ingénierie / ACTEE.">
+<meta property="og:image" content="https://benjaminlallemand44.github.io/outilplancanicule_methodosurya/img/apercu.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/favicon.png">
+<style>
+  @font-face { font-family: "Bitter"; font-weight: 900; src: url(fonts/Bitter-Black.woff2) format("woff2"); font-display: swap; }
+  @font-face { font-family: "Schibsted Grotesk"; font-weight: 500; src: url(fonts/SchibstedGrotesk-Medium.woff2) format("woff2"); font-display: swap; }
+  @font-face { font-family: "Schibsted Grotesk"; font-weight: 700; src: url(fonts/SchibstedGrotesk-Bold.woff2) format("woff2"); font-display: swap; }
+  @font-face { font-family: "Schibsted Grotesk"; font-weight: 800; src: url(fonts/SchibstedGrotesk-ExtraBold.woff2) format("woff2"); font-display: swap; }
+  :root { --bleu: #0a17a6; --orange: #ff5400; --cyan: #0dcccc; --lila: #d1bffc; --noir: #000; --blanc: #fff; --gris: #e0e6de; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--blanc); color: var(--noir); font: 500 17px/1.55 "Schibsted Grotesk", Arial, sans-serif; }
+  .page { max-width: 1040px; margin: 0 auto; padding: 28px 16px 48px; }
+  header img { width: 190px; height: auto; display: block; }
+  .une { display: grid; grid-template-columns: 1fr 220px; gap: 40px; align-items: end; margin: 48px 0 40px; }
+  h1 { font: 900 clamp(2rem, 5vw, 3.2rem)/1.08 "Bitter", Georgia, serif; margin: 0 0 14px; }
+  h1::after { content: ""; display: block; width: 160px; height: 8px; background: var(--noir); margin-top: 18px; }
+  h2 { font: 900 1.6rem/1.2 "Bitter", Georgia, serif; margin: 44px 0 14px; }
+  .chapo { font-weight: 800; font-size: 1.15rem; color: var(--bleu); margin: 0 0 22px; }
+  .bouton { display: inline-block; background: var(--bleu); color: var(--blanc); font-weight: 700; padding: 14px 26px; text-decoration: none; }
+  .bouton:hover, .bouton:focus-visible { background: var(--noir); outline: none; }
+  .grille { display: grid; grid-template-columns: 1fr 1fr; width: 220px; height: 220px; }
+  .grille div { position: relative; overflow: hidden; }
+  .g1 { background: var(--bleu); } .g2 { background: var(--orange); } .g3 { background: var(--cyan); } .g4 { background: var(--lila); }
+  .g1::after { content: ""; position: absolute; inset: 22%; border-radius: 50%; background: var(--orange); }
+  .g2::after { content: ""; position: absolute; inset: 28%; border-radius: 50%; background: var(--lila); }
+  .g4::after { content: ""; position: absolute; left: 0; top: 0; width: 200%; height: 200%; border-radius: 50%; background: var(--bleu); }
+  .etapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0; list-style: none; }
+  .etapes li { border: 2px solid var(--bleu); padding: 16px; }
+  .etapes b { display: block; font: 900 2rem/1 "Bitter", Georgia, serif; color: var(--orange); margin-bottom: 8px; }
+  .encart { background: var(--bleu); color: var(--blanc); padding: 16px 20px; margin-top: 28px; }
+  .encart a { color: var(--blanc); }
+  ul.carre { padding-left: 1.2em; list-style: square; }
+  footer { margin-top: 56px; border-top: 2px solid var(--noir); padding-top: 14px; font-size: 0.85rem; }
+  footer a { color: var(--bleu); }
+  @media (max-width: 720px) {
+    .une { grid-template-columns: 1fr; gap: 24px; margin-top: 32px; }
+    .grille { width: 140px; height: 140px; }
+    .etapes { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header><img src="img/actee-fnccr-couleur.png" alt="ACTEE — Action des Collectivités Territoriales pour l'Efficacité Énergétique, FNCCR"></header>
+
+  <section class="une">
+    <div>
+      <h1>Audit de faisabilité d'actions d'adaptation</h1>
+      <p class="chapo">Plan rafraîchissement des écoles — outil de test de la méthode SURYA Ingénierie / ACTEE</p>
+      <p>À partir des relevés d'une visite, l'outil établit pour chaque local et chaque espace extérieur d'une école le
+        <strong>statut de faisabilité</strong> de chaque solution de confort d'été : brasseurs d'air, ventilation nocturne,
+        protections solaires, toiture, charges internes, ombrage de la cour.</p>
+      <p><a class="bouton" href="https://outilplancanicule.streamlit.app/">Ouvrir l'outil</a></p>
+    </div>
+    <div class="grille" aria-hidden="true"><div class="g1"></div><div class="g2"></div><div class="g3"></div><div class="g4"></div></div>
+  </section>
+
+  <h2>Deux usages</h2>
+  <ul class="carre">
+    <li><strong>Résultats de faisabilité</strong> : l'équivalent de l'Excel de la méthode. Statuts par local et par espace,
+      PDF des résultats, tableau CSV.</li>
+    <li><strong>Diagnostic complet</strong> : la même saisie, avec l'identification de l'audit, les observations, les
+      photos et le questionnaire usagers. Il produit un compte rendu orienté décision : synthèse en une page, plan
+      simplifié, pistes d'action dans l'ordre de mise en œuvre.</li>
+  </ul>
+
+  <h2>Un ordre de mise en œuvre</h2>
+  <ol class="etapes">
+    <li><b>1.</b><strong>Dès maintenant</strong><br>Usages, réglages et remise en état, par l'exploitant ou en régie.</li>
+    <li><b>2.</b><strong>Petits travaux</strong><br>Équipements légers, consultation simple, pendant les vacances d'été.</li>
+    <li><b>3.</b><strong>Travaux sur le bâtiment</strong><br>Enveloppe, toiture, structures : à programmer, souvent avec une maîtrise d'œuvre.</li>
+  </ol>
+
+  <div class="encart">
+    <strong>Maquette.</strong> L'outil sert à éprouver la méthode et le parcours de saisie. La saisie n'est pas
+    enregistrée sur un serveur : elle s'exporte et se réimporte en fichier. L'application est hébergée sur Streamlit
+    Community Cloud, qui ajoute ses propres outils de mesure d'audience.
+    <a href="https://github.com/benjaminlallemand44/outilplancanicule_methodosurya/blob/main/docs/notice_utilisation.md">Lire la notice d'utilisation</a>.
+  </div>
+
+  <footer>
+    Méthode : © 2026 ACTEE et SURYA Ingénierie, licence <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr">CC BY-SA 4.0</a>.
+    Code : licence MIT. Polices Bitter et Schibsted Grotesk : SIL Open Font License 1.1.
+  </footer>
+</div>
+</body>
+</html>

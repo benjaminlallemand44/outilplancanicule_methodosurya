@@ -21,40 +21,40 @@ buttonRadius = "none"
 
 [[theme.fontFaces]]
 family = "Schibsted Grotesk"
-url = "app/static/fonts/SchibstedGrotesk-Medium.ttf"
+url = "app/static/fonts/SchibstedGrotesk-Medium.woff2"
 weight = "400"
 
 [[theme.fontFaces]]
 family = "Schibsted Grotesk"
-url = "app/static/fonts/SchibstedGrotesk-Medium.ttf"
+url = "app/static/fonts/SchibstedGrotesk-Medium.woff2"
 weight = "500"
 
 [[theme.fontFaces]]
 family = "Schibsted Grotesk"
-url = "app/static/fonts/SchibstedGrotesk-Bold.ttf"
+url = "app/static/fonts/SchibstedGrotesk-Bold.woff2"
 weight = "600"
 
 [[theme.fontFaces]]
 family = "Schibsted Grotesk"
-url = "app/static/fonts/SchibstedGrotesk-Bold.ttf"
+url = "app/static/fonts/SchibstedGrotesk-Bold.woff2"
 weight = "700"
 
 [[theme.fontFaces]]
 family = "Schibsted Grotesk"
-url = "app/static/fonts/SchibstedGrotesk-ExtraBold.ttf"
+url = "app/static/fonts/SchibstedGrotesk-ExtraBold.woff2"
 weight = "800"
 
 [[theme.fontFaces]]
 family = "Schibsted Grotesk"
-url = "app/static/fonts/SchibstedGrotesk-Black.ttf"
+url = "app/static/fonts/SchibstedGrotesk-Black.woff2"
 weight = "900"
 
 [[theme.fontFaces]]
 family = "Bitter"
-url = "app/static/fonts/Bitter-ExtraBold.ttf"
+url = "app/static/fonts/Bitter-ExtraBold.woff2"
 weight = "800"
 
 [[theme.fontFaces]]
 family = "Bitter"
-url = "app/static/fonts/Bitter-Black.ttf"
+url = "app/static/fonts/Bitter-Black.woff2"
 weight = "900"
