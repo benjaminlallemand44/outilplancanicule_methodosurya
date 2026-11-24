@@ -8,7 +8,7 @@ portant dans l'outil :
 - le document « Méthode de l'audit de faisabilité d'actions d'adaptation » (version 01 du 27/10/2026) ;
 - le « Questionnaire confort estival » (version 01 du 11/11/2026).
 
-Chaque point a été revérifié sur l'outil, et par la campagne de tests. Six catégories :
+Chaque point a été revérifié sur l'outil, et par la campagne de tests. Sept catégories :
 
 - **A. Erreurs de l'Excel** : des références cassées. La correction ne fait pas débat, mais elle change
   des résultats ; à valider.
@@ -18,6 +18,7 @@ Chaque point a été revérifié sur l'outil, et par la campagne de tests. Six c
 - **D. Écarts entre l'Excel et le document de méthode.**
 - **E. Questionnaire usagers** : matrice de correspondance proposée et points à préciser.
 - **F. Questions de méthode issues de la campagne de tests.**
+- **G. Compte rendu orienté décision** : ordre de mise en œuvre, synthèse, plan simplifié.
 
 Les décisions déjà prises sont regroupées à la fin.
 
@@ -360,6 +361,48 @@ d'avant 1997, comme PR-AL3 ?
 L'Excel lit « 0,2 < diamètre / (√surface / nombre) < 0,4 » avec des bornes exclues ; l'image de
 l'équation dans la méthode (III.a.i-4) ne permet pas de le confirmer.
 
+## G. Compte rendu orienté décision (propositions)
+
+Le compte rendu complet commence par 5 parties courtes pensées pour la décision : synthèse en une page,
+bâtiment et plan simplifié, ressenti des usagers, pistes d'action dans l'ordre de mise en œuvre, ce
+qu'il reste à lever avant de consulter. Le détail (statuts, plan d'action par local, fiches, seuils)
+passe en annexes A à H. Trois choix sont des propositions de l'outil, absentes de la méthode.
+
+### G1. Ordre de mise en œuvre en trois étapes
+
+| Étape | Contenu | Solutions |
+|---|---|---|
+| 1. Dès maintenant | Usages, réglages et remise en état : par l'exploitant ou en régie, coût nul ou faible, effet dès l'été qui vient | Occupation, Équipements (extinction, déplacement) ; ventilation naturelle nocturne sans grilles à poser (consignes d'ouverture) ; ventilation mécanique nocturne (programmation) ; tout équipement « À optimiser » déjà présent : brasseurs, protections solaires, protections des fenêtres de toit et vérandas (réparer, régler, remettre en service) |
+| 2. Petits travaux | Équipements légers sans intervention sur la structure : consultation simple, réalisables pendant les vacances d'été | Brasseurs d'air (pose), films solaires, éclairage LED, protections des fenêtres de toit, ventilation naturelle nocturne avec grilles ou ventelles à poser (VN-AL1), ombrage autoportant ou végétal de la cour |
+| 3. Travaux sur le bâtiment | Interventions sur l'enveloppe, la toiture ou les structures : à programmer, souvent avec une maîtrise d'œuvre | Protections verticales et horizontales (pose), vérandas et verrières, toiture, ombrage adossé au bâtiment, adaptation du préau |
+
+Une solution « À valider » garde l'étape qu'elle aurait une fois la validation obtenue. Dans chaque
+étape, les solutions sont classées par nombre de personnes concernées (effectif des locaux).
+
+**À trancher :**
+
+- le classement de chaque solution, notamment les plantations (étape 2, mais effet sur plusieurs
+  années : à lancer tôt ?) et les stores extérieurs (étape 3, ou étape 2 s'ils se posent sans
+  maîtrise d'œuvre ?) ;
+- le critère de classement dans une étape : effectif seul, ou aussi la sensibilité du public
+  (maternelle, dortoir), l'exposition (dernier niveau, plein sud) et le ressenti des usagers ;
+- l'ajout d'ordres de grandeur de coût et d'efficacité par solution, qui permettraient de passer
+  d'un ordre logique à une vraie priorisation.
+
+### G2. Solutions principales de la synthèse
+
+La page 1 retient les 7 couples « solution × étape » qui concernent le plus de personnes, rangés par
+étape, puis 3 solutions à valider. Elle cite pour chacune les 3 lieux les plus fréquentés. À valider.
+
+### G3. Plan simplifié
+
+Schéma de principe, sans géométrie réelle : une ligne par niveau (L-09), une boîte par local de
+largeur proportionnelle à la surface (même échelle pour tous les niveaux), couleur selon le nombre de
+solutions à engager, trait orange sur les côtés qui ont des baies (N en haut, S en bas, E à droite,
+O à gauche), disque orange en cas d'alerte maîtrise d'œuvre. Les espaces extérieurs forment la
+dernière ligne. Un plan réel demanderait la position des locaux (aile, voisinage) ou l'import d'un
+plan de l'établissement.
+
 ## Décisions déjà prises
 
 | Point | Décision |
@@ -370,4 +413,5 @@ l'équation dans la méthode (III.a.i-4) ne permet pas de le confirmer.
 | Ordre des étapes | Bâtiment (bloc par bloc en pas à pas), Locaux, Espaces extérieurs, puis Façades. |
 | Réglages | Seuils et import / export dans un menu « Réglages » discret. |
 | Questionnaire usagers | Collecte par questionnaire en ligne, ou import d'un fichier au même format ; synthèse globale pour l'établissement (pas de rattachement aux locaux) ; matrice de correspondance proposée par l'outil (E1). |
+| Compte rendu complet | Orienté décision : synthèse en une page, présentation du bâtiment, rapprochement usagers / visite, détail en annexe. |
 | Base de données | Supabase dans une étape ultérieure ; la maquette ne stocke aucune donnée, mais le code est prêt (`surya/stockage.py`, `docs/supabase.md`). |

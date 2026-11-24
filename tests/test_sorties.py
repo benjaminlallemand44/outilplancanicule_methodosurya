@@ -418,9 +418,9 @@ def test_partie_usagers_et_numerotation(sortie):
     _, _, _, avec = sortie("exemple + usagers")
     _, _, _, sans = sortie("exemple Excel")
     ta, ts = sorties.texte(avec), sorties.texte(sans)
-    assert "3. Ressenti des usagers et résultats de la visite" in ta and "4. Pistes d'action par solution" in ta
+    assert "3. Ressenti des usagers et résultats de la visite" in ta and "4. Pistes d'action, dans l'ordre de mise en œuvre" in ta
     assert "5. Avant de consulter" in ta and "Annexe F — Questionnaire usagers" in ta
-    assert "Ressenti des usagers" not in ts and "3. Pistes d'action par solution" in ts
+    assert "Ressenti des usagers" not in ts and "3. Pistes d'action, dans l'ordre de mise en œuvre" in ts
     assert "4. Avant de consulter" in ts and "Annexe F" not in ts
     # ordre : synthèse et bâtiment d'abord, détail en annexe
     for t in (ta, ts):
@@ -472,3 +472,67 @@ def test_a_completer_ne_cite_que_les_questions_vides():
     x = moteur.calculer(donnees(local={"BA-18": S_}))["locaux"][0]
     texte = justification(x, solution(x, "Par ventilation mécanique nocturne"))[1]
     assert "BA-18" in texte and "L-03" not in texte
+
+
+# ------------------------------------------------------------------ ordre de mise en œuvre et plan simplifié
+def test_phases_de_mise_en_oeuvre():
+    from surya.rapport import phase
+    R, O = moteur.RECOMMANDE, moteur.A_OPTIMISER
+    assert phase("Occupation", R) == phase("Équipements", R) == 1
+    assert phase("Par ventilation naturelle nocturne", R) == 1
+    assert phase("Par ventilation naturelle nocturne", R, ["VN-AL1"]) == 2  # grilles ou ventelles à poser
+    assert phase("Mise en place de brasseurs d'air plafonniers", O) == 1  # remise en service
+    assert phase("Mise en place de brasseurs d'air plafonniers", R) == 2
+    assert phase("Films solaires", R) == phase("Éclairage", R) == 2
+    assert phase("Protections verticales", O) == 1 and phase("Protections verticales", R) == 3
+    for sol in ("Toiture", "Ombrage rapporté adossé au bâtiment", "Adaptation d'un préau existant"):
+        assert phase(sol, R) == 3
+
+
+def test_toute_solution_a_une_phase():
+    from surya.rapport import phase
+    res = moteur.calculer({"locaux": [{}], "espaces": [{}]})
+    for x in res["locaux"] + res["espaces"]:
+        for s in x["solutions"]:
+            for st in (moteur.RECOMMANDE, moteur.A_OPTIMISER, moteur.SOUS_RESERVE):
+                assert phase(s["solution"], st) in (1, 2, 3)
+
+
+@pytest.mark.parametrize("jeu", list(JEUX))
+def test_pistes_par_etape_reprennent_toutes_les_solutions_a_engager(sortie, jeu):
+    """Chaque couple « à engager » de l'annexe C apparaît dans les pistes (partie 3 ou 4)."""
+    d, res, _, pdf = sortie(jeu)
+    if not (res["locaux"] or res["espaces"]):
+        return
+    t = " ".join(sorties.texte(pdf).split())
+    pistes = t[t.index("Pistes d'action, dans l'ordre"):t.index("Avant de consulter")]
+    for cle, defaut in (("locaux", "Local"), ("espaces", "Espace")):
+        for nom_, x in zip(_noms(res, cle, defaut), res[cle]):
+            if any(s["statut"] in (moteur.RECOMMANDE, moteur.A_OPTIMISER) for s in x["solutions"]):
+                assert _norm(nom_) in _norm(pistes), nom_
+    etapes = [e for e in ("Étape 1 — Dès maintenant", "Étape 2 — Petits travaux", "Étape 3 — Travaux sur le bâtiment")
+              if e in pistes]
+    assert [pistes.index(e) for e in etapes] == sorted(pistes.index(e) for e in etapes)
+
+
+def test_plan_simplifie():
+    from surya import plan
+    d = json.loads((RACINE / "surya" / "exemple_ecole_sud.json").read_text(encoding="utf-8"))
+    res = moteur.calculer(d)
+    lignes = plan._boites(d, res)
+    assert [l for l, _ in lignes] == ["Dernier niveau", "RDC", "Extérieur"]
+    assert sum(len(b) for _, b in lignes) == len(res["locaux"]) + len(res["espaces"])
+    cp = next(b for _, bs in lignes for b in bs if b["nom"].startswith("Classe CP"))
+    assert set(cp["orient"]) == {"S", "N"} and cp["n"] == plan.a_engager(res["locaux"][0])
+    assert plan.dessin({}, moteur.calculer({})) is None
+    s = plan.svg(d, res)
+    assert s.startswith("<svg") and 'width="100%"' in s and "Classe CP" in s
+    t = sorties.texte(generer_pdf(d))
+    assert "Plan simplifié" in t
+
+
+def test_plan_simplifie_cas_degeneres():
+    from surya import plan
+    for d in ({"locaux": [{}]}, {"espaces": [{}]}, {"locaux": [{"L-09": "Sous-sol", "L-03": 0}] * 25}):
+        res = moteur.calculer(d)
+        assert plan.dessin(d, res) is not None and plan.svg(d, res)

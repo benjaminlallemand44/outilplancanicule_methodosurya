@@ -12,6 +12,7 @@ délégué à ``surya.moteur`` et le PDF à ``surya.rapport``, qui ne dépendent
 from __future__ import annotations
 
 import csv
+import base64
 import html
 import io
 import json
@@ -22,7 +23,7 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-from surya import moteur
+from surya import moteur, plan
 from surya import questionnaire as QU
 from surya.import_excel import ImportImpossible, importer
 from surya.stockage import DepotMemoire
@@ -1166,6 +1167,11 @@ def etape_documents():
                     ss.etape_max = len(etapes()) - 1
                     ss.message = None
                     aller("Identification")
+    schema = plan.svg(D, res)
+    if schema:
+        st.subheader("Plan simplifié")
+        img = base64.b64encode(schema.encode("utf-8")).decode()
+        st.html(f"<img alt='Plan simplifié' style='width:100%;max-width:900px' src='data:image/svg+xml;base64,{img}'>")
     st.markdown(" ".join(pastille(s) for s in COULEURS), unsafe_allow_html=True)
     for titre, cle_, defaut in (("Locaux", "locaux", "Local"), ("Espaces extérieurs", "espaces", "Espace")):
         entites = res[cle_]

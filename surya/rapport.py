@@ -31,7 +31,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (CondPageBreak, Flowable, Image, KeepTogether, PageBreak, Paragraph,
                                 SimpleDocTemplate, Spacer, Table, TableStyle)
 
-from . import moteur
+from . import moteur, plan
 from .moteur import (A_OPTIMISER, EN_PLACE, NON_CONCERNE, NON_RECOMMANDE, PARAMETRES_DEFAUT, RECOMMANDE, REFERENTIEL,
                      REGLES, SOUS_RESERVE)
 
@@ -792,6 +792,36 @@ SUITES = {"engager": "À engager", "valider": "À valider avant de consulter", "
           "en_place": "Déjà en place", "exclue": "Écartée"}
 COULEURS_SUITE = {"engager": "#5bba50", "valider": "#ffc300", "completer": "#e0e6de"}
 
+# Ordre de mise en œuvre — PROPOSITION (docs/points_a_trancher.md, § G) : trois étapes, de la moins
+# coûteuse et la plus rapide à la plus lourde. Une solution « À valider » garde l'étape qu'elle aurait
+# une fois la validation obtenue.
+PHASES = {
+    1: ("Étape 1 — Dès maintenant", "Usages, réglages et remise en état : par l'exploitant ou en régie, coût nul "
+        "ou faible, effet dès l'été qui vient."),
+    2: ("Étape 2 — Petits travaux", "Équipements légers, sans intervention sur la structure : consultation simple, "
+        "réalisables pendant les vacances d'été."),
+    3: ("Étape 3 — Travaux sur le bâtiment", "Interventions sur l'enveloppe, la toiture ou les structures : "
+        "à programmer, souvent avec une maîtrise d'œuvre."),
+}
+COULEURS_PHASE = {1: "#5bba50", 2: "#0dcccc", 3: "#8dc8f8"}
+REMISE_EN_ETAT = ("Mise en place de brasseurs d'air plafonniers", "Protections verticales", "Protections horizontales",
+                  "Sur fenêtres de toiture", "Sur vérandas et/ou verrières")
+PETITS_TRAVAUX = ("Mise en place de brasseurs d'air plafonniers", "Films solaires", "Éclairage", "Sur fenêtres de toiture",
+                  "Ombrage autoportant ou végétal de la cour")
+
+
+def phase(solution: str, statut: str, alertes=()) -> int:
+    """Étape de mise en œuvre proposée pour une solution dans un local ou un espace."""
+    if solution in ("Occupation", "Équipements", "Par ventilation mécanique nocturne"):
+        return 1  # organisation, extinction, programmation horaire de la ventilation
+    if solution == "Par ventilation naturelle nocturne":
+        return 2 if "VN-AL1" in alertes else 1  # consignes d'ouverture ; grilles ou ventelles à poser sinon
+    if statut == A_OPTIMISER and solution in REMISE_EN_ETAT:
+        return 1  # équipement présent : réparer, régler, remettre en service
+    if solution in PETITS_TRAVAUX:
+        return 2
+    return 3
+
 
 def _poids(entree: dict, cle: str) -> float:
     """Nombre de personnes concernées (effectif du local ou de l'espace), 1 à défaut."""
@@ -833,7 +863,8 @@ def _bilan(res: dict, d: dict) -> list[dict]:
                 else:
                     continue
                 b[k].append({"nom": nom(x, i, defaut), "poids": _poids(entree, cle), "statut": s["statut"],
-                             "x": x, "s": s, "entree": entree})
+                             "x": x, "s": s, "entree": entree,
+                             "phase": phase(s0["solution"], s["statut"], s["alertes"])})
             for k in SUITES:
                 b[k].sort(key=lambda e: -e["poids"])
             b["score"] = sum(e["poids"] for e in b["engager"]) + 0.5 * sum(e["poids"] for e in b["valider"])
@@ -962,33 +993,42 @@ def _synthese_decision(d, res, S):
     if audit.get("synthese"):
         el += [Paragraph("L'avis de l'auditeur", S["h2"]), Paragraph(_t(audit["synthese"]), S["base"])]
 
-    # solutions principales
-    el.append(Paragraph("Les solutions principales", S["h2"]))
+    # solutions principales, dans l'ordre de mise en œuvre
+    el.append(Paragraph("Les solutions principales, dans l'ordre de mise en œuvre", S["h2"]))
     if not engager:
         el.append(Paragraph("Aucune solution n'est engageable en l'état : voir les validations à obtenir.", S["base"]))
+    candidats = []
+    for b in engager:
+        for ph in sorted({e["phase"] for e in b["engager"]}):
+            ent = [e for e in b["engager"] if e["phase"] == ph]
+            candidats.append((ph, -sum(e["poids"] for e in ent), b, ent))
+    candidats.sort(key=lambda c: c[1])
+    retenus = sorted(candidats[:7], key=lambda c: (c[0], c[1]))  # les plus utiles, rangés par étape
     lignes = []
-    for b in engager[:6]:
+    for ph, _, b, ent in retenus:
         quoi = f"<b>{_t(b['libelle'])}</b>"
-        ou = _lieux(b["engager"])
-        pers = _personnes(b["engager"])
-        detail = f"{_t(ou)}" + (f" · {pers}" if pers else "")
+        if ph == 1 and all(e["statut"] == A_OPTIMISER for e in ent) and b["solution"] in REMISE_EN_ETAT:
+            quoi += " <font size='6.5'>(remise en état)</font>"
+        detail = _t(_lieux(ent)) + (f" · {_personnes(ent)}" if _personnes(ent) else "")
         if usagers.get(b["solution"]):
             detail += f"<br/><font color='#0a17a6'>Confirmé par les usagers : {_t(usagers[b['solution']][0])}</font>"
-        lignes.append(("engager", quoi, detail))
+        lignes.append((PHASES[ph][0].split(" — ")[0], COULEURS_PHASE[ph], quoi, detail))
     valider = sorted([b for b in bil if b["valider"]], key=lambda b: -sum(e["poids"] for e in b["valider"]))
     for b in valider[:3]:
-        lignes.append(("valider", f"<b>{_t(b['libelle'])}</b>", _t(_lieux(b["valider"])) + " · " + _t(_raison_valider(b))))
+        lignes.append(("À valider", COULEURS_SUITE["valider"], f"<b>{_t(b['libelle'])}</b>",
+                       _t(_lieux(b["valider"])) + " · " + _t(_raison_valider(b))))
     if lignes:
         data, style = [], []
-        for k, quoi, detail in lignes:
-            data.append([Paragraph(SUITES[k], S["statut"]), Paragraph(quoi, S["cellule"]), Paragraph(detail, S["cellule"])])
-            style.append(("BACKGROUND", (0, len(data) - 1), (0, len(data) - 1), colors.HexColor(COULEURS_SUITE[k])))
-        t = Table(data, colWidths=[30 * mm, 62 * mm, 88 * mm])
+        for tag, coul, quoi, detail in lignes:
+            data.append([Paragraph(tag, S["statut"]), Paragraph(quoi, S["cellule"]), Paragraph(detail, S["cellule"])])
+            style.append(("BACKGROUND", (0, len(data) - 1), (0, len(data) - 1), colors.HexColor(coul)))
+        t = Table(data, colWidths=[22 * mm, 66 * mm, 92 * mm])
         t.setStyle(TableStyle(style + [("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                                        ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor("#9aa39a")),
                                        ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]))
         el.append(t)
-        el.append(Paragraph(f"Classement par nombre de personnes concernées. Le détail figure à la partie {n_pistes}.", S["petit"]))
+        el.append(Paragraph("Étape 1 : usages, réglages, remise en état · Étape 2 : petits travaux · Étape 3 : travaux "
+                            f"sur le bâtiment (ordre proposé). Le détail figure à la partie {n_pistes}.", S["petit"]))
 
     # points de vigilance
     el.append(Paragraph("Points de vigilance", S["h2"]))
@@ -1062,6 +1102,9 @@ def _presentation(d, res, S):
     facades = [o for o, f in (d.get("facades") or {}).items() if f.get("F-01")]
     if facades:
         el.append(Paragraph(f"Façades décrites : {', '.join(facades)}.", S["base"]))
+    schema = plan.dessin(d, res)
+    if schema is not None:
+        el += [Paragraph("Plan simplifié", S["h2"]), schema]
     locaux = d.get("locaux") or []
     if res["locaux"]:
         el.append(Paragraph(f"Locaux visités ({per['nb_locaux']} local(aux)"
@@ -1099,53 +1142,73 @@ def _presentation(d, res, S):
 
 
 def _pistes(d, res, S, num):
-    """Pistes d'action par solution, rédigées : où engager, où valider, ce qui manque."""
+    """Pistes d'action rédigées, rangées par étape de mise en œuvre puis par personnes concernées."""
     bil = [b for b in _bilan(res, d) if b["engager"] or b["valider"] or b["completer"]]
     usagers = _ressentis_par_solution(d)
-    el = [PageBreak(), Titre1(f"{num}. Pistes d'action par solution", S["h1"]),
-          Paragraph("Les solutions sont classées par nombre de personnes concernées. <b>À engager</b> : statut "
-                    "Recommandé ou À optimiser sans alerte de maîtrise d'œuvre ; la solution peut faire l'objet d'une "
-                    "consultation d'entreprises ou de travaux en régie. <b>À valider</b> : une étude ou une vérification "
-                    "technique est nécessaire avant de consulter. Les quantités sont celles relevées lors de la visite ; "
-                    "le détail par local figure en annexe C.", S["petit"])]
+    el = [PageBreak(), Titre1(f"{num}. Pistes d'action, dans l'ordre de mise en œuvre", S["h1"]),
+          Paragraph("Ordre proposé, en trois étapes, de la plus simple à la plus lourde. Dans chaque étape, les "
+                    "solutions sont classées par nombre de personnes concernées. <b>À engager</b> : statut Recommandé "
+                    "ou À optimiser sans alerte de maîtrise d'œuvre ; consultation d'entreprises ou travaux en régie. "
+                    "<b>À valider</b> : une étude ou une vérification technique est nécessaire avant de consulter. "
+                    "Les quantités sont celles relevées lors de la visite ; le détail par local figure en annexe C.",
+                    S["petit"])]
     if not bil:
         return el + [Paragraph("Aucune solution à engager ni à valider.", S["base"])]
-    for b in bil:
-        bloc = [Paragraph(_t(b["libelle"]), S["h3"])]
-        if b["engager"]:
-            lieux = " ; ".join(f"{_t(e['nom'])} ({_t(quantites(b['solution'], e['entree']))})"
-                              if quantites(b["solution"], e["entree"]) else _t(e["nom"]) for e in b["engager"])
-            optim = [e["nom"] for e in b["engager"] if e["statut"] == A_OPTIMISER]
-            txt = f"<b>À engager</b>{' (' + _personnes(b['engager']) + ')' if _personnes(b['engager']) else ''} : {lieux}."
-            if optim:
-                txt += f" Existant à améliorer : {_t(', '.join(optim))}."
-            va = {a for e in b["engager"] for a in e["s"]["alertes"] if TYPES_ALERTE.get(a) == "VA"}
-            if va:
-                txt += " Point à faire valider par un professionnel : " + " ; ".join(_t(SUJETS_ALERTE.get(a, a)) for a in sorted(va)) + "."
-            bloc.append(Paragraph(txt, S["puce"], bulletText="n"))
-        if b["valider"]:
-            par_motif = defaultdict(list)  # un même motif pour plusieurs locaux : cité une fois
-            for e in b["valider"]:
-                al = [a for a in e["s"]["alertes"] if TYPES_ALERTE.get(a) == "AL"]
-                motif = SUJETS_ALERTE.get(al[0], _court(REGLES[al[0]]["regle"])) if al else _court(_motif(justification(e["x"], e["s"])[1]), 130)
-                par_motif[motif].append(e["nom"])
-            details = [f"{_t(', '.join(noms))} ({_t(m[0].lower() + m[1:])})" for m, noms in par_motif.items()]
-            bloc.append(Paragraph("<b>À valider avant de consulter</b> : " + " ; ".join(details) + ".", S["puce"], bulletText="n"))
-        if b["completer"]:
-            bloc.append(Paragraph("<b>Données à compléter</b> : " + _t(", ".join(e["nom"] for e in b["completer"]))
-                                  + " (voir annexe E).", S["puce"], bulletText="n"))
-        reste = []
-        if b["en_place"]:
-            reste.append("déjà en place : " + ", ".join(e["nom"] for e in b["en_place"]))
-        if b["exclue"]:
-            reste.append("écartée : " + ", ".join(e["nom"] for e in b["exclue"]))
-        if reste:
-            bloc.append(Paragraph(_t("; ".join(reste)[0].upper() + "; ".join(reste)[1:] + "."), S["petit"]))
-        if usagers.get(b["solution"]):
-            bloc.append(Paragraph(f"<font color='#0a17a6'>Ressenti des usagers : {_t(', '.join(usagers[b['solution']]))}.</font>",
-                                  S["petit"]))
-        el.append(KeepTogether(bloc))
+    for ph, (titre, intro) in PHASES.items():
+        blocs = []
+        for b in bil:
+            eng = [e for e in b["engager"] if e["phase"] == ph]
+            val = [e for e in b["valider"] if e["phase"] == ph]
+            com = [e for e in b["completer"] if e["phase"] == ph]
+            if eng or val or com:
+                blocs.append((sum(e["poids"] for e in eng) + 0.5 * sum(e["poids"] for e in val), b, eng, val, com))
+        if not blocs:
+            continue
+        el += [Paragraph(_t(titre), S["h2"]), Paragraph(_t(intro), S["petit"])]
+        for _, b, eng, val, com in sorted(blocs, key=lambda x: -x[0]):
+            el.append(KeepTogether(_bloc_piste(b, eng, val, com, usagers, ph, S)))
     return el
+
+
+def _bloc_piste(b, eng, val, com, usagers, ph, S):
+    titre = b["libelle"]
+    if ph == 1 and eng and all(e["statut"] == A_OPTIMISER for e in eng) and b["solution"] in REMISE_EN_ETAT:
+        titre += " (remise en état de l'existant)"
+    bloc = [Paragraph(_t(titre), S["h3"])]
+    if eng:
+        lieux = " ; ".join(f"{_t(e['nom'])} ({_t(quantites(b['solution'], e['entree']))})"
+                           if quantites(b["solution"], e["entree"]) else _t(e["nom"]) for e in eng)
+        optim = [e["nom"] for e in eng if e["statut"] == A_OPTIMISER]
+        txt = f"<b>À engager</b>{' (' + _personnes(eng) + ')' if _personnes(eng) else ''} : {lieux}."
+        if optim and not titre.endswith("(remise en état de l'existant)"):
+            txt += f" Existant à améliorer : {_t(', '.join(optim))}."
+        va = {a for e in eng for a in e["s"]["alertes"] if TYPES_ALERTE.get(a) == "VA"}
+        if va:
+            txt += " Point à faire valider par un professionnel : " + " ; ".join(_t(SUJETS_ALERTE.get(a, a)) for a in sorted(va)) + "."
+        bloc.append(Paragraph(txt, S["puce"], bulletText="n"))
+    if val:
+        par_motif = defaultdict(list)  # un même motif pour plusieurs locaux : cité une fois
+        for e in val:
+            al = [a for a in e["s"]["alertes"] if TYPES_ALERTE.get(a) == "AL"]
+            motif = SUJETS_ALERTE.get(al[0], _court(REGLES[al[0]]["regle"])) if al else _court(_motif(justification(e["x"], e["s"])[1]), 130)
+            par_motif[motif].append(e["nom"])
+        details = [f"{_t(', '.join(noms))} ({_t(m[0].lower() + m[1:])})" for m, noms in par_motif.items()]
+        bloc.append(Paragraph("<b>À valider avant de consulter</b> : " + " ; ".join(details) + ".", S["puce"], bulletText="n"))
+    if com:
+        bloc.append(Paragraph("<b>Données à compléter</b> : " + _t(", ".join(e["nom"] for e in com))
+                              + " (voir annexe E).", S["puce"], bulletText="n"))
+    reste = []
+    if b["en_place"]:
+        reste.append("déjà en place : " + ", ".join(e["nom"] for e in b["en_place"]))
+    if b["exclue"]:
+        reste.append("écartée : " + ", ".join(e["nom"] for e in b["exclue"]))
+    if reste:
+        txt = "; ".join(reste)
+        bloc.append(Paragraph(_t(txt[0].upper() + txt[1:] + "."), S["petit"]))
+    if usagers.get(b["solution"]):
+        bloc.append(Paragraph(f"<font color='#0a17a6'>Ressenti des usagers : {_t(', '.join(usagers[b['solution']]))}.</font>",
+                              S["petit"]))
+    return bloc
 
 
 def _points_a_lever(d, res, S, num):
@@ -1159,9 +1222,9 @@ def _points_a_lever(d, res, S, num):
                                "bureau de contrôle…) peut lever le point sans étude de maîtrise d'œuvre.")):
         if not al[typ]:
             continue
-        el += [Paragraph(titre, S["h2"]), Paragraph(intro, S["petit"])]
-        el += [Paragraph(f"{_t(_court(REGLES[a]['regle'], 200))} — <i>{_t(_lieux([{'nom': n_} for n_ in lieux], 4))}</i>",
-                         S["puce"], bulletText="n") for a, lieux in al[typ].items()]
+        el.append(KeepTogether([Paragraph(titre, S["h2"]), Paragraph(intro, S["petit"])]
+                               + [Paragraph(f"{_t(_court(REGLES[a]['regle'], 200))} — <i>{_t(_lieux([{'nom': n_} for n_ in lieux], 4))}</i>",
+                                            S["puce"], bulletText="n") for a, lieux in al[typ].items()]))
     completer = defaultdict(list)
     for b in bil:
         for e in b["completer"]:
