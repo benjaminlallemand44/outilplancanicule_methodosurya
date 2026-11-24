@@ -706,6 +706,8 @@ def _fiches(res, d, S, num="G", titre=None):
     cb = res["batiment"]
     el = [PageBreak(), Titre1(titre or f"{num}. Fiches détaillées", S["h1"]), Paragraph(f"{num}.1 Bâtiment", S["h2"])]
     el.append(_table_reponses(_questions_renseignees(SECTIONS_BATIMENT, d.get("batiment") or {}, cb, cb), S))
+    if _photos(d, "batiment"):
+        el += [Paragraph("Photos", S["h3"]), _planche(d, _photos(d, "batiment"), S, avec_lieu=False)]
     facades = [(o, f) for o, f in (d.get("facades") or {}).items() if f.get("F-01")]
     if facades:
         el.append(Paragraph("Façades décrites", S["h3"]))
@@ -739,6 +741,9 @@ def _fiches(res, d, S, num="G", titre=None):
             el.append(_tableau(data, [45 * mm, 27 * mm, 108 * mm], style))
             if entree.get("observations"):
                 el += [Paragraph("Observations de l'auditeur", S["h3"]), Paragraph(_t(entree["observations"]), S["base"])]
+            ses_photos = _photos(d, f"{cle}:{entree.get('_id')}")
+            if ses_photos:
+                el += [CondPageBreak(55 * mm), Paragraph("Photos", S["h3"]), _planche(d, ses_photos, S, avec_lieu=False)]
             el.append(CondPageBreak(40 * mm))
             el.append(Paragraph("Relevé de visite", S["h3"]))
             el.append(_table_reponses(_questions_renseignees(sections, entree, x["etats"], cb), S))
@@ -785,6 +790,55 @@ def _annexe(d, S, titre="Annexe — seuils utilisés"):
            Paragraph("Méthode : © 2026 ACTEE et SURYA Ingénierie, diffusée sous licence CC BY-SA 4.0 "
                      "(https://creativecommons.org/licenses/by-sa/4.0/deed.fr).", S["petit"])]
     return el
+
+
+# ------------------------------------------------------------------ photos
+def _photos(d: dict, cible: str | None = None, etiquettes=None) -> list[dict]:
+    """Photos disponibles (image fournie), filtrées par cible et étiquette."""
+    contenus = d.get("_photos") or {}
+    return [ph for ph in d.get("photos") or [] if ph.get("id") in contenus and ph.get("cible")
+            and (cible is None or ph["cible"] == cible) and (etiquettes is None or ph.get("etiquette") in etiquettes)]
+
+
+def _image(d: dict, ph: dict, largeur: float, hauteur: float):
+    from PIL import Image as PILImage
+    contenu = d["_photos"][ph["id"]]
+    try:
+        l, h = PILImage.open(io.BytesIO(contenu)).size
+    except Exception:
+        return Spacer(1, 1)
+    k = min(largeur / l, hauteur / h)
+    img = Image(io.BytesIO(contenu), width=l * k, height=h * k)
+    img.hAlign = "LEFT"
+    return img
+
+
+def _legende_photo(d: dict, ph: dict, avec_lieu: bool = True) -> str:
+    from .photos import libelle_cible
+    morceaux = [f"<b>{_t(libelle_cible(d, ph['cible']))}</b>"] if avec_lieu else []
+    morceaux.append(_t(ph.get("etiquette") or ""))
+    if ph.get("legende"):
+        morceaux.append(_t(ph["legende"]))
+    return " — ".join(m for m in morceaux if m)
+
+
+def _planche(d: dict, liste: list[dict], S, colonnes: int = 3, hauteur: float = 42 * mm, avec_lieu: bool = True):
+    """Planche de photos légendées, sans bordure (charte : angles droits, pas d'ombre)."""
+    if not liste:
+        return Spacer(1, 1)
+    largeur = (180 * mm - 4 * mm * (colonnes - 1)) / colonnes
+    cellules = [[_image(d, ph, largeur, hauteur), Paragraph(_legende_photo(d, ph, avec_lieu), S["petit"])] for ph in liste]
+    lignes = [cellules[k:k + colonnes] for k in range(0, len(cellules), colonnes)]
+    lignes[-1] += [""] * (colonnes - len(lignes[-1]))
+    t = Table(lignes, colWidths=[largeur + 4 * mm] * colonnes)
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                           ("RIGHTPADDING", (0, 0), (-1, -1), 4 * mm), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
+    return t
+
+
+def _photo_facade(d: dict):
+    liste = _photos(d, "batiment", ("Façade",)) or _photos(d, "batiment")
+    return liste[0] if liste else None
 
 
 # ------------------------------------------------------------------ compte rendu orienté décision
@@ -974,8 +1028,16 @@ def _synthese_decision(d, res, S):
     nom_et = audit.get("etablissement") or "L'établissement"
     perim = (f"{per['nb_locaux']} local(aux) visité(s)" + (f" ({_dec(per['surface'])} m², {per['effectif']:g} personnes "
              "au plus)" if per["surface"] else "") + (f" et {per['nb_espaces']} espace(s) extérieur(s)" if per["nb_espaces"] else ""))
-    el.append(Paragraph(f"<b>{_t(nom_et)}</b>{' (' + _t(audit['commune']) + ')' if audit.get('commune') else ''} : "
-                        f"{_t(perim)}. {_t(_phrase_batiment(d, res))}", S["base"]))
+    bref = Paragraph(f"<b>{_t(nom_et)}</b>{' (' + _t(audit['commune']) + ')' if audit.get('commune') else ''} : "
+                     f"{_t(perim)}. {_t(_phrase_batiment(d, res))}", S["base"])
+    facade = _photo_facade(d)
+    if facade:
+        t = Table([[bref, _image(d, facade, 58 * mm, 36 * mm)]], colWidths=[120 * mm, 60 * mm])
+        t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                               ("RIGHTPADDING", (0, 0), (0, 0), 5 * mm)]))
+        el.append(t)
+    else:
+        el.append(bref)
     engager = [b for b in bil if b["engager"]]
     nb_al = sum(1 for x in res["locaux"] + res["espaces"] for s in x["solutions"] for a in s["alertes"]
                 if TYPES_ALERTE.get(a) == "AL")
@@ -1138,6 +1200,15 @@ def _presentation(d, res, S):
     if obs:
         el.append(Paragraph("Observations de visite", S["h2"]))
         el += [Paragraph(f"<b>{_t(n_)}</b> : {_t(o)}", S["puce"], bulletText="n") for n_, o in obs]
+    choix = _photos(d, "batiment")[:2]
+    for cle_liste in ("locaux", "espaces"):
+        for x in d.get(cle_liste) or []:
+            liste = _photos(d, f"{cle_liste}:{x.get('_id')}")
+            vue = [ph for ph in liste if ph.get("etiquette") == "Vue d'ensemble"] or liste
+            choix += vue[:1]
+    if choix:
+        el += [CondPageBreak(60 * mm), Paragraph("Photos de la visite", S["h2"]), _planche(d, choix[:9], S),
+               Paragraph("Une photo par local ou espace ; toutes les photos figurent dans les fiches (annexe G).", S["petit"])]
     return el
 
 
@@ -1234,6 +1305,9 @@ def _points_a_lever(d, res, S, num):
                Paragraph("Ces statuts « Sous réserve » ne traduisent pas un obstacle constaté mais une information "
                          "manquante ; le détail des questions figure en annexe E.", S["petit"])]
         el += [Paragraph(f"<b>{_t(n_)}</b> : {_t(', '.join(sols))}", S["puce"], bulletText="n") for n_, sols in completer.items()]
+    points = _photos(d, etiquettes=("Point d'alerte", "Désordre"))
+    if points:
+        el += [Paragraph("Photos des points à lever", S["h2"]), _planche(d, points[:6], S, hauteur=36 * mm)]
     if not (al["AL"] or al["VA"] or completer):
         el.append(Paragraph("Rien à lever : les solutions à engager peuvent être consultées directement.", S["base"]))
     return el
@@ -1255,7 +1329,7 @@ def _entete_resultats(audit, res, S):
 
 
 # ------------------------------------------------------------------ point d'entrée
-def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
+def generer_pdf(donnees: dict, complet: bool = True, photos: dict | None = None) -> bytes:
     """PDF de l'audit.
 
     ``complet=True`` : compte rendu orienté décision — synthèse en une page, bâtiment et périmètre,
@@ -1263,8 +1337,10 @@ def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
     annexes (cadre, statuts, plan d'action détaillé, alertes, données manquantes, questionnaire,
     fiches, seuils).
     ``complet=False`` : résultats seuls (tableaux de statuts, alertes, données manquantes).
+    ``photos`` : contenu des photos {id: jpeg} décrites dans ``donnees["photos"]`` (compte rendu complet).
     """
     S = _styles()
+    donnees = dict(donnees, _photos=photos or {})
     res = moteur.calculer(donnees)
     audit = donnees.get("audit") or {}
     titre_pied = " — ".join(t for t in (audit.get("etablissement"), audit.get("commune")) if t) or "Audit de faisabilité"

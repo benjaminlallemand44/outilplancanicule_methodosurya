@@ -1,5 +1,6 @@
 # Charte graphique ACTEE (design system ACTEE, octobre 2024)
 [server]
+maxUploadSize = 25
 enableStaticServing = true
 
 [browser]

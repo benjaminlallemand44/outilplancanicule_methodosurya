@@ -198,4 +198,7 @@ def valider(donnees: dict) -> tuple[dict, list[str]]:
                     r2[k] = v2
         reps.append(r2)
     out["questionnaires"] = reps
+    if d.get("photos"):
+        from .photos import valider as valider_photos
+        out["photos"] = valider_photos(d["photos"], notes)
     return out, notes

@@ -64,6 +64,14 @@ globale et matrice de correspondance ressenti / préconisations (proposition, vo
 `docs/points_a_trancher.md` § E1). Maquette : aucune réponse n'est stockée sur un serveur ; le passage
 à Supabase est préparé (`surya/stockage.py`, `docs/supabase.md`).
 
+**Photos** (diagnostic complet) : photos générales du bâtiment (étape Identification) et photos de
+chaque local et espace (thème « Photos » de leur fiche), par fichier ou caméra de l'appareil, ou en
+une fois après la visite puis rattachées une à une. Chaque photo est réduite (1 600 px), redressée,
+datée d'après la prise de vue, et les visages détectés sont floutés (modèle YuNet, `surya/modeles`).
+Étiquettes et légendes ; liste de contrôle des photos attendues (non bloquante) ; export / import
+`.zip` (saisie + photos). Le compte rendu les reprend : façade dans la synthèse, planche en partie 2,
+points à lever en partie 5, toutes les photos dans les fiches. Code : `surya/photos.py`.
+
 Les questions conditionnelles (« - si B-09 = Oui : … ») ne s'affichent que lorsqu'elles ont un objet.
 
 ## Organisation du code

@@ -24,6 +24,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from surya import moteur, plan, version
+from surya import photos as PH
 from surya import questionnaire as QU
 from surya.import_excel import ImportImpossible, importer
 from surya.stockage import DepotMemoire
@@ -103,16 +104,19 @@ ss = st.session_state
 # ------------------------------------------------------------------ état
 def donnees_vides() -> dict:
     return {"audit": {}, "batiment": {}, "facades": {}, "locaux": [], "espaces": [], "parametres": {},
-            "questionnaires": []}
+            "questionnaires": [], "photos": []}
 
 
-def charger(d: dict):
-    """Remplace toutes les données (exemple, import) et réinitialise les champs affichés."""
+def charger(d: dict, contenus: dict | None = None):
+    """Remplace toutes les données (exemple, import) et réinitialise les champs affichés.
+    ``contenus`` : photos {id: jpeg} (import d'une archive ZIP)."""
     base = donnees_vides()
     base.update({k: v for k, v in d.items() if k in base})
     for x in base["locaux"] + base["espaces"] + base["questionnaires"]:
         x.setdefault("_id", uuid.uuid4().hex[:8])
     ss.donnees = base
+    ss.photos_bin = dict(contenus or {})
+    base["photos"] = [ph for ph in base["photos"] if ph.get("id") in ss.photos_bin]  # description sans image : retirée
     ss.generation = ss.get("generation", 0) + 1
     ss.edition = {"locaux": None, "espaces": None}
     ss.theme = {"locaux": 0, "espaces": 0, "batiment": 0}
@@ -121,9 +125,10 @@ def charger(d: dict):
 if "donnees" not in ss:
     charger(donnees_vides())
 for k, v in (("mode", None), ("saisie", "guidee"), ("etape", 0), ("etape_max", 0), ("vue", "parcours"),
-             ("message", None), ("haut", False)):
+             ("message", None), ("haut", False), ("photos_bin", {})):
     ss.setdefault(k, v)
 D = ss.donnees
+D.setdefault("photos", [])  # saisies antérieures aux photos
 
 
 def cle(*parts) -> str:
@@ -371,21 +376,33 @@ def bloc_donnees(prefixe: str):
             ss.message = msg + " et 14 questionnaires usagers fictifs."
             ss.etape_max = len(etapes()) - 1 if ss.mode else 0
             st.rerun()
-    c3.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
-                       file_name="saisie_surya.json", mime="application/json", width="stretch", key=f"{prefixe}:export")
-    fichier = st.file_uploader("Importer une saisie (JSON) ou un Excel de la méthode déjà rempli (.xlsx)",
-                               type=["json", "xlsx"], key=cle(prefixe, "import"))
+    if D.get("photos"):
+        c3.download_button("Exporter la saisie et les photos (ZIP)", PH.exporter_zip(D, ss.photos_bin),
+                           file_name="saisie_surya.zip", mime="application/zip", width="stretch", key=f"{prefixe}:export")
+    else:
+        c3.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
+                           file_name="saisie_surya.json", mime="application/json", width="stretch", key=f"{prefixe}:export")
+    fichier = st.file_uploader("Importer une saisie (JSON, ou ZIP avec photos) ou un Excel de la méthode déjà rempli "
+                               "(.xlsx)", type=["json", "zip", "xlsx"], key=cle(prefixe, "import"))
     if fichier is not None and st.button("Importer ce fichier", type="primary", key=f"{prefixe}:importer"):
+        contenus = {}
         try:
-            d, notes = importer(fichier.name, fichier.getvalue())
+            if fichier.name.lower().endswith(".zip"):
+                brut, contenus = PH.lire_zip(fichier.getvalue())
+                d, notes = importer("saisie.json", json.dumps(brut).encode("utf-8"))
+            else:
+                d, notes = importer(fichier.name, fichier.getvalue())
+        except ValueError as e:
+            st.error(f"Import impossible : {e}")
         except ImportImpossible as e:
             st.error(f"Import impossible : {e}")
         except Exception:  # cas non prévu : message générique plutôt qu'une trace Python
             st.error("Import impossible : fichier illisible. Utilisez un fichier exporté par l'outil (.json) ou "
                      "l'Excel de la méthode (.xlsx).")
         else:
-            charger(d)
-            ss.message = f"Fichier importé : {len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)."
+            charger(d, contenus)
+            ss.message = (f"Fichier importé : {len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)"
+                          + (f", {len(D['photos'])} photo(s)." if D["photos"] else "."))
             ss.notes_import = notes
             ss.etape_max = len(etapes()) - 1 if ss.mode else 0
             st.rerun()
@@ -441,6 +458,104 @@ def pied(suivant_label: str | None = None, precedent: bool = True):
             aller(ss.etape + 1)
 
 
+# ------------------------------------------------------------------ photos
+def ajouter_photos(fichiers, cible: str) -> list[str]:
+    """Prépare et ajoute des photos ; renvoie les messages (visages floutés, fichiers illisibles)."""
+    messages = []
+    for f in fichiers:
+        try:
+            jpeg, infos = PH.preparer(f.getvalue(), flouter_visages=True)
+        except ValueError as e:
+            messages.append(f"{f.name} : {e}")
+            continue
+        ph = PH.nouvelle(cible, infos, etiquette=PH.premiere_attendue(D, cible) if cible else "Autre")
+        D["photos"].append(ph)
+        ss.photos_bin[ph["id"]] = jpeg
+        if infos["visages_floutes"]:
+            messages.append(f"{getattr(f, 'name', 'Photo')} : {infos['visages_floutes']} visage(s) flouté(s).")
+    return messages
+
+
+def vignette(ph: dict, pid: str, cibles: list[str] | None = None):
+    """Une photo : image, étiquette, légende, (rattachement), suppression."""
+    img = ss.photos_bin.get(ph["id"])
+    if img:
+        st.image(img, width="stretch")
+    meta = [ph["prise_le"]] if ph.get("prise_le") else []
+    if ph.get("visages_floutes"):
+        meta.append(f"{ph['visages_floutes']} visage(s) flouté(s)")
+    if meta:
+        st.caption(" · ".join(meta))
+    if cibles is not None:
+        c = st.selectbox("Rattacher à", cibles, index=cibles.index(ph["cible"]) if ph["cible"] in cibles else 0,
+                         format_func=lambda k: PH.libelle_cible(D, k), key=cle(pid, ph["id"], "cible"))
+        if c != ph["cible"]:
+            ph["cible"] = c
+            st.rerun()
+    e = st.selectbox("Étiquette", PH.ETIQUETTES, index=PH.ETIQUETTES.index(ph.get("etiquette", "Autre")),
+                     key=cle(pid, ph["id"], "etiquette"))
+    ph["etiquette"] = e
+    lg = st.text_input("Légende", value=ph.get("legende", ""), key=cle(pid, ph["id"], "legende"),
+                       placeholder="Ce que montre la photo").strip()
+    ph["legende"] = lg
+    if st.button("Supprimer la photo", key=cle(pid, ph["id"], "suppr"), width="stretch"):
+        D["photos"].remove(ph)
+        ss.photos_bin.pop(ph["id"], None)
+        st.rerun()
+
+
+def bloc_photos(cible: str, pid: str):
+    """Ajout (fichiers ou caméra), liste de contrôle des photos attendues et vignettes d'une cible."""
+    genre = cible.split(":")[0]
+    attendues = PH.ATTENDUES.get(genre, [])
+    manquantes = PH.attendues_manquantes(D, cible)
+    if attendues:
+        st.markdown("**Photos attendues** : " + " · ".join(
+            f"{'✅' if a not in manquantes else '⬜'} {a}" for a in attendues))
+    st.caption("Sur téléphone, « Ajouter des photos » propose l'appareil photo ou la galerie. Les photos sont réduites "
+               "(1 600 px), redressées, et les visages détectés sont floutés. Évitez de photographier des enfants.")
+    n = ss.setdefault("photos_gen", {}).get(cible, 0)
+    fichiers = st.file_uploader("Ajouter des photos", type=PH.FORMATS, accept_multiple_files=True,
+                                key=cle(pid, "photos", n))
+    if st.toggle("Prendre une photo avec la caméra de l'appareil", key=cle(pid, "camera", n)):
+        prise = st.camera_input("Photo", key=cle(pid, "camera_input", n), label_visibility="collapsed")
+        if prise is not None:
+            fichiers = list(fichiers or []) + [prise]
+    if fichiers:
+        msgs = ajouter_photos(fichiers, cible)
+        ss.photos_gen[cible] = n + 1
+        ss.message_photos = msgs
+        st.rerun()
+    for m in ss.pop("message_photos", None) or []:
+        st.info(m, icon="📷")
+    liste = PH.de_la_cible(D, cible)
+    cols = st.columns(3)
+    for k, ph in enumerate(liste):
+        with cols[k % 3].container(border=True):
+            vignette(ph, pid)
+
+
+def import_groupe():
+    """Import de toutes les photos de la visite, puis rattachement de chacune."""
+    with st.expander(f"📷 Importer les photos de la visite en une fois"
+                     + (f" — {len(PH.de_la_cible(D, ''))} à rattacher" if PH.de_la_cible(D, "") else "")):
+        st.caption("Pratique après la visite : déposez toutes les photos, puis rattachez chacune au bâtiment, à un "
+                   "local ou à un espace. Elles sont rangées par heure de prise de vue.")
+        n = ss.setdefault("photos_gen", {}).get("groupe", 0)
+        fichiers = st.file_uploader("Photos de la visite", type=PH.FORMATS, accept_multiple_files=True,
+                                    key=cle("groupe", "photos", n))
+        if fichiers:
+            ss.message_photos = ajouter_photos(fichiers, "")
+            ss.photos_gen["groupe"] = n + 1
+            st.rerun()
+        a_rattacher = sorted(PH.de_la_cible(D, ""), key=lambda ph: ph.get("prise_le") or "")
+        cibles = [""] + PH.cibles(D)
+        cols = st.columns(3)
+        for k, ph in enumerate(a_rattacher):
+            with cols[k % 3].container(border=True):
+                vignette(ph, "groupe", cibles)
+
+
 # ------------------------------------------------------------------ étapes
 def etape_identification():
     st.header("Identification de l'audit")
@@ -455,6 +570,11 @@ def etape_identification():
             a.pop(k, None)
     manque = [lib for k, lib in CHAMPS_AUDIT if not a.get(k)]
     avertir([], [f"{lib}" for lib in manque])
+    st.subheader("Photos générales du bâtiment")
+    st.markdown("Façade principale, vue d'ensemble, cour : la photo étiquetée « Façade » illustre la synthèse du "
+                "compte rendu.")
+    bloc_photos("batiment", "batiment")
+    import_groupe()
     pied()
 
 
@@ -610,6 +730,7 @@ def themes(cle_liste: str) -> list[tuple]:
         th.insert(2, ("murs", "Murs et baies en façade", None))
     if ss.mode == "complet":
         th.append(("observations", "Observations", None))
+        th.append(("photos", "Photos", None))
     return th
 
 
@@ -681,10 +802,13 @@ def liste_entites(cle_liste: str):
                     st.rerun()
                 if b3.button("🗑", key=f"del:{cle_liste}:{x['_id']}", width="stretch", help="Supprimer"):
                     liste.pop(i)
+                    PH.orphelines(D)  # ses photos restent, « à rattacher »
                     st.rerun()
     if st.button(f"➕ Ajouter {cfg['un']}", type="primary" if not liste else "secondary"):
         liste.append({"_id": uuid.uuid4().hex[:8]})
         ouvrir(cle_liste, len(liste) - 1)
+    if ss.mode == "complet":
+        import_groupe()
     pied()
 
 
@@ -757,6 +881,8 @@ def afficher_theme(cle_liste: str, x: dict, pid: str, th: tuple):
         section(s, x, lambda: ENTITES[cle_liste]["etats"](x), CB, pid)
     elif kind == "murs":
         _murs(x, pid)
+    elif kind == "photos":
+        bloc_photos(PH.cible_de(cle_liste, x), pid)
     else:
         _observations(x, pid)
     q, autres = manques_theme(cle_liste, x, th)
@@ -895,6 +1021,15 @@ def etape_verification():
                                            f" — facultatif ; la synthèse demande au moins {QU.MIN_REPONDANTS} réponses"))
         if n < QU.MIN_REPONDANTS and c3.button("Ajouter", key="verif:quest", width="stretch"):
             aller("Questionnaires usagers")
+    if ss.mode == "complet":
+        bilan = PH.bilan_attendues(D)
+        a_rattacher = len(PH.de_la_cible(D, ""))
+        c1, c2, c3 = st.columns([3, 4, 1.3], vertical_alignment="center")
+        c1.markdown(f"{'✅' if not bilan and not a_rattacher else 'ℹ️'} **Photos** ({len(D['photos'])})")
+        detail = " · ".join(f"{n} : {', '.join(m)}" for n, m in bilan[:6]) + (" …" if len(bilan) > 6 else "")
+        c2.markdown((f"{a_rattacher} photo(s) à rattacher. " if a_rattacher else "")
+                    + (f"Photos attendues manquantes — {html.escape(detail)}" if bilan else "Toutes les photos attendues sont là.")
+                    + " :gray[(facultatif)]")
     for c in ("locaux", "espaces"):
         for n in doublons(c):
             st.warning(f"Plusieurs {ENTITES[c]['titre'].lower()} portent le même nom « {n} » : renommez-les pour les "
@@ -1125,8 +1260,8 @@ def _export_csv(res) -> str:
 
 
 @st.cache_data(max_entries=20, show_spinner="Préparation du document…")
-def _pdf(donnees_json: str, complet: bool) -> bytes:
-    return generer_pdf(json.loads(donnees_json), complet=complet)
+def _pdf(donnees_json: str, complet: bool, photos: tuple = ()) -> bytes:
+    return generer_pdf(json.loads(donnees_json), complet=complet, photos=dict(photos))
 
 
 def etape_documents():
@@ -1154,7 +1289,8 @@ def etape_documents():
         donnees_json = json.dumps(D, ensure_ascii=False, sort_keys=True)
         cols = st.columns([1.3, 1, 0.7] if complet else [1, 0.6, 1.4])
         if complet:
-            cols[0].download_button("Compte rendu complet (PDF)", _pdf(donnees_json, True),
+            utiles = tuple((ph["id"], ss.photos_bin[ph["id"]]) for ph in D["photos"] if ph["id"] in ss.photos_bin)
+            cols[0].download_button("Compte rendu complet (PDF)", _pdf(donnees_json, True, utiles),
                                     file_name="compte_rendu_" + suffixe, mime="application/pdf", type="primary",
                                     width="stretch")
             cols[0].caption("Synthèse en une page, bâtiment, ressenti des usagers, pistes d'action et points à lever ; détail en annexes.")

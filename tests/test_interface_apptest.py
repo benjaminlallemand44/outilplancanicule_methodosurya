@@ -570,3 +570,32 @@ def test_verification_facades_en_clair():
     clic(at, key="nav:4")
     texte = " ".join(m.value for m in at.markdown)
     assert "F-03 sans réponse" not in texte
+
+
+# ------------------------------------------------------------------ photos
+def test_photos_dans_le_diagnostic_complet():
+    import io as _io
+    from PIL import Image
+    from surya import photos as PH
+    at = app()
+    clic(at, key="depart:ecole_sud")
+    demarrer(at, "complet")
+    assert any(s.value == "Photos générales du bâtiment" for s in at.subheader)
+    # une photo du bâtiment, comme après un ajout
+    b = _io.BytesIO()
+    Image.new("RGB", (800, 600), "#0a17a6").save(b, "JPEG")
+    j, infos = PH.preparer(b.getvalue())
+    ph = PH.nouvelle("batiment", infos, "Façade", "Façade sud")
+    D(at)["photos"].append(ph)
+    at.session_state["photos_bin"] = {ph["id"]: j}
+    at.run()
+    assert not at.exception
+    assert "✅ Façade" in " ".join(m.value for m in at.markdown)
+    # l'export devient une archive ZIP (saisie + photos)
+    clic(at, "Seuils et données")
+    assert any("ZIP" in b.proto.label for b in at.get("download_button"))
+    # les fiches des locaux ont un thème « Photos » en diagnostic complet
+    clic(at, contient="Retour")
+    clic(at, key="nav:2")
+    clic(at, key=f"mod:locaux:{D(at)['locaux'][0]['_id']}")
+    assert any("Photos" in o for o in at.get("segmented_control")[0].options)
