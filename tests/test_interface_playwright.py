@@ -80,7 +80,7 @@ def test_parcours_complet_et_documents_telecharges(scenarios):
     import csv
     import io
     assert list(csv.DictReader(io.StringIO(lu), delimiter=";")) == lignes
-    assert "6. Ressenti des usagers" in sorties.texte(pdf)
+    assert "3. Ressenti des usagers et résultats de la visite" in sorties.texte(pdf)
 
 
 def test_resultats_onglets(scenarios):

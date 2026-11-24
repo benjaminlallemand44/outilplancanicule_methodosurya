@@ -325,8 +325,8 @@ def ecran_depart():
         st.markdown("Même saisie, avec en plus l'identification de l'audit (établissement, auditeur, date), vos "
                     "observations par local et espace, les **questionnaires usagers** (confort estival) et un "
                     "commentaire général.")
-        st.markdown("**À la fin :** le **compte rendu complet** (page de garde, synthèse, plan d'action, alertes, "
-                    "fiches détaillées) et le PDF des résultats.")
+        st.markdown("**À la fin :** le **compte rendu complet** (synthèse en une page, présentation du bâtiment, "
+                    "ressenti des usagers, pistes d'action, détail en annexes) et le PDF des résultats.")
         st.markdown(f":gray[{len(MODES['complet']['etapes'])} étapes : {' → '.join(MODES['complet']['etapes'])}]")
         if st.button("Commencer — diagnostic complet", type="primary", width="stretch"):
             demarrer("complet")
@@ -1149,7 +1149,7 @@ def etape_documents():
             cols[0].download_button("Compte rendu complet (PDF)", _pdf(donnees_json, True),
                                     file_name="compte_rendu_" + suffixe, mime="application/pdf", type="primary",
                                     width="stretch")
-            cols[0].caption("Page de garde, cadre, synthèse, plan d'action, alertes, données manquantes, fiches détaillées.")
+            cols[0].caption("Synthèse en une page, bâtiment, ressenti des usagers, pistes d'action et points à lever ; détail en annexes.")
             k_res, k_csv = 1, 2
         else:
             k_res, k_csv = 0, 1
@@ -1160,7 +1160,7 @@ def etape_documents():
                                     file_name="resultats_surya.csv", mime="text/csv", width="stretch")
         if not complet:
             with cols[2]:
-                st.caption("Besoin du compte rendu complet (page de garde, plan d'action, fiches, observations) ?")
+                st.caption("Besoin du compte rendu complet (synthèse, bâtiment, pistes d'action, annexes) ?")
                 if st.button("Passer au diagnostic complet", width="stretch"):
                     ss.mode = "complet"
                     ss.etape_max = len(etapes()) - 1

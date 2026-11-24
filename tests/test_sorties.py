@@ -334,11 +334,11 @@ def _fiches(pdf, res):
         commence = False
         for page in p.pages:
             txt = page.extract_text() or ""
-            if "Fiches détaillées" in txt:
+            if "Annexe G — Fiches détaillées" in txt:
                 commence = True
             if not commence:
                 continue
-            if "Annexe — seuils utilisés" in txt:
+            if "Annexe H — Seuils utilisés" in txt:
                 break
             lignes = [l.strip() for l in txt.splitlines() if l.strip()]
             for l in lignes[:3]:
@@ -391,10 +391,10 @@ def test_page_de_garde_et_annexe(sortie):
     for k in ("etablissement", "commune", "auditeur", "date_visite", "moa", "adresse"):
         assert d["audit"][k] in p1, k
     assert "4 local(aux), 2 espace(s)" in p1
-    annexe = sorties.texte(pdf).split("Annexe — seuils utilisés")[1]
+    annexe = sorties.texte(pdf).split("Annexe H — Seuils utilisés")[1]
     assert "(modifié)" not in annexe
     d2, _, _, pdf2 = sortie("seuils modifiés")
-    annexe2 = sorties.texte(pdf2).split("Annexe — seuils utilisés")[1]
+    annexe2 = sorties.texte(pdf2).split("Annexe H — Seuils utilisés")[1]
     assert annexe2.count("(modifié)") == 3
     for nom in ("P_HSP_MIN", "P_VOL_H", "P_PALE_PLAFOND"):
         ligne = next(l for l in annexe2.splitlines() if nom in l)
@@ -403,7 +403,7 @@ def test_page_de_garde_et_annexe(sortie):
 
 def test_decimales_a_la_francaise(sortie):
     d, res, _, pdf = sortie("seuils modifiés")
-    annexe = sorties.texte(pdf).split("Annexe — seuils utilisés")[1].split("Méthode : ©")[0]  # hors « CC BY-SA 4.0 »
+    annexe = sorties.texte(pdf).split("Annexe H — Seuils utilisés")[1].split("Méthode : ©")[0]  # hors « CC BY-SA 4.0 »
     assert not re.search(r"\d\.\d", annexe)
 
 
@@ -418,13 +418,29 @@ def test_partie_usagers_et_numerotation(sortie):
     _, _, _, avec = sortie("exemple + usagers")
     _, _, _, sans = sortie("exemple Excel")
     ta, ts = sorties.texte(avec), sorties.texte(sans)
-    assert "6. Ressenti des usagers" in ta and "7. Fiches détaillées" in ta
-    assert "Ressenti des usagers" not in ts and "6. Fiches détaillées" in ts
+    assert "3. Ressenti des usagers et résultats de la visite" in ta and "4. Pistes d'action par solution" in ta
+    assert "5. Avant de consulter" in ta and "Annexe F — Questionnaire usagers" in ta
+    assert "Ressenti des usagers" not in ts and "3. Pistes d'action par solution" in ts
+    assert "4. Avant de consulter" in ts and "Annexe F" not in ts
+    # ordre : synthèse et bâtiment d'abord, détail en annexe
+    for t in (ta, ts):
+        pos = [t.index(x) for x in ("1. Synthèse", "2. Le bâtiment et le périmètre visité", "Pistes d'action",
+                                     "Annexe A —", "Annexe B —", "Annexe C —", "Annexe G —", "Annexe H —")]
+        assert pos == sorted(pos)
 
 
 def test_numerotation_sans_entite():
     t = sorties.texte(generer_pdf({"batiment": {"B-01": "Avant 1948"}}))
-    assert "6. Fiches détaillées" not in t
+    assert "Pistes d'action" not in t and "1. Synthèse" in t and "Annexe G — Fiches détaillées" in t
+
+
+def test_synthese_tient_sur_une_page(sortie):
+    """La synthèse (partie 1) tient sur la page qui suit la page de garde."""
+    for jeu in ("exemple Excel", "complet", "30 locaux, 5 espaces", "exemple + usagers"):
+        _, _, _, pdf = sortie(jeu)
+        p = sorties.pages(pdf)
+        assert "1. Synthèse" in p[1] and "Points de vigilance" in p[1], jeu
+        assert "2. Le bâtiment et le périmètre visité" in p[2], jeu
 
 
 def test_pdf_cas_degeneres():

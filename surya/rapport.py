@@ -99,6 +99,12 @@ TYPES_ALERTE = {
     "PR-AL3": "AL",   # matériaux dangereux
     "PR-AL4": "INFO",
 }
+SUJETS_ALERTE = {  # libellé court, pour la synthèse
+    "BR-AL": "électricité et fixation des brasseurs", "VN-AL1": "grilles ou ventelles pour ventiler la nuit en sécurité",
+    "VV-AL": "tenue structurelle de la véranda", "OA-AL2": "prise au vent de la voile", "OA-AL3": "réaction au feu de la toile",
+    "PR-AL1": "avis de l'architecte des bâtiments de France", "PR-AL2": "capacité de la charpente du préau",
+    "PR-AL3": "repérage amiante",
+}
 LIBELLES_TYPE = {"AL": "Alerte maîtrise d'œuvre", "VA": "Validation ponctuelle", "INFO": "Point d'attention"}
 
 # Solutions dont le statut dépend d'abord d'un « cas » : questions à renseigner si le cas est indéterminé
@@ -305,7 +311,8 @@ def _styles():
                                    textColor=BLEU),
         "titre": ParagraphStyle("titre", parent=base, fontName=P["titre"], fontSize=26, leading=31),
         "sous_titre": ParagraphStyle("sous_titre", parent=base, fontName=P["extra"], fontSize=12.5, leading=16),
-        "puce": ParagraphStyle("puce", parent=base, leftIndent=10, bulletIndent=2),
+        "puce": ParagraphStyle("puce", parent=base, leftIndent=11, bulletIndent=1, bulletFontName="ZapfDingbats",
+                                bulletFontSize=5.5, spaceAfter=1.5),  # puce carrée pleine (charte)
     }
 
 
@@ -390,8 +397,8 @@ def _page_de_garde(audit, res, S):
     return el
 
 
-def _cadre(S):
-    el = [Titre1("1. Cadre de l'audit", S["h1"]),
+def _cadre(S, titre="1. Cadre de l'audit"):
+    el = [Titre1(titre, S["h1"]),
           Paragraph("L'audit est un <b>audit de faisabilité d'actions d'adaptation</b> à l'aléa « vagues de chaleur », "
                     "et non un diagnostic thermique. Il établit, pour chaque local et espace extérieur visité, quelles "
                     "solutions sont réalistes ou exclues compte tenu des usages et des contraintes constatées, ce qui "
@@ -465,9 +472,9 @@ def _tableau_statuts(entites, debut, defaut, S):
     return _tableau(data, [55 * mm] + [largeur_col] * n, style)
 
 
-def _plan_action(res, d, S):
-    """§ 3 : par solution, ce qui est engageable, à valider, en place, exclu."""
-    el = [PageBreak(), Titre1("3. Plan d'action par solution", S["h1"]),
+def _plan_action(res, d, S, titre="3. Plan d'action par solution"):
+    """Par solution, ce qui est engageable, à valider, en place, exclu (tableaux détaillés)."""
+    el = [PageBreak(), Titre1(titre, S["h1"]),
           Paragraph("Pour chaque solution, les locaux et espaces sont classés selon la suite à donner. "
                     "« Engageable » : statut Recommandé ou À optimiser sans alerte maîtrise d'œuvre — la solution peut "
                     "faire l'objet d'une consultation d'entreprises ou de travaux en régie, après levée des éventuels "
@@ -602,23 +609,13 @@ def _table_reponses(lignes, S):
     return _tableau(data, [110 * mm, 70 * mm], style, entete=False) if data else Spacer(1, 1)
 
 
-def _usagers(d, res, S, num):
-    """Ressenti des usagers (questionnaire confort estival) et matrice de cohérence."""
+def _indicateurs_usagers(syn, S):
     from . import questionnaire as QU
 
-    reponses = d.get("questionnaires") or []
-    m = QU.matrice(reponses, res)
-    syn, ind = m["synthese"], m["synthese"]["indicateurs"]
-    el = [PageBreak(), Titre1(f"{num}. Ressenti des usagers", S["h1"]),
-          Paragraph(f"Questionnaire confort estival : <b>{syn['repondants']} répondant(s)</b>, synthèse pour l'ensemble "
-                    "de l'établissement. Enquête déclarative ponctuelle : elle ne remplace pas une campagne de mesures ; "
-                    "ses résultats sont indicatifs et servent à orienter et vérifier les préconisations.", S["base"])]
-    if syn["repondants"] < QU.MIN_REPONDANTS:
-        el.append(Paragraph(f"Moins de {QU.MIN_REPONDANTS} réponses : synthèse non interprétable.", S["base"]))
-    el.append(Paragraph("Indicateurs clés", S["h2"]))
+    ind = syn["indicateurs"]
     data = [[Paragraph(h, S["entete"]) for h in ("Indicateur", "Valeur", "Répondants")]]
-    for cle_i, (lib, unite) in (("sensation_moyenne", ("Sensation thermique moyenne (Q4), de −3 très froide à +3 très chaude", "")),
-                                ("preference_moyenne", ("Préférence moyenne (Q6), de −3 beaucoup plus froide à +3 beaucoup plus chaude", ""))):
+    for cle_i, lib in (("sensation_moyenne", "Sensation thermique moyenne (Q4), de −3 très froide à +3 très chaude"),
+                       ("preference_moyenne", "Préférence moyenne (Q6), de −3 beaucoup plus froide à +3 beaucoup plus chaude")):
         v = ind[cle_i]
         data.append([Paragraph(_t(lib), S["cellule"]), Paragraph("—" if v is None else _dec(v, signe=True, decimales=1), S["cellule"]), ""])
     for cle_i, lib in QU.LIBELLES_INDICATEURS.items():
@@ -626,27 +623,35 @@ def _usagers(d, res, S, num):
         data.append([Paragraph(_t(lib), S["cellule"]),
                      Paragraph("—" if v["part"] is None else f"<b>{v['part']:.0%}</b>", S["cellule"]),
                      Paragraph(f"{v['nb']} / {v['sur']}", S["cellule"])])
-    el.append(_tableau(data, [120 * mm, 25 * mm, 35 * mm]))
+    return _tableau(data, [120 * mm, 25 * mm, 35 * mm])
 
-    el.append(Paragraph("Répartition des réponses", S["h2"]))
-    for code in ("Q4", "Q5", "Q21", "Q8", "Q10", "Q22", "Q11", "Q12", "Q15", "Q13", "Q16", "Q18", "Q19", "Q20"):
-        q = QU.PAR_CODE[code]
-        rep_q = syn["repartition"][code]
-        if not rep_q["repondants"]:
-            continue
-        lignes = [[Paragraph(_t(o), S["cellule"]), Paragraph(str(n), S["cellule"]),
-                   Paragraph(f"{n / rep_q['repondants']:.0%}", S["cellule"])] for o, n in rep_q["comptes"].items()]
-        bloc = [Paragraph(f"{code}. {_t(q['libelle'])} <font color='#888888'>({rep_q['repondants']} répondant(s)"
-                          f"{', plusieurs réponses possibles' if q['type'] == 'multi' else ''})</font>", S["h3"]),
-                _tableau(lignes, [110 * mm, 20 * mm, 20 * mm], entete=False)]
-        el.append(KeepTogether(bloc))
 
-    el.append(Paragraph("Correspondance ressenti / préconisations", S["h2"]))
-    el.append(Paragraph(f"Proposition de matrice (à valider) : chaque ressenti est jugé « signalé » à partir de "
-                        f"{m['seuil']:.0%} des répondants, et rapproché des statuts de l'audit pour l'ensemble des "
-                        f"locaux. Cohérent : ressenti et préconisation concordent. À vérifier : contradiction entre "
-                        f"le ressenti et l'audit. Non corroboré : préconisation sans ressenti signalé (elle reste "
-                        f"valable). Indicateur de cohérence : part des croisements évalués sans incohérence.", S["petit"]))
+def _usagers(d, res, S, num):
+    """Ressenti des usagers rapproché des résultats de la visite (matrice de correspondance)."""
+    from . import questionnaire as QU
+
+    reponses = d.get("questionnaires") or []
+    m = QU.matrice(reponses, res)
+    syn, ind = m["synthese"], m["synthese"]["indicateurs"]
+    el = [PageBreak(), Titre1(f"{num}. Ressenti des usagers et résultats de la visite", S["h1"]),
+          Paragraph(f"Questionnaire confort estival : <b>{syn['repondants']} répondant(s)</b>, synthèse pour l'ensemble "
+                    "de l'établissement. Enquête déclarative ponctuelle : elle ne remplace pas une campagne de mesures ; "
+                    "elle sert à confirmer ou à interroger les préconisations de la visite.", S["base"])]
+    if syn["repondants"] < QU.MIN_REPONDANTS:
+        el.append(Paragraph(f"Moins de {QU.MIN_REPONDANTS} réponses : synthèse non interprétable.", S["base"]))
+    cles = [("trop_chaud_souvent", "ont trop chaud souvent ou très souvent"),
+            ("inconfort", "jugent l'ambiance inconfortable"),
+            ("soleil_gene", "sont gênés par le soleil direct"),
+            ("fenetres_fermees_nuit", "ne peuvent pas laisser les fenêtres ouvertes la nuit")]
+    chiffres = [(f"{ind[c]['part']:.0%}", lib) for c, lib in cles if ind[c]["part"] is not None]
+    if chiffres:
+        el += [Spacer(1, 3 * mm), _chiffres_cles(chiffres, S), Spacer(1, 2 * mm)]
+    el.append(Paragraph("Ce que le ressenti confirme ou interroge", S["h2"]))
+    el.append(Paragraph(f"Chaque ressenti est jugé « signalé » à partir de {m['seuil']:.0%} des répondants et rapproché "
+                        "des statuts de la visite pour l'ensemble des locaux (matrice proposée, à valider). "
+                        "<b>Cohérent</b> : ressenti et préconisation concordent. <b>À vérifier</b> : contradiction entre "
+                        "le ressenti et la visite. <b>Non corroboré</b> : préconisation sans ressenti signalé (elle reste "
+                        "valable).", S["petit"]))
     couleurs = {QU.COHERENT: "#5bba50", QU.A_VERIFIER: "#ff5400", QU.NON_CORROBORE: "#e0e6de", QU.NON_EVALUABLE: "#ffffff"}
     data = [[Paragraph(h, S["entete"]) for h in ("Croisement", "Usagers", "Audit", "Résultat", "Commentaire")]]
     style = []
@@ -661,16 +666,45 @@ def _usagers(d, res, S, num):
                             f"({m['evalues'] - m['a_verifier']} croisement(s) sans incohérence sur {m['evalues']} évalué(s)).",
                             S["base"]))
     if syn["remarques"]:
-        el.append(Paragraph("Remarques libres", S["h2"]))
-        el += [Paragraph(f"« {_t(t)} »", S["puce"], bulletText="•") for t in syn["remarques"][:30]]
+        el.append(Paragraph("Remarques libres (extraits)", S["h2"]))
+        freq = Counter(" ".join(t.split()) for t in syn["remarques"])
+        el += [Paragraph(f"« {_t(t)} »" + (f" <font color='#555555'>({n_} fois)</font>" if n_ > 1 else ""), S["puce"],
+                         bulletText="n") for t, n_ in freq.most_common(5)]
+        if len(freq) > 5:
+            el.append(Paragraph(f"{len(syn['remarques'])} remarques au total : voir l'annexe.", S["petit"]))
     return el
 
 
-def _fiches(res, d, S, num=6):
+def _usagers_detail(d, S, titre):
+    """Annexe : indicateurs complets et répartition des réponses."""
+    from . import questionnaire as QU
+
+    syn = QU.synthese(d.get("questionnaires") or [])
+    el = [PageBreak(), Titre1(titre, S["h1"]),
+          Paragraph(f"{syn['repondants']} répondant(s), synthèse pour l'ensemble de l'établissement.", S["base"]),
+          Paragraph("Indicateurs", S["h2"]), _indicateurs_usagers(syn, S), Paragraph("Répartition des réponses", S["h2"])]
+    for code in ("Q4", "Q5", "Q21", "Q8", "Q10", "Q22", "Q11", "Q12", "Q15", "Q13", "Q16", "Q18", "Q19", "Q20"):
+        q = QU.PAR_CODE[code]
+        rep_q = syn["repartition"][code]
+        if not rep_q["repondants"]:
+            continue
+        lignes = [[Paragraph(_t(o), S["cellule"]), Paragraph(str(n), S["cellule"]),
+                   Paragraph(f"{n / rep_q['repondants']:.0%}", S["cellule"])] for o, n in rep_q["comptes"].items()]
+        bloc = [Paragraph(f"{code}. {_t(q['libelle'])} <font color='#555555'>({rep_q['repondants']} répondant(s)"
+                          f"{', plusieurs réponses possibles' if q['type'] == 'multi' else ''})</font>", S["h3"]),
+                _tableau(lignes, [110 * mm, 20 * mm, 20 * mm], entete=False)]
+        el.append(KeepTogether(bloc))
+    if syn["remarques"]:
+        el.append(Paragraph("Remarques libres", S["h2"]))
+        el += [Paragraph(f"« {_t(t)} »", S["puce"], bulletText="n") for t in syn["remarques"][:60]]
+    return el
+
+
+def _fiches(res, d, S, num="G", titre=None):
     from .questions import QUESTIONS_MUR, SECTIONS_BATIMENT, SECTIONS_ESPACE, SECTIONS_LOCAL
 
     cb = res["batiment"]
-    el = [PageBreak(), Titre1(f"{num}. Fiches détaillées", S["h1"]), Paragraph(f"{num}.1 Bâtiment", S["h2"])]
+    el = [PageBreak(), Titre1(titre or f"{num}. Fiches détaillées", S["h1"]), Paragraph(f"{num}.1 Bâtiment", S["h2"])]
     el.append(_table_reponses(_questions_renseignees(SECTIONS_BATIMENT, d.get("batiment") or {}, cb, cb), S))
     facades = [(o, f) for o, f in (d.get("facades") or {}).items() if f.get("F-01")]
     if facades:
@@ -735,9 +769,9 @@ def _table_murs(l, questions_mur, S):
     return KeepTogether([Paragraph("Baies en façade", S["h3"]), _tableau(data, largeurs[:len(data[0])])])
 
 
-def _annexe(d, S):
+def _annexe(d, S, titre="Annexe — seuils utilisés"):
     p = {**PARAMETRES_DEFAUT, **(d.get("parametres") or {})}
-    el = [PageBreak(), Titre1("Annexe — seuils utilisés", S["h1"])]
+    el = [PageBreak(), Titre1(titre, S["h1"])]
     data = [[Paragraph(h, S["entete"]) for h in ("Seuil", "Valeur", "Signification", "Règles")]]
     for q in REFERENTIEL["parametres"]:
         v = p[q["nom"]]
@@ -750,6 +784,395 @@ def _annexe(d, S):
     el += [Spacer(1, 6 * mm),
            Paragraph("Méthode : © 2026 ACTEE et SURYA Ingénierie, diffusée sous licence CC BY-SA 4.0 "
                      "(https://creativecommons.org/licenses/by-sa/4.0/deed.fr).", S["petit"])]
+    return el
+
+
+# ------------------------------------------------------------------ compte rendu orienté décision
+SUITES = {"engager": "À engager", "valider": "À valider avant de consulter", "completer": "Données à compléter",
+          "en_place": "Déjà en place", "exclue": "Écartée"}
+COULEURS_SUITE = {"engager": "#5bba50", "valider": "#ffc300", "completer": "#e0e6de"}
+
+
+def _poids(entree: dict, cle: str) -> float:
+    """Nombre de personnes concernées (effectif du local ou de l'espace), 1 à défaut."""
+    v = entree.get("L-04" if cle == "locaux" else "E-06")
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0 else 1.0
+
+
+def _libelle_solution(s0: dict) -> str:
+    sol, grp = s0["solution"], s0["groupe"]
+    if sol == "Toiture":
+        return grp
+    if sol in ("Occupation", "Éclairage", "Équipements") or sol.startswith(("Par ", "Sur ")):
+        return f"{grp} : {sol[0].lower() + sol[1:]}"
+    return sol
+
+
+def _bilan(res: dict, d: dict) -> list[dict]:
+    """Par solution : où l'engager, où la valider, où compléter, où elle est en place ou écartée."""
+    out = []
+    for cle, defaut in (("locaux", "Local"), ("espaces", "Espace")):
+        entites, entrees = res[cle], d.get(cle) or []
+        if not entites:
+            continue
+        for j, s0 in enumerate(entites[0]["solutions"]):
+            b = {"solution": s0["solution"], "libelle": _libelle_solution(s0), "groupe": s0["groupe"], "cle": cle,
+                 **{k: [] for k in SUITES}}
+            for i, x in enumerate(entites):
+                s = x["solutions"][j]
+                entree = entrees[i] if i < len(entrees) else {}
+                types = {TYPES_ALERTE.get(a, "INFO") for a in s["alertes"]}
+                if s["statut"] in (RECOMMANDE, A_OPTIMISER):
+                    k = "valider" if "AL" in types else "engager"
+                elif s["statut"] == SOUS_RESERVE:
+                    k = "completer" if donnee_manquante(x, s) else "valider"
+                elif s["statut"] == EN_PLACE:
+                    k = "en_place"
+                elif s["statut"] == NON_RECOMMANDE:
+                    k = "exclue"
+                else:
+                    continue
+                b[k].append({"nom": nom(x, i, defaut), "poids": _poids(entree, cle), "statut": s["statut"],
+                             "x": x, "s": s, "entree": entree})
+            for k in SUITES:
+                b[k].sort(key=lambda e: -e["poids"])
+            b["score"] = sum(e["poids"] for e in b["engager"]) + 0.5 * sum(e["poids"] for e in b["valider"])
+            out.append(b)
+    return sorted(out, key=lambda b: -b["score"])
+
+
+def _ressentis_par_solution(d: dict) -> dict:
+    """{solution: [« soleil direct gênant (64 %) », …]} pour les ressentis signalés par les usagers."""
+    from . import questionnaire as QU
+
+    reponses = d.get("questionnaires") or []
+    if len(reponses) < QU.MIN_REPONDANTS:
+        return {}
+    ind = QU.synthese(reponses)["indicateurs"]
+    out = defaultdict(list)
+    for _, ressenti, cle, solutions, _ in QU.MATRICE:
+        i = ind[cle]
+        if solutions and i["part"] is not None and i["sur"] >= QU.MIN_REPONDANTS and i["part"] >= QU.SEUIL_SIGNAL:
+            for sol in solutions:
+                out[sol].append(f"{ressenti[0].lower() + ressenti[1:]} ({i['part']:.0%})")
+    return out
+
+
+def _lieux(entites, n=3) -> str:
+    noms = [e["nom"] for e in entites]
+    if len(noms) <= n:
+        return ", ".join(noms)
+    return ", ".join(noms[:n]) + f" et {len(noms) - n} autre(s)"
+
+
+def _personnes(entites) -> str:
+    total = sum(e["poids"] for e in entites if e["poids"] > 1)
+    return f"{total:g} pers." if total else ""
+
+
+def _chiffres_cles(chiffres, S):
+    """Bandeau de chiffres clés (charte : Bitter Black dans des blocs de couleur)."""
+    fonds = [("#0a17a6", colors.white), ("#ff5400", NOIR), ("#0dcccc", NOIR), ("#d1bffc", NOIR)]
+    st_v = ParagraphStyle("cv", parent=S["base"], fontName=S["h1"].fontName, fontSize=19, leading=22)
+    st_l = ParagraphStyle("cl", parent=S["base"], fontSize=7.5, leading=9)
+    cellules, style = [], []
+    for k, (v, lib) in enumerate(chiffres[:4]):
+        fond, texte = fonds[k % 4]
+        cellules.append([Paragraph(f"<font color='{texte.hexval().replace('0x', '#')}'>{_t(v)}</font>", st_v),
+                         Paragraph(f"<font color='{texte.hexval().replace('0x', '#')}'>{_t(lib)}</font>", st_l)])
+        style.append(("BACKGROUND", (k, 0), (k, 0), colors.HexColor(fond)))
+    n = len(cellules)
+    t = Table([cellules], colWidths=[180 * mm / n] * n)
+    t.setStyle(TableStyle(style + [("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                                   ("RIGHTPADDING", (0, 0), (-1, -1), 5), ("TOPPADDING", (0, 0), (-1, -1), 6),
+                                   ("BOTTOMPADDING", (0, 0), (-1, -1), 7)]))
+    return t
+
+
+def _phrase_batiment(d: dict, res: dict) -> str:
+    b = d.get("batiment") or {}
+    morceaux = []
+    if b.get("B-01") and b["B-01"] != "Non renseigné":
+        periode = b["B-01"]
+        morceaux.append(f"bâtiment construit {periode[0].lower() + periode[1:]}" if periode.startswith(("De ", "Avant", "Après"))
+                        else f"bâtiment ({periode})")
+    if b.get("B-03"):
+        morceaux.append(f"structure {b['B-03'].lower()}")
+    if b.get("B-04"):
+        morceaux.append(f"isolation des murs : {b['B-04']}")
+    toit = b.get("B-18")
+    if toit:
+        t = toit.split(" (")[0].lower()
+        if b.get("B-19") == "Isolée":
+            t += " isolée" + (f" ({_dec(b['B-20'])} cm d'isolant)" if isinstance(b.get("B-20"), (int, float)) else "")
+        elif b.get("B-19") == "Non isolée":
+            t += " non isolée"
+        if b.get("B-21") == "Oui":
+            t += ", avec combles"
+        morceaux.append(t)
+    if b.get("B-09") == "Non":
+        morceaux.append("pas de ventilation mécanique")
+    elif b.get("B-09") == "Oui":
+        morceaux.append("ventilation mécanique" + (f" {b['B-10'].lower()}" if b.get("B-10") and b["B-10"] != "Non évalué" else ""))
+    if b.get("B-05") == "Oui" or b.get("B-06") == "Oui":
+        morceaux.append("protection patrimoniale (avis de l'architecte des bâtiments de France)")
+    if not morceaux:
+        return ""
+    txt = " ; ".join(morceaux)
+    return txt[0].upper() + txt[1:] + "."
+
+
+def _perimetre(d: dict, res: dict) -> dict:
+    locaux, espaces = d.get("locaux") or [], d.get("espaces") or []
+    num = lambda v: v if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0 else 0  # noqa: E731
+    return {"nb_locaux": len(res["locaux"]), "nb_espaces": len(res["espaces"]),
+            "surface": sum(num(l.get("L-03")) for l in locaux), "effectif": sum(num(l.get("L-04")) for l in locaux),
+            "effectif_ext": max([num(e.get("E-06")) for e in espaces] or [0])}
+
+
+def _synthese_decision(d, res, S):
+    """Page 1 : le bâtiment en bref, les solutions principales et les points de vigilance."""
+    audit = d.get("audit") or {}
+    bil = _bilan(res, d)
+    usagers = _ressentis_par_solution(d)
+    per = _perimetre(d, res)
+    n_pistes = 4 if d.get("questionnaires") else 3  # numéros des parties citées
+    el = [Titre1("1. Synthèse", S["h1"])]
+
+    # le bâtiment en bref
+    nom_et = audit.get("etablissement") or "L'établissement"
+    perim = (f"{per['nb_locaux']} local(aux) visité(s)" + (f" ({_dec(per['surface'])} m², {per['effectif']:g} personnes "
+             "au plus)" if per["surface"] else "") + (f" et {per['nb_espaces']} espace(s) extérieur(s)" if per["nb_espaces"] else ""))
+    el.append(Paragraph(f"<b>{_t(nom_et)}</b>{' (' + _t(audit['commune']) + ')' if audit.get('commune') else ''} : "
+                        f"{_t(perim)}. {_t(_phrase_batiment(d, res))}", S["base"]))
+    engager = [b for b in bil if b["engager"]]
+    nb_al = sum(1 for x in res["locaux"] + res["espaces"] for s in x["solutions"] for a in s["alertes"]
+                if TYPES_ALERTE.get(a) == "AL")
+    chiffres = [(f"{len(engager)}", "solutions à engager sans étude préalable"),
+                (f"{sum(1 for b in bil if b['valider'])}", "solutions à valider avant de consulter"),
+                (f"{nb_al}", "alertes maîtrise d'œuvre")]
+    if d.get("questionnaires"):
+        from . import questionnaire as QU
+        i = QU.synthese(d["questionnaires"])["indicateurs"]["trop_chaud_souvent"]
+        if i["part"] is not None:
+            chiffres.append((f"{i['part']:.0%}", "des usagers ont trop chaud souvent ou très souvent"))
+    if per["surface"] and len(chiffres) < 4:
+        chiffres.append((f"{_dec(per['surface'])} m²", "de locaux visités"))
+    el += [Spacer(1, 3 * mm), _chiffres_cles(chiffres, S), Spacer(1, 1 * mm)]
+    if audit.get("synthese"):
+        el += [Paragraph("L'avis de l'auditeur", S["h2"]), Paragraph(_t(audit["synthese"]), S["base"])]
+
+    # solutions principales
+    el.append(Paragraph("Les solutions principales", S["h2"]))
+    if not engager:
+        el.append(Paragraph("Aucune solution n'est engageable en l'état : voir les validations à obtenir.", S["base"]))
+    lignes = []
+    for b in engager[:6]:
+        quoi = f"<b>{_t(b['libelle'])}</b>"
+        ou = _lieux(b["engager"])
+        pers = _personnes(b["engager"])
+        detail = f"{_t(ou)}" + (f" · {pers}" if pers else "")
+        if usagers.get(b["solution"]):
+            detail += f"<br/><font color='#0a17a6'>Confirmé par les usagers : {_t(usagers[b['solution']][0])}</font>"
+        lignes.append(("engager", quoi, detail))
+    valider = sorted([b for b in bil if b["valider"]], key=lambda b: -sum(e["poids"] for e in b["valider"]))
+    for b in valider[:3]:
+        lignes.append(("valider", f"<b>{_t(b['libelle'])}</b>", _t(_lieux(b["valider"])) + " · " + _t(_raison_valider(b))))
+    if lignes:
+        data, style = [], []
+        for k, quoi, detail in lignes:
+            data.append([Paragraph(SUITES[k], S["statut"]), Paragraph(quoi, S["cellule"]), Paragraph(detail, S["cellule"])])
+            style.append(("BACKGROUND", (0, len(data) - 1), (0, len(data) - 1), colors.HexColor(COULEURS_SUITE[k])))
+        t = Table(data, colWidths=[30 * mm, 62 * mm, 88 * mm])
+        t.setStyle(TableStyle(style + [("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                       ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor("#9aa39a")),
+                                       ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]))
+        el.append(t)
+        el.append(Paragraph(f"Classement par nombre de personnes concernées. Le détail figure à la partie {n_pistes}.", S["petit"]))
+
+    # points de vigilance
+    el.append(Paragraph("Points de vigilance", S["h2"]))
+    puces = []
+    al = _alertes_par_type(res)
+    if al["AL"]:
+        puces.append("Études de maîtrise d'œuvre à prévoir avant de consulter : "
+                     + " ; ".join(f"{_t(SUJETS_ALERTE.get(a, a))} ({_t(_lieux([{'nom': n_} for n_ in lieux], 2))})"
+                                  for a, lieux in al["AL"].items()) + ".")
+    manquants = sum(len(b["completer"]) for b in bil)
+    if manquants:
+        puces.append(f"{manquants} statut(s) restent « Sous réserve » faute d'information : compléter le relevé "
+                     f"lève la réserve (partie {n_pistes + 1}).")
+    if d.get("questionnaires"):
+        from . import questionnaire as QU
+        m = QU.matrice(d["questionnaires"], res)
+        for l in m["lignes"]:
+            if l["resultat"] == QU.A_VERIFIER:
+                puces.append(f"Ressenti des usagers à rapprocher de la visite : {_t(l['ressenti'][0].lower() + l['ressenti'][1:])} "
+                             f"({_t(l['usagers'])}), voir partie 3.")
+    if not puces:
+        puces.append("Aucune alerte de maîtrise d'œuvre ni donnée manquante.")
+    el += [Paragraph(p, S["puce"], bulletText="n") for p in puces[:5]]
+    return el
+
+
+def _motif(texte: str) -> str:
+    """Motif lisible d'une règle : « Aucun cas précédent (x) » -> « x »."""
+    m = re.match(r"Aucun cas précédent \((.*)\)\s*$", texte.strip())
+    return m.group(1) if m else texte
+
+
+def _fin(texte: str) -> str:
+    return texte if texte.endswith((".", "…", "!", "?")) else texte + "."
+
+
+def _court(texte: str, n: int = 110) -> str:
+    texte = " ".join(str(texte).split())
+    return texte if len(texte) <= n else texte[:n].rsplit(" ", 1)[0] + "…"
+
+
+def _alertes_par_type(res) -> dict:
+    out = {"AL": defaultdict(list), "VA": defaultdict(list), "INFO": defaultdict(list)}
+    for cle, defaut in (("locaux", "Local"), ("espaces", "Espace")):
+        for i, x in enumerate(res[cle]):
+            codes = [a for s in x["solutions"] for a in s["alertes"]]
+            if x.get("EX-AL") == 1:
+                codes.insert(0, "EX-AL")
+            for a in dict.fromkeys(codes):
+                out[TYPES_ALERTE.get(a, "INFO")][a].append(nom(x, i, defaut))
+    return out
+
+
+def _raison_valider(b) -> str:
+    raisons = []
+    for e in b["valider"]:
+        al = [a for a in e["s"]["alertes"] if TYPES_ALERTE.get(a) == "AL"]
+        if al:
+            raisons.append("étude de maîtrise d'œuvre (" + SUJETS_ALERTE.get(al[0], al[0]) + ")")
+        else:
+            raisons.append("vérification technique")
+    return " et ".join(dict.fromkeys(raisons))
+
+
+def _presentation(d, res, S):
+    """Partie 2 : le bâtiment, les locaux et les espaces visités."""
+    per = _perimetre(d, res)
+    el = [PageBreak(), Titre1("2. Le bâtiment et le périmètre visité", S["h1"])]
+    phrase = _phrase_batiment(d, res)
+    el.append(Paragraph(_t(phrase) if phrase else "Caractéristiques du bâtiment non renseignées.", S["base"]))
+    facades = [o for o, f in (d.get("facades") or {}).items() if f.get("F-01")]
+    if facades:
+        el.append(Paragraph(f"Façades décrites : {', '.join(facades)}.", S["base"]))
+    locaux = d.get("locaux") or []
+    if res["locaux"]:
+        el.append(Paragraph(f"Locaux visités ({per['nb_locaux']} local(aux)"
+                            + (f", {_dec(per['surface'])} m², {per['effectif']:g} personnes au plus" if per["surface"] else "")
+                            + ")", S["h2"]))
+        data = [[Paragraph(h, S["entete"]) for h in ("Local", "Usage", "Niveau", "Surface", "Effectif", "Baies par orientation")]]
+        for i, x in enumerate(res["locaux"]):
+            l = locaux[i] if i < len(locaux) else {}
+            data.append([Paragraph(f"<b>{_t(nom(x, i, 'Local'))}</b>", S["cellule"]), Paragraph(_t(l.get("L-02") or "—"), S["cellule"]),
+                         Paragraph(_t(l.get("L-09") or "—"), S["cellule"]), Paragraph(_nb(l.get("L-03"), " m²"), S["cellule"]),
+                         Paragraph(_nb(l.get("L-04")), S["cellule"]), Paragraph(_t(_baies_par_orientation(l)), S["cellule"])])
+        el.append(_tableau(data, [36 * mm, 38 * mm, 24 * mm, 17 * mm, 15 * mm, 50 * mm]))
+    espaces = d.get("espaces") or []
+    if res["espaces"]:
+        el.append(Paragraph(f"Espaces extérieurs ({per['nb_espaces']})", S["h2"]))
+        for i, x in enumerate(res["espaces"]):
+            e = espaces[i] if i < len(espaces) else {}
+            infos = []
+            if e.get("E-02"):
+                infos.append(", ".join(e["E-02"]) if isinstance(e["E-02"], list) else str(e["E-02"]))
+            if isinstance(e.get("E-06"), (int, float)):
+                infos.append(f"{e['E-06']:g} personnes au plus")
+            if e.get("E-09"):
+                infos.append(f"part à l'ombre en milieu de journée : {e['E-09']}")
+            if e.get("E-10"):
+                infos.append("ombre apportée par : " + (", ".join(e["E-10"]) if isinstance(e["E-10"], list) else str(e["E-10"])).lower())
+            el.append(Paragraph(f"<b>{_t(nom(x, i, 'Espace'))}</b> : {_t('; '.join(infos) or 'non décrit')}.", S["puce"], bulletText="n"))
+    obs = [(nom(x, i, "Local"), (locaux[i] if i < len(locaux) else {}).get("observations")) for i, x in enumerate(res["locaux"])]
+    obs += [(nom(x, i, "Espace"), (espaces[i] if i < len(espaces) else {}).get("observations")) for i, x in enumerate(res["espaces"])]
+    obs = [(n_, o) for n_, o in obs if o]
+    if obs:
+        el.append(Paragraph("Observations de visite", S["h2"]))
+        el += [Paragraph(f"<b>{_t(n_)}</b> : {_t(o)}", S["puce"], bulletText="n") for n_, o in obs]
+    return el
+
+
+def _pistes(d, res, S, num):
+    """Pistes d'action par solution, rédigées : où engager, où valider, ce qui manque."""
+    bil = [b for b in _bilan(res, d) if b["engager"] or b["valider"] or b["completer"]]
+    usagers = _ressentis_par_solution(d)
+    el = [PageBreak(), Titre1(f"{num}. Pistes d'action par solution", S["h1"]),
+          Paragraph("Les solutions sont classées par nombre de personnes concernées. <b>À engager</b> : statut "
+                    "Recommandé ou À optimiser sans alerte de maîtrise d'œuvre ; la solution peut faire l'objet d'une "
+                    "consultation d'entreprises ou de travaux en régie. <b>À valider</b> : une étude ou une vérification "
+                    "technique est nécessaire avant de consulter. Les quantités sont celles relevées lors de la visite ; "
+                    "le détail par local figure en annexe C.", S["petit"])]
+    if not bil:
+        return el + [Paragraph("Aucune solution à engager ni à valider.", S["base"])]
+    for b in bil:
+        bloc = [Paragraph(_t(b["libelle"]), S["h3"])]
+        if b["engager"]:
+            lieux = " ; ".join(f"{_t(e['nom'])} ({_t(quantites(b['solution'], e['entree']))})"
+                              if quantites(b["solution"], e["entree"]) else _t(e["nom"]) for e in b["engager"])
+            optim = [e["nom"] for e in b["engager"] if e["statut"] == A_OPTIMISER]
+            txt = f"<b>À engager</b>{' (' + _personnes(b['engager']) + ')' if _personnes(b['engager']) else ''} : {lieux}."
+            if optim:
+                txt += f" Existant à améliorer : {_t(', '.join(optim))}."
+            va = {a for e in b["engager"] for a in e["s"]["alertes"] if TYPES_ALERTE.get(a) == "VA"}
+            if va:
+                txt += " Point à faire valider par un professionnel : " + " ; ".join(_t(SUJETS_ALERTE.get(a, a)) for a in sorted(va)) + "."
+            bloc.append(Paragraph(txt, S["puce"], bulletText="n"))
+        if b["valider"]:
+            par_motif = defaultdict(list)  # un même motif pour plusieurs locaux : cité une fois
+            for e in b["valider"]:
+                al = [a for a in e["s"]["alertes"] if TYPES_ALERTE.get(a) == "AL"]
+                motif = SUJETS_ALERTE.get(al[0], _court(REGLES[al[0]]["regle"])) if al else _court(_motif(justification(e["x"], e["s"])[1]), 130)
+                par_motif[motif].append(e["nom"])
+            details = [f"{_t(', '.join(noms))} ({_t(m[0].lower() + m[1:])})" for m, noms in par_motif.items()]
+            bloc.append(Paragraph("<b>À valider avant de consulter</b> : " + " ; ".join(details) + ".", S["puce"], bulletText="n"))
+        if b["completer"]:
+            bloc.append(Paragraph("<b>Données à compléter</b> : " + _t(", ".join(e["nom"] for e in b["completer"]))
+                                  + " (voir annexe E).", S["puce"], bulletText="n"))
+        reste = []
+        if b["en_place"]:
+            reste.append("déjà en place : " + ", ".join(e["nom"] for e in b["en_place"]))
+        if b["exclue"]:
+            reste.append("écartée : " + ", ".join(e["nom"] for e in b["exclue"]))
+        if reste:
+            bloc.append(Paragraph(_t("; ".join(reste)[0].upper() + "; ".join(reste)[1:] + "."), S["petit"]))
+        if usagers.get(b["solution"]):
+            bloc.append(Paragraph(f"<font color='#0a17a6'>Ressenti des usagers : {_t(', '.join(usagers[b['solution']]))}.</font>",
+                                  S["petit"]))
+        el.append(KeepTogether(bloc))
+    return el
+
+
+def _points_a_lever(d, res, S, num):
+    """Avant de consulter : études, validations et informations à obtenir."""
+    al = _alertes_par_type(res)
+    bil = _bilan(res, d)
+    el = [Spacer(1, 4 * mm), CondPageBreak(60 * mm), Titre1(f"{num}. Avant de consulter : ce qu'il reste à lever", S["h1"])]
+    for typ, titre, intro in (("AL", "Études de maîtrise d'œuvre", "Une étude par une maîtrise d'œuvre (ou une expertise "
+                               "équivalente) est nécessaire avant de consulter des entreprises."),
+                              ("VA", "Validations ponctuelles", "Un professionnel identifié (installateur, électricien, "
+                               "bureau de contrôle…) peut lever le point sans étude de maîtrise d'œuvre.")):
+        if not al[typ]:
+            continue
+        el += [Paragraph(titre, S["h2"]), Paragraph(intro, S["petit"])]
+        el += [Paragraph(f"{_t(_court(REGLES[a]['regle'], 200))} — <i>{_t(_lieux([{'nom': n_} for n_ in lieux], 4))}</i>",
+                         S["puce"], bulletText="n") for a, lieux in al[typ].items()]
+    completer = defaultdict(list)
+    for b in bil:
+        for e in b["completer"]:
+            completer[e["nom"]].append(b["solution"])
+    if completer:
+        el += [Paragraph("Informations à compléter", S["h2"]),
+               Paragraph("Ces statuts « Sous réserve » ne traduisent pas un obstacle constaté mais une information "
+                         "manquante ; le détail des questions figure en annexe E.", S["petit"])]
+        el += [Paragraph(f"<b>{_t(n_)}</b> : {_t(', '.join(sols))}", S["puce"], bulletText="n") for n_, sols in completer.items()]
+    if not (al["AL"] or al["VA"] or completer):
+        el.append(Paragraph("Rien à lever : les solutions à engager peuvent être consultées directement.", S["base"]))
     return el
 
 
@@ -772,8 +1195,10 @@ def _entete_resultats(audit, res, S):
 def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
     """PDF de l'audit.
 
-    ``complet=True`` : compte rendu complet (page de garde, cadre, synthèse, plan d'action, alertes,
-    données manquantes, fiches détaillées, annexe).
+    ``complet=True`` : compte rendu orienté décision — synthèse en une page, bâtiment et périmètre,
+    ressenti des usagers rapproché de la visite, pistes d'action, points à lever — puis le détail en
+    annexes (cadre, statuts, plan d'action détaillé, alertes, données manquantes, questionnaire,
+    fiches, seuils).
     ``complet=False`` : résultats seuls (tableaux de statuts, alertes, données manquantes).
     """
     S = _styles()
@@ -803,19 +1228,32 @@ def generer_pdf(donnees: dict, complet: bool = True) -> bytes:
             el.append(Paragraph("Aucun local ni espace extérieur n'a été saisi.", S["base"]))
         return _construire(el, audit, titre_pied, "Résultats — audit de faisabilité d'actions d'adaptation", pied)
 
-    el = _page_de_garde(audit, res, S) + _cadre(S)
-    if res["locaux"] or res["espaces"]:
-        el += _synthese(res, S) + _plan_action(res, donnees, S) + _alertes(res, S) + [Spacer(1, 6 * mm)]
-        el += _donnees_manquantes(res, S)
+    el = _page_de_garde(audit, res, S)
+    entites = bool(res["locaux"] or res["espaces"])
+    usagers = bool(donnees.get("questionnaires"))
+    if entites:
+        el += _synthese_decision(donnees, res, S) + _presentation(donnees, res, S)
+        num = 3
+        if usagers:
+            el += _usagers(donnees, res, S, num)
+            num += 1
+        el += _pistes(donnees, res, S, num) + _points_a_lever(donnees, res, S, num + 1)
     else:
-        el += [PageBreak(), Paragraph("Aucun local ni espace extérieur n'a été saisi.", S["base"])]
-    if audit.get("synthese"):
-        el += [Paragraph("Commentaire général de l'auditeur", S["h2"]), Paragraph(_t(audit["synthese"]), S["base"])]
-    num = 6 if (res["locaux"] or res["espaces"]) else 2  # numérotation continue des parties
-    if donnees.get("questionnaires"):
-        el += _usagers(donnees, res, S, num)
-        num += 1
-    el += _fiches(res, donnees, S, num) + _annexe(donnees, S)
+        el += [Titre1("1. Synthèse", S["h1"]), Paragraph("Aucun local ni espace extérieur n'a été saisi.", S["base"])]
+        if audit.get("synthese"):
+            el += [Paragraph("L'avis de l'auditeur", S["h2"]), Paragraph(_t(audit["synthese"]), S["base"])]
+        el += _presentation(donnees, res, S)
+    # annexes : le détail complet
+    el += [PageBreak()] + _cadre(S, "Annexe A — Cadre de l'audit et définitions")
+    if entites:
+        el += _synthese(res, S, "Annexe B — Statuts par local et par espace")
+        el += _plan_action(res, donnees, S, "Annexe C — Plan d'action détaillé")
+        el += _alertes(res, S, "Annexe D — Alertes")
+        el += [PageBreak()] + _donnees_manquantes(res, S, "Annexe E — Données manquantes")
+    if usagers:
+        el += _usagers_detail(donnees, S, "Annexe F — Questionnaire usagers : résultats détaillés")
+    el += _fiches(res, donnees, S, "G", "Annexe G — Fiches détaillées")
+    el += _annexe(donnees, S, "Annexe H — Seuils utilisés")
     return _construire(el, audit, titre_pied, "Compte rendu — audit de faisabilité d'actions d'adaptation", pied)
 
 
