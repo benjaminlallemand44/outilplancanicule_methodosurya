@@ -17,6 +17,13 @@ streamlit run app.py
 Menu **Réglages** (en haut à droite) : charger un exemple, importer un Excel de la méthode déjà rempli
 (`.xlsx`), exporter / réimporter une saisie (`.json`, ou `.zip` avec les photos), notice d'utilisation.
 
+## Base de données (Supabase)
+
+Facultative : sans la section `[supabase]` dans les secrets Streamlit, l'outil reste une maquette.
+Avec elle : comptes des auditeurs, audits enregistrés automatiquement à chaque étape, questionnaire en
+ligne enregistré dans la base, photos dans un stockage privé. Mise en service, sécurité (RLS) et points
+à décider : `docs/supabase.md` ; schéma : `supabase/migrations/`.
+
 ## Version, déploiement et gouvernance
 
 - **Branche de référence : `main`.** L'application Streamlit Cloud doit être déployée depuis `main`.

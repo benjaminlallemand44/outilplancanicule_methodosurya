@@ -209,7 +209,7 @@ def valider(photos, notes: list[str]) -> list[dict]:
         q = {"id": str(p["id"])[:40], "cible": str(p.get("cible") or ""), "legende": str(p.get("legende") or "")[:300]}
         e = p.get("etiquette")
         q["etiquette"] = e if e in ETIQUETTES else "Autre"
-        for k in ("prise_le", "visages_floutes", "chemin"):
+        for k in ("prise_le", "visages_floutes", "envoyee"):
             if p.get(k) not in (None, ""):
                 q[k] = p[k]
         out.append(q)

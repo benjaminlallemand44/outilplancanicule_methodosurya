@@ -1,59 +1,56 @@
-# Passage à Supabase (étape suivante)
+# Supabase : comptes, audits enregistrés, questionnaire en ligne, photos
 
-La maquette n'enregistre rien sur un serveur : la saisie de l'audit vit dans la session du
-navigateur (export / import JSON) et les réponses usagers sont importées en CSV ou saisies à la main.
-Le code est organisé pour brancher Supabase sans toucher au moteur, au questionnaire ni au PDF.
+Sans configuration, l'application reste une **maquette** : rien n'est enregistré sur un serveur (export
+et import de fichiers). Dès que la section `[supabase]` est renseignée dans les secrets Streamlit, elle
+devient un outil multi-auditeurs.
 
-## Ce qui est déjà prêt
+## Ce que fait le branchement
 
-| Élément | Où | Rôle |
-|---|---|---|
-| Saisie de l'audit = un seul dictionnaire JSON | `st.session_state.donnees` | à stocker tel quel dans une colonne `jsonb` |
-| Interface de stockage des réponses usagers | `surya/stockage.py` (`DepotReponses`) | `DepotMemoire` aujourd'hui, `DepotSupabase` demain |
-| Format d'une réponse usager | `surya/questionnaire.py` (`Q1` à `Q24`) | même format en base, en CSV et dans le formulaire |
-| Lien du questionnaire en ligne | `?questionnaire=<code de l'audit>` | identifie l'audit auquel rattacher une réponse |
+| Fonction | Comportement |
+|---|---|
+| Comptes | Création de compte et connexion par e-mail et mot de passe (Supabase Auth), sur l'écran de départ. |
+| Audits enregistrés | Liste « Vos audits enregistrés » (ouvrir, supprimer) ; **enregistrement automatique à chaque changement d'étape**, et bouton « Enregistrer » dans le menu Réglages. Toute la saisie est une colonne `jsonb`. |
+| Questionnaire en ligne | Le lien `?questionnaire=<code>` enregistre chaque réponse, anonyme, dans la base. L'auditeur les récupère dans l'étape Questionnaires usagers (« Récupérer les réponses en ligne »). |
+| Photos | Seau de stockage **privé** `photos`, un dossier par audit ; envoyées à l'enregistrement, retéléchargées à l'ouverture de l'audit, supprimées avec lui. |
 
-## Schéma proposé
+Code : `surya/supabase.py` (client REST sans SDK, dépôts `DepotAudits`, `DepotReponsesSupabase`,
+`DepotPhotos`). Tests : `tests/test_supabase.py`, contre un faux serveur qui reproduit les règles
+d'accès (`tests/faux_supabase.py`).
 
-```sql
-create table audits (
-  id uuid primary key default gen_random_uuid(),
-  code text unique not null,              -- code du lien questionnaire, non devinable
-  proprietaire uuid references auth.users not null,
-  donnees jsonb not null,                 -- saisie complète de l'audit
-  cree_le timestamptz default now(),
-  modifie_le timestamptz default now()
-);
+## Sécurité (règles RLS, `supabase/migrations/20261124000000_init.sql`)
 
-create table reponses_usagers (
-  id uuid primary key default gen_random_uuid(),
-  audit_code text not null references audits(code) on delete cascade,
-  reponses jsonb not null,                -- {"Q1": "...", "Q11": ["...", "..."], ...}
-  recue_le timestamptz default now()
-);
+- Un auditeur ne voit, ne modifie et ne supprime **que ses audits**, leurs réponses et leurs photos.
+- Un usager anonyme peut **seulement déposer** une réponse, et seulement si le code correspond à un
+  audit existant dont le questionnaire est **ouvert** et **non expiré** (120 jours après la création).
+- **Limite de débit** : 60 réponses par 10 minutes et 2 000 réponses au plus par audit.
+- Taille bornée : 20 Ko par réponse, 2 Mo par saisie, 5 Mo par photo (JPEG uniquement).
+- La clé utilisée par l'application est la **clé publique** (« publishable ») : ce sont les règles RLS qui
+  protègent les données. Aucune clé secrète (`service_role`) n'est nécessaire ni ne doit être configurée.
 
-alter table audits enable row level security;
-alter table reponses_usagers enable row level security;
+## Mise en service
 
--- L'auditeur ne voit et ne modifie que ses audits
-create policy audits_proprietaire on audits
-  for all using (auth.uid() = proprietaire) with check (auth.uid() = proprietaire);
+1. Créer un projet Supabase, région **eu-west-3 (Paris)** pour l'hébergement des données en France.
+2. Appliquer la migration `supabase/migrations/20261124000000_init.sql` (éditeur SQL du tableau de bord,
+   ou `supabase db push`).
+3. Dans Streamlit Cloud, « Settings → Secrets », coller (voir `.streamlit/secrets.toml.example`) :
 
--- Un usager (anonyme) peut déposer une réponse pour un code d'audit existant, sans rien lire
-create policy reponses_depot on reponses_usagers
-  for insert to anon with check (exists (select 1 from audits a where a.code = audit_code));
+   ```toml
+   [supabase]
+   url = "https://<identifiant-du-projet>.supabase.co"
+   cle_publique = "sb_publishable_..."
+   ```
 
--- L'auditeur lit les réponses de ses audits
-create policy reponses_lecture on reponses_usagers
-  for select using (exists (select 1 from audits a where a.code = audit_code and a.proprietaire = auth.uid()));
-```
+4. Dans Supabase, « Authentication → URL configuration » : mettre l'adresse de l'application comme
+   « Site URL » (lien de confirmation des e-mails).
 
-## Étapes du branchement
+## Points à décider avant un usage réel
 
-1. Créer le projet Supabase et appliquer le schéma ci-dessus.
-2. Ajouter l'URL et la clé publique dans les secrets Streamlit (`.streamlit/secrets.toml`, jamais dans
-   le dépôt).
-3. Écrire `DepotSupabase` (mêmes méthodes que `DepotMemoire`).
-4. Ajouter l'authentification de l'auditeur, la liste de ses audits et l'enregistrement automatique.
-5. Points à décider avant la mise en production : durée de conservation des réponses, hébergement des
-   données (RGPD), anonymat des répondants, limitation du nombre de réponses par lien.
+- **Inscriptions** : ouvertes à tous aujourd'hui. Les restreindre (invitation par l'administrateur, ou
+  domaine d'e-mail autorisé) avant de diffuser le lien.
+- **Durée de conservation** des audits, des photos et des réponses ; purge automatique à prévoir.
+- **Durée d'ouverture** du questionnaire (120 jours par défaut) et possibilité de le clore depuis l'outil.
+- **RGPD** : registre de traitement, mention d'information sur le questionnaire, sous-traitant
+  (Supabase, hébergement AWS Paris), hébergement de l'application elle-même (Streamlit Community Cloud
+  ajoute ses propres traceurs, voir `docs/notice_utilisation.md`).
+- **Offre Supabase** : l'offre gratuite met le projet en pause après une semaine sans activité et ne
+  comporte pas de sauvegarde à restaurer ; une offre payante est à prévoir pour un usage métier.

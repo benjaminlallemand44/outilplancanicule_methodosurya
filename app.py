@@ -25,6 +25,7 @@ import streamlit.components.v1 as components
 
 from surya import moteur, plan, version
 from surya import photos as PH
+from surya import supabase as SB
 from surya import questionnaire as QU
 from surya.import_excel import ImportImpossible, importer
 from surya.stockage import DepotMemoire
@@ -115,6 +116,8 @@ def charger(d: dict, contenus: dict | None = None):
     for x in base["locaux"] + base["espaces"] + base["questionnaires"]:
         x.setdefault("_id", uuid.uuid4().hex[:8])
     ss.donnees = base
+    ss.audit_id = None  # nouvel audit, pas encore enregistré (ouvrir_audit le renseigne)
+    ss.photos_supprimees = []
     ss.photos_bin = dict(contenus or {})
     base["photos"] = [ph for ph in base["photos"] if ph.get("id") in ss.photos_bin]  # description sans image : retirée
     ss.generation = ss.get("generation", 0) + 1
@@ -129,6 +132,51 @@ for k, v in (("mode", None), ("saisie", "guidee"), ("etape", 0), ("etape_max", 0
     ss.setdefault(k, v)
 D = ss.donnees
 D.setdefault("photos", [])  # saisies antérieures aux photos
+for k, v in (("audit_id", None), ("photos_supprimees", []), ("enregistre_le", None)):
+    ss.setdefault(k, v)
+SB_CONF = SB.configuration(st.secrets)  # None : mode maquette, rien n'est enregistré sur un serveur
+if SB_CONF and "sb" not in ss:
+    ss.sb = SB.Supabase(*SB_CONF)
+
+
+def connecte() -> bool:
+    return bool(SB_CONF) and ss.sb.connecte
+
+
+def enregistrer(silencieux: bool = False) -> bool:
+    """Enregistre l'audit (et ses photos) dans Supabase si l'auditeur est connecté."""
+    if not connecte():
+        return False
+    try:
+        code_audit()
+        depot = SB.DepotAudits(ss.sb)
+        if ss.audit_id is None:  # première fois : créer la ligne pour obtenir l'identifiant du dossier photos
+            ss.audit_id = depot.enregistrer(D)["id"]
+        SB.synchroniser_photos(SB.DepotPhotos(ss.sb), ss.audit_id, D, ss.photos_bin, ss.photos_supprimees)
+        depot.enregistrer(D, ss.audit_id)
+        ss.enregistre_le = __import__("datetime").datetime.now().strftime("%H:%M")
+        return True
+    except SB.ErreurSupabase as e:
+        if not silencieux:
+            st.error(f"Enregistrement impossible : {e}")
+        else:
+            st.toast(f"Enregistrement automatique impossible : {e}", icon="⚠️")
+        return False
+
+
+def ouvrir_audit(id_audit: str):
+    from surya.validation import valider
+    ligne = SB.DepotAudits(ss.sb).ouvrir(id_audit)
+    d, _ = valider(ligne["donnees"])
+    d["audit"] = dict(d.get("audit") or {}, code=ligne["code"])
+    depot, contenus = SB.DepotPhotos(ss.sb), {}
+    for ph in d.get("photos") or []:
+        try:
+            contenus[ph["id"]] = depot.telecharger(id_audit, ph["id"])
+        except SB.ErreurSupabase:
+            pass
+    charger(d, contenus)
+    ss.audit_id = id_audit
 
 
 def cle(*parts) -> str:
@@ -142,6 +190,7 @@ def etapes() -> list[str]:
 def aller(etape: str | int):
     """Change d'étape du parcours (et remonte en haut de page)."""
     n = etapes().index(etape) if isinstance(etape, str) else etape
+    enregistrer(silencieux=True)
     ss.etape = n
     ss.etape_max = max(ss.etape_max, n)
     ss.vue = "parcours"
@@ -304,6 +353,9 @@ def ecran_depart():
                 "l'outil établit pour chaque local et chaque espace extérieur le **statut de faisabilité** de chaque "
                 "solution de confort d'été.")
 
+    if SB_CONF:
+        bloc_compte()
+
     if D["locaux"] or D["espaces"] or D["batiment"]:
         st.info(f"Une saisie est en cours ({len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)) : "
                 "elle sera conservée quel que soit votre choix.", icon="💾")
@@ -345,6 +397,82 @@ def ecran_depart():
     st.caption(f"{REFERENTIEL['version']}. © 2026 ACTEE et SURYA Ingénierie — contenu de la méthode diffusé sous "
                "licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr). Maquette : les "
                "données ne sont pas enregistrées sur un serveur ; exportez la saisie pour la conserver.")
+
+
+def bloc_compte():
+    """Connexion de l'auditeur et liste de ses audits enregistrés (si Supabase est configuré)."""
+    if not ss.sb.connecte:
+        with st.expander("🔐 Se connecter pour enregistrer et retrouver vos audits", expanded=False):
+            st.caption("Sans compte, l'outil fonctionne comme une maquette : la saisie n'est pas enregistrée, "
+                       "exportez-la pour la conserver.")
+            t1, t2 = st.tabs(["Connexion", "Créer un compte"])
+            for onglet, creer in ((t1, False), (t2, True)):
+                with onglet, st.form(f"compte:{creer}"):
+                    email = st.text_input("Adresse e-mail")
+                    mdp = st.text_input("Mot de passe" + (" (8 caractères au moins)" if creer else ""), type="password")
+                    if st.form_submit_button("Créer le compte" if creer else "Se connecter", type="primary"):
+                        try:
+                            if creer:
+                                if ss.sb.inscription(email.strip(), mdp):
+                                    st.success("Compte créé : confirmez votre adresse avec le lien reçu par e-mail, "
+                                               "puis connectez-vous.")
+                                else:
+                                    st.rerun()
+                            else:
+                                ss.sb.connexion(email.strip(), mdp)
+                                st.rerun()
+                        except SB.ErreurSupabase as e:
+                            st.error(str(e))
+        return
+    c1, c2 = st.columns([4, 1], vertical_alignment="center")
+    c1.markdown(f"**Vos audits enregistrés** · :gray[{html.escape((ss.sb.utilisateur or {}).get('email', ''))}]")
+    if c2.button("Se déconnecter", width="stretch"):
+        ss.sb.deconnexion()
+        st.rerun()
+    try:
+        audits = SB.DepotAudits(ss.sb).lister()
+    except SB.ErreurSupabase as e:
+        st.error(f"Liste des audits indisponible : {e}")
+        return
+    if not audits:
+        st.caption("Aucun audit enregistré : choisissez un type d'audit ci-dessous ; il sera enregistré à chaque "
+                   "étape.")
+    for a in audits[:20]:
+        with st.container(border=True):
+            l1, l2, l3 = st.columns([4, 1, 1], vertical_alignment="center")
+            courant = " · :blue[en cours]" if a["id"] == ss.audit_id else ""
+            l1.markdown(f"**{html.escape(a['nom'])}** :gray[· modifié le {a['modifie_le'][8:10]}/{a['modifie_le'][5:7]}/"
+                        f"{a['modifie_le'][:4]}]{courant}")
+            if l2.button("Ouvrir", key=f"ouvrir:{a['id']}", width="stretch"):
+                try:
+                    ouvrir_audit(a["id"])
+                    ss.message = f"Audit « {a['nom']} » ouvert."
+                    ss.etape_max = len(MODES["complet"]["etapes"]) - 1
+                    st.rerun()
+                except SB.ErreurSupabase as e:
+                    st.error(str(e))
+            if l3.button("Supprimer", key=f"suppr:{a['id']}", width="stretch"):
+                ss.a_supprimer = a["id"]
+            if ss.get("a_supprimer") == a["id"]:
+                st.warning("Supprimer définitivement cet audit, ses photos et les réponses des usagers ?")
+                o1, o2 = st.columns(2)
+                if o1.button("Oui, supprimer", key=f"confirmer:{a['id']}", type="primary"):
+                    try:
+                        ids = [ph["id"] for ph in SB.DepotAudits(ss.sb).ouvrir(a["id"])["donnees"].get("photos") or []]
+                        SB.DepotPhotos(ss.sb).supprimer(a["id"], ids)
+                        SB.DepotAudits(ss.sb).supprimer(a["id"])
+                    except SB.ErreurSupabase as e:
+                        st.error(str(e))
+                    if ss.audit_id == a["id"]:
+                        ss.audit_id = None
+                    ss.a_supprimer = None
+                    st.rerun()
+                if o2.button("Annuler", key=f"annuler:{a['id']}"):
+                    ss.a_supprimer = None
+                    st.rerun()
+    if ss.message:
+        st.success(ss.message)
+        ss.message = None
 
 
 def notice():
@@ -426,6 +554,12 @@ def entete():
                     f"Audit de faisabilité d'actions d'adaptation<br><span class='actee-mode'>"
                     f"{MODES[ss.mode]['titre']}</span></div>", unsafe_allow_html=True)
     with c2.popover("⚙️ Réglages", width="stretch"):
+        if connecte():
+            if st.button("💾 Enregistrer", width="stretch", type="primary"):
+                if enregistrer():
+                    st.toast("Audit enregistré.", icon="✅")
+            st.caption(f"Connecté : {(ss.sb.utilisateur or {}).get('email', '')}"
+                       + (f" · enregistré à {ss.enregistre_le}" if ss.enregistre_le else " · pas encore enregistré"))
         if st.button("Seuils et données", width="stretch"):
             ss.vue = "reglages"
             st.rerun()
@@ -501,6 +635,8 @@ def vignette(ph: dict, pid: str, cibles: list[str] | None = None):
     if st.button("Supprimer la photo", key=cle(pid, ph["id"], "suppr"), width="stretch"):
         D["photos"].remove(ph)
         ss.photos_bin.pop(ph["id"], None)
+        if ph.get("envoyee"):
+            ss.photos_supprimees.append(ph["id"])
         st.rerun()
 
 
@@ -1080,12 +1216,16 @@ def page_usager(code: str):
     st.markdown("Ce questionnaire, anonyme, prend 5 minutes. Il porte sur la **période estivale** (mai, juin et "
                 "septembre) et sur le **local que vous occupez principalement**. Vos réponses aideront à choisir les "
                 "solutions pour limiter la chaleur dans l'école.")
-    st.info("Maquette : vos réponses ne sont pas encore envoyées automatiquement. À la fin, téléchargez le fichier "
-            "de votre réponse et transmettez-le à la personne qui réalise l'audit.", icon="ℹ️")
+    if not SB_CONF:
+        st.info("Maquette : vos réponses ne sont pas encore envoyées automatiquement. À la fin, téléchargez le fichier "
+                "de votre réponse et transmettez-le à la personne qui réalise l'audit.", icon="ℹ️")
+    else:
+        st.caption("Vos réponses sont enregistrées de façon anonyme pour l'audit de votre établissement.")
     if ss.get("usager_envoye"):
         st.success("Merci pour votre participation !")
         st.download_button("Télécharger ma réponse (CSV)", QU.vers_csv([ss.usager_envoye]).encode("utf-8-sig"),
-                           file_name=f"reponse_questionnaire_{code}.csv", mime="text/csv", type="primary")
+                           file_name=f"reponse_questionnaire_{code}.csv", mime="text/csv",
+                           type="secondary" if SB_CONF else "primary")
         if st.button("Répondre à nouveau"):
             ss.usager_envoye, ss.usager_r = None, {}
             ss.usager_n = ss.get("usager_n", 0) + 1
@@ -1097,7 +1237,14 @@ def page_usager(code: str):
         if not any(k.startswith("Q") for k in r):
             st.error("Le questionnaire est vide.")
         else:
-            ss.usager_envoye = dict(r, horodatage=__import__("datetime").datetime.now().strftime("%Y-%m-%d %H:%M"))
+            reponse = dict(r, horodatage=__import__("datetime").datetime.now().strftime("%Y-%m-%d %H:%M"))
+            if SB_CONF:  # dépôt anonyme : accepté seulement pour un questionnaire ouvert (règles de la base)
+                try:
+                    SB.DepotReponsesSupabase(SB.Supabase(*SB_CONF)).ajouter(code, dict(reponse, source="en ligne"))
+                except SB.ErreurSupabase as e:
+                    st.error(str(e))
+                    return
+            ss.usager_envoye = reponse
             st.rerun()
 
 
@@ -1112,11 +1259,31 @@ def etape_questionnaires():
     t1, t2, t3 = st.tabs(["Questionnaire en ligne", "Importer des réponses (CSV)", "Saisir un questionnaire papier"])
     with t1:
         st.markdown("Lien à diffuser aux enseignants et au personnel :")
-        st.code(f"<adresse de l'application>/?questionnaire={code}", language=None)
+        base = (getattr(st.context, "url", None) or "<adresse de l'application>").split("?")[0].rstrip("/")
+        st.code(f"{base}/?questionnaire={code}", language=None)
         st.link_button("Ouvrir le questionnaire tel que le voient les usagers", f"?questionnaire={code}")
-        st.caption("Maquette : les réponses données par ce lien ne sont pas encore enregistrées sur un serveur. "
-                   "Chaque usager peut télécharger sa réponse (CSV) et vous l'envoyer ; vous l'importez dans "
-                   "l'onglet suivant. Avec la base de données (étape suivante), elles arriveront ici automatiquement.")
+        if connecte():
+            if ss.audit_id is None:
+                enregistrer(silencieux=True)  # le lien n'accepte des réponses que pour un audit enregistré
+            st.caption("Les réponses données par ce lien sont enregistrées dans la base (anonymes), pendant "
+                       "120 jours après la création de l'audit.")
+            if st.button("Récupérer les réponses en ligne", type="primary"):
+                try:
+                    distantes = SB.DepotReponsesSupabase(ss.sb).lister(code)
+                    connues = {r.get("_id") for r in D["questionnaires"]}
+                    nouvelles = [r for r in distantes if r["_id"] not in connues]
+                    D["questionnaires"].extend(nouvelles)
+                    ss.message = f"{len(nouvelles)} nouvelle(s) réponse(s) en ligne."
+                    st.rerun()
+                except SB.ErreurSupabase as e:
+                    st.error(str(e))
+        elif SB_CONF:
+            st.caption("Connectez-vous (écran de départ) pour que ce lien enregistre les réponses et que vous les "
+                       "récupériez ici.")
+        else:
+            st.caption("Maquette : les réponses données par ce lien ne sont pas enregistrées sur un serveur. "
+                       "Chaque usager peut télécharger sa réponse (CSV) et vous l'envoyer ; vous l'importez dans "
+                       "l'onglet suivant.")
     with t2:
         st.markdown("Fichier CSV au format du questionnaire en ligne : une ligne par répondant, une colonne par "
                     "question (`Q1` à `Q24`), réponses multiples séparées par « ; ». Les exports de formulaires "
@@ -1165,6 +1332,11 @@ def etape_questionnaires():
         c1, c2, c3 = st.columns([1.2, 1, 1.3], vertical_alignment="bottom")
         k = c1.selectbox("Réponse", range(len(reponses)), format_func=lambda i: f"N° {i + 1}")
         if c2.button("Supprimer cette réponse"):
+            if reponses[k].get("source") == "en ligne" and connecte():
+                try:
+                    SB.DepotReponsesSupabase(ss.sb).supprimer(code, reponses[k].get("_id", ""))
+                except SB.ErreurSupabase as e:
+                    st.error(str(e))
             depot.supprimer(code, reponses[k].get("_id", ""))
             st.rerun()
         c3.download_button("Exporter toutes les réponses (CSV)", QU.vers_csv(reponses).encode("utf-8-sig"),
@@ -1344,7 +1516,7 @@ def vue_reglages():
                    "la réimporter plus tard.")
         bloc_donnees(prefixe="reglages")
         st.divider()
-        if st.button("🗑 Tout effacer et recommencer"):
+        if st.button("🗑 Tout effacer et recommencer", help="Nouvel audit vide (un audit déjà enregistré reste en base)."):
             charger(donnees_vides())
             ss.mode, ss.vue = None, "parcours"
             st.rerun()

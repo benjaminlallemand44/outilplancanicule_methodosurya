@@ -10,6 +10,9 @@ il sert à éprouver la méthode et le parcours de saisie, pas encore à conduir
   disparaît quand l'onglet est fermé ou la session expire.
 - Pour la conserver : **Réglages → Exporter la saisie** (fichier JSON, ou ZIP si vous avez ajouté des
   photos), puis réimportez-la plus tard.
+- Si la base de données est activée et que vous êtes connecté, l'audit est enregistré dans votre espace
+  (hébergé à Paris) à chaque changement d'étape ; vous seul y avez accès. Les réponses au questionnaire
+  en ligne sont anonymes.
 - Ne saisissez pas de données personnelles inutiles (noms d'élèves, coordonnées). Évitez de
   photographier des personnes : les visages détectés sur les photos sont floutés automatiquement, mais
   la détection n'est pas infaillible.
