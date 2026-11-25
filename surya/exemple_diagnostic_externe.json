@@ -1,0 +1,141 @@
+{
+ "audit": {
+  "etablissement": "École primaire publique Benjamin Rabier",
+  "adresse": "19 avenue du Parc des Sports",
+  "commune": "Bretignolles-sur-Mer",
+  "moa": "Commune de Bretignolles-sur-Mer",
+  "auditeur": "Inddigo",
+  "date_visite": "27/07/2026"
+ },
+ "batiment": {
+  "B-01": "De 1975 à 1997",
+  "B-05": "Non",
+  "B-04": "ITI (isolation par l'intérieur)",
+  "B-09": "Oui",
+  "B-10": "Simple flux",
+  "B-18": "Toiture à pentes (tuiles, ardoises, zinc)"
+ },
+ "diagnostic_externe": {
+  "source": "Inddigo – Diagnostic confort estival (programme EduRénov, Banque des Territoires)",
+  "date": "18/09/2026",
+  "commentaire": "Exemple de test : préconisations du rapport Inddigo reportées dans la saisie simplifiée.",
+  "operations": [
+   {
+    "solution": "Protections verticales",
+    "locaux": [
+     "Salles façade est côté cour et côté jardin (bâtiment historique)",
+     "Salles façade ouest (bâtiment historique)",
+     "Salles façade est (extension 2012)",
+     "Salles façade est (extension 2003-2005)",
+     "Salles façade est (extension 2003)"
+    ],
+    "vigilances": [
+     "Arbitrer le type de protection (store toile, volet roulant, brise-soleil orientable) selon l'insertion architecturale et les usages",
+     "Locaux aujourd'hui équipés de stores intérieurs"
+    ],
+    "commentaire": "Le rapport indique « travaux en régie : oui »."
+   },
+   {
+    "solution": "Protections solaires intérieures",
+    "a_confirmer": [
+     "Locaux façade est (extension 2012) qui n'en ont pas",
+     "Locaux façade nord (extension 2003-2005) qui n'en ont pas"
+    ],
+    "vigilances": [
+     "Façades jugées correctement protégées : protection intérieure seulement pour les locaux qui n'en ont pas"
+    ]
+   },
+   {
+    "solution": "Par ventilation naturelle nocturne",
+    "locaux": [
+     "Salle côté bureau de direction",
+     "Salle côté laverie",
+     "Salle de motricité",
+     "Salle côté cour de récréation",
+     "Salle informatique",
+     "Salle des professeurs",
+     "Bibliothèque",
+     "Salle TPS-PS (extension 2003)",
+     "Salle est (extensions 2003-2005)"
+    ],
+    "alertes": [
+     "VN-AL1"
+    ],
+    "vigilances": [
+     "Priorité du rapport : permettre l'ouverture des fenêtres la nuit avec un risque acceptable (compas d'ouverture, gardiennage)",
+     "Afficher la température intérieure et extérieure pour savoir quand ouvrir"
+    ]
+   },
+   {
+    "solution": "Création d'une ventilation mécanique",
+    "locaux": [
+     "Ensemble des locaux du bâtiment principal et de ses extensions (classes, salle de motricité)"
+    ],
+    "vigilances": [
+     "Étude de faisabilité par un bureau d'études en génie climatique : acoustique, architecture, électricité, maintenance",
+     "Exiger les fonctions de surventilation et de free-cooling",
+     "Percements de façade : diagnostics amiante préalables"
+    ],
+    "commentaire": "Ventilation double flux décentralisée par local ; le rapport la juge non prioritaire pour le confort d'été, mais utile à la qualité de l'air."
+   },
+   {
+    "solution": "Mise en place de brasseurs d'air plafonniers",
+    "locaux": [
+     "Salles de classe",
+     "Salle des professeurs et bureaux"
+    ],
+    "alertes": [
+     "BR-AL"
+    ],
+    "hauteur_limite": true,
+    "vigilances": [
+     "Faux plafonds intégraux : hauteur du plénum à mesurer avant commande, aucune fixation sur le faux plafond",
+     "Fixation capable de reprendre au moins dix fois le poids de l'appareil",
+     "Équiper d'abord une salle témoin"
+    ]
+   },
+   {
+    "solution": "Ombrage autoportant ou végétal de la cour",
+    "locaux": [
+     "Cour (espace des grands)",
+     "Cour (espace des petits)"
+    ],
+    "vigilances": [
+     "Aires de jeux exposées au soleil",
+     "Aménager des places assises dans les zones ombragées des préaux"
+    ]
+   },
+   {
+    "solution": "Végétalisation et désimperméabilisation de la cour",
+    "locaux": [
+     "Cour (2 906 m², enrobé noir)"
+    ],
+    "vigilances": [
+     "Jeunes arbres plantés au sud de la cour, pas encore assez développés pour faire de l'ombre"
+    ]
+   },
+   {
+    "solution": "Rafraîchissement d'un local refuge",
+    "locaux": [
+     "Salle de motricité",
+     "Bibliothèque"
+    ],
+    "vigilances": [
+     "Vérifier avec le fournisseur d'électricité la puissance souscrite disponible",
+     "Entreprise qualifiée pour les pompes à chaleur (QualiPAC)"
+    ],
+    "commentaire": "Le rapport vise un local refuge à 26 °C jusqu'à 40 °C extérieur."
+   },
+   {
+    "solution": "Adaptation des usages",
+    "locaux": [
+     "Ensemble de l'école"
+    ],
+    "vigilances": [
+     "S'appuyer sur un plan existant de la commune ou de l'académie"
+    ]
+   }
+  ]
+ },
+ "travaux": {}
+}

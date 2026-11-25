@@ -201,4 +201,12 @@ def valider(donnees: dict) -> tuple[dict, list[str]]:
     if d.get("photos"):
         from .photos import valider as valider_photos
         out["photos"] = valider_photos(d["photos"], notes)
+    if d.get("diagnostic_externe"):
+        from .travaux import valider_externe
+        out["diagnostic_externe"], n_e = valider_externe(d["diagnostic_externe"])
+        notes += n_e
+    if d.get("travaux"):
+        from .travaux import valider_saisie
+        out["travaux"], n_t = valider_saisie(d["travaux"])
+        notes += n_t
     return out, notes

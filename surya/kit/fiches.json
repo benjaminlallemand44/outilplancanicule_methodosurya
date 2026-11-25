@@ -1,0 +1,365 @@
+{
+ "_source": "Kit passage en travaux ACTEE — fiches solutions détaillées (document de travail du 24/11/2026). Version condensée pour l'outil ; la fiche complète reste la référence.",
+ "1": {
+  "titre": "Brasseurs d'air plafonniers",
+  "en_bref": "L'air en mouvement donne une sensation de 2 à 3 °C de moins pour une consommation très faible. Le brasseur ne refroidit pas l'air : il rend une température élevée supportable. Il faut d'abord protéger les vitrages des locaux très ensoleillés.",
+  "etapes": [
+   [
+    "Confirmer la faisabilité local par local",
+    "Relever hauteur sous plafond, nature du plafond, plénum et obstacles (luminaires, vidéoprojecteur, détecteurs, ouvrants). Vérifier le repérage amiante si le bâtiment date d'avant juillet 1997."
+   ],
+   [
+    "Vérifier la structure et l'électricité",
+    "Demander à l'électricien une note de faisabilité : point d'ancrage dans la structure porteuse, puissance disponible, cheminement des câbles."
+   ],
+   [
+    "Définir le besoin",
+    "Fixer avec l'équipe enseignante l'emplacement de la commande murale et le local témoin."
+   ],
+   [
+    "Consulter et choisir",
+    "Trois devis sur la base du CCTP du kit, visite sur place ; écarter tout devis sans fiche technique."
+   ],
+   [
+    "Équiper une salle témoin",
+    "Une semaine d'essai et l'avis de l'enseignant (bruit, flux d'air) avant de généraliser."
+   ],
+   [
+    "Poser pendant les vacances",
+    "Plan de prévention, accès aux locaux, mobilier déplacé."
+   ],
+   [
+    "Réceptionner",
+    "Vitesses, sens de rotation, vibrations, bruit, câble de sécurité, commandes repérées ; notices et démonstration à l'équipe."
+   ]
+  ],
+  "vigilances": [
+   "Ne jamais fixer dans un faux plafond : la tige doit rejoindre la structure.",
+   "Pas de luminaire au-dessus des pales (effet stroboscopique).",
+   "Salle de motricité : appareils résistants aux ballons.",
+   "Matériel grand public inadapté."
+  ],
+  "apres": "Mise en marche par les occupants pendant les heures chaudes ; dépoussiérage et contrôle des fixations une fois par an."
+ },
+ "2": {
+  "titre": "Protections solaires extérieures mobiles",
+  "en_bref": "Arrêter le soleil avant la vitre est l'action la plus efficace contre la surchauffe. Stores toile screen ou brise-soleil orientables laissent passer la lumière ; les volets roulants sont à réserver aux dortoirs.",
+  "etapes": [
+   [
+    "Faire le métré des baies",
+    "Dimensions, orientation, menuiserie, espace entre linteau et dormant, isolation extérieure, accès à la façade."
+   ],
+   [
+    "Choisir le type et la commande",
+    "Par façade ; commande motorisée par local, abaissement automatique le matin, capteur de vent."
+   ],
+   [
+    "Obtenir les autorisations",
+    "Déclaration préalable en mairie (1 mois, 2 mois en secteur protégé avec avis de l'ABF) ; repérage amiante si avant 1997."
+   ],
+   [
+    "Consulter",
+    "CCTP du kit, tableau des baies, photos ; visite obligatoire, 3 semaines pour répondre ; comparer Sws, Tv, classe de vent, garantie, délai."
+   ],
+   [
+    "Valider avant fabrication",
+    "Plans de pose, échantillon, teinte (conforme à l'avis ABF), emplacement des commandes."
+   ],
+   [
+    "Suivre le chantier",
+    "Plan de prévention, balisage, coordination avec l'électricien."
+   ],
+   [
+    "Réceptionner",
+    "Montée et descente, fins de course, capteur de vent, automatisme, état des façades ; formation du personnel."
+   ]
+  ],
+  "vigilances": [
+   "Moins de 10 cm entre linteau et dormant : le coffre masque le vitrage.",
+   "Isolation par l'extérieur : fixations spécifiques sans pont thermique.",
+   "Ne jamais bloquer un ouvrant de désenfumage.",
+   "Commander en mars au plus tard pour une pose l'été."
+  ],
+  "apres": "Protections baissées avant l'arrivée du soleil ; nettoyage et contrôle des moteurs une fois par an."
+ },
+ "3": {
+  "titre": "Protections solaires extérieures fixes",
+  "en_bref": "Casquettes au sud, brise-soleil à lames verticales à l'est et à l'ouest : durable, sans manipulation, mais à dimensionner. Niveau C : maîtrise d'œuvre, note de calcul des ancrages, autorisation d'urbanisme.",
+  "etapes": [
+   [
+    "Missionner une maîtrise d'œuvre",
+    "Programme à partir du pré-programme, cahier des charges MOE du kit (volet façade)."
+   ],
+   [
+    "Étude solaire et dimensionnement",
+    "Ombre portée en été, ensoleillement conservé en hiver, comparaison avec une solution mobile."
+   ],
+   [
+    "Diagnostiquer le support",
+    "Nature du mur, isolation extérieure, ancrages ; repérages amiante et plomb si bâtiment ancien."
+   ],
+   [
+    "Autorisations",
+    "Déclaration préalable ou permis, avis de l'ABF en secteur protégé."
+   ],
+   [
+    "Consulter les entreprises",
+    "Sur le dossier de la MOE ; procédure selon le montant."
+   ],
+   [
+    "Valider l'exécution",
+    "Plans d'exécution, note de calcul (vent, neige), échantillons visés par la MOE."
+   ],
+   [
+    "Réceptionner",
+    "Ancrages, alignement, étanchéité des percements ; dossier des ouvrages exécutés, attestations décennales."
+   ]
+  ],
+  "vigilances": [
+   "Une casquette seule est inefficace à l'est et à l'ouest.",
+   "Casquette trop profonde : classes sombres l'hiver.",
+   "Charge de neige en montagne.",
+   "Eaux pluviales et ouvrants à préserver."
+  ],
+  "apres": "Rien à manipuler ; contrôle visuel des fixations tous les deux à trois ans."
+ },
+ "4": {
+  "titre": "Films solaires (solution de repli)",
+  "en_bref": "Rapide et peu cher, mais nettement moins efficace qu'une protection extérieure, avec une durée de vie courte et un effet toute l'année. À réserver à l'urgence ou aux vitrages sans autre solution.",
+  "etapes": [
+   [
+    "Choisir les baies",
+    "Seulement celles sans autre solution, ou qui attendront plus d'un an une protection extérieure."
+   ],
+   [
+    "Relever les vitrages",
+    "Type, dimensions, âge, garantie de la menuiserie."
+   ],
+   [
+    "Consulter",
+    "Trois devis avec fiche technique et vérification de compatibilité thermique avec chaque vitrage ; refuser les films « miroir »."
+   ],
+   [
+    "Poser pendant les vacances",
+    "Abords des fenêtres dégagés, vitres propres."
+   ],
+   [
+    "Réceptionner",
+    "Ni bulles, ni plis, ni décollements ; certificat de garantie et date de pose."
+   ]
+  ],
+  "vigilances": [
+   "Risque de casse thermique d'un double vitrage sans étude de compatibilité.",
+   "Un film peut annuler la garantie du vitrage.",
+   "Remplacement à prévoir vers 5 ans en pose extérieure."
+  ],
+  "apres": "Nettoyage non abrasif ; inscrire la protection extérieure définitive au programme pluriannuel."
+ },
+ "5": {
+  "titre": "Ventilation naturelle nocturne sécurisée",
+  "en_bref": "Ouvrir la nuit, quand l'air extérieur est plus frais, vide le bâtiment de la chaleur du jour. Il faut des ouvrants sur deux façades ou un ouvrant haut, et fermer le matin dès que l'extérieur se réchauffe.",
+  "etapes": [
+   [
+    "Vérifier les conditions",
+    "Ouvrants traversants ou hauts, bruit et air la nuit, points d'intrusion, avec le gardien."
+   ],
+   [
+    "Tester avec un protocole manuel",
+    "Une semaine chaude, consigne écrite à l'agent, thermomètre dans une classe ouverte et une classe témoin ; prévenir l'assureur."
+   ],
+   [
+    "Lever les obstacles",
+    "Zonage de l'alarme, avis du référent sûreté police ou gendarmerie, accord écrit de l'assureur."
+   ],
+   [
+    "Définir les équipements",
+    "Grilles, persiennes anti-effraction, châssis à soufflet, ouvrants motorisés avec capteurs pluie et vent."
+   ],
+   [
+    "Consulter",
+    "CCTP du kit ; menuisier ou serrurier, électricien, installateur d'alarme selon les besoins."
+   ],
+   [
+    "Réceptionner",
+    "Ouvrants, fermeture automatique sur pluie, alarme ouvrants ouverts, pas de pincement ; protocole d'une page aux agents."
+   ]
+  ],
+  "vigilances": [
+   "Ne pas toucher aux ouvrants de désenfumage sans avis du service prévention.",
+   "Un faux plafond masque l'inertie et réduit l'effet.",
+   "Si personne ne ferme le matin, l'effet s'inverse."
+  ],
+  "apres": "Consigne écrite d'une page : qui ouvre, qui ferme, à quelles conditions."
+ },
+ "6": {
+  "titre": "Ventilation mécanique nocturne et mode été",
+  "en_bref": "Faire ventiler fort la nuit par l'installation existante et, sur un double flux, ouvrir le by-pass de l'échangeur quand l'air extérieur est plus frais que l'intérieur (en journée chaude, l'échangeur limite au contraire l'entrée de chaleur). Souvent un simple réglage par le mainteneur.",
+  "etapes": [
+   [
+    "Identifier l'installation et qui la règle",
+    "Type, locaux desservis, automate, contrat de maintenance et dernier rapport."
+   ],
+   [
+    "Autodiagnostic",
+    "Main sous une bouche un matin chaud : l'air doit circuler et ne pas être plus chaud que dehors."
+   ],
+   [
+    "Demander le réglage au mainteneur",
+    "By-pass sur écart de température, surventilation la nuit aux heures les plus fraîches (plage proposée par le mainteneur), modes été et hiver, filtres ; relevé des consignes avant et après."
+   ],
+   [
+    "Semaine d'essai",
+    "Retours des enseignants (bruit, courants d'air), températures du matin dans deux classes."
+   ],
+   [
+    "Garantir le retour au mode hiver",
+    "Vérification à l'automne."
+   ],
+   [
+    "Si l'automate ne le permet pas",
+    "Audit de régulation par un bureau d'études fluides (CCTP 6)."
+   ]
+  ],
+  "vigilances": [
+   "Un by-pass resté ouvert en hiver fait exploser la consommation de chauffage.",
+   "Simple flux : entrées d'air dégagées.",
+   "Bruit si le réseau est juste."
+  ],
+  "apres": "Passage en mode été et en mode hiver inscrit au contrat de maintenance."
+ },
+ "7": {
+  "titre": "Traitement de la toiture",
+  "en_bref": "Sous une toiture mal isolée, le dernier niveau reçoit beaucoup de chaleur. Isoler, ventiler les combles ou rendre la toiture réfléchissante réduit les apports, avec un gain en hiver. Un diagnostic de toiture précède toute décision.",
+  "etapes": [
+   [
+    "Faire diagnostiquer la toiture",
+    "Couverture ou étanchéité, isolant existant, humidité, structure, accès ; repérage amiante (fibrociment fréquent)."
+   ],
+   [
+    "Choisir la stratégie",
+    "Combles perdus : soufflage (niveau B). Rampants, terrasse, réfection d'étanchéité : maîtrise d'œuvre (niveau C)."
+   ],
+   [
+    "Missionner une MOE si niveau C",
+    "Cahier des charges MOE du kit, volet toiture."
+   ],
+   [
+    "Consulter et attribuer",
+    "Assurance décennale de l'activité ; conditions de la fiche CEE vérifiées (y compris une éventuelle qualification de l'entreprise) et dossier engagé avant signature."
+   ],
+   [
+    "Suivre le chantier",
+    "Protections contre les chutes, bâchage, pare-vapeur, continuité de l'isolant."
+   ],
+   [
+    "Réceptionner",
+    "Épaisseur (piges), étanchéité, évacuations ; attestations pour les CEE."
+   ]
+  ],
+  "vigilances": [
+   "Végétalisation ou panneaux : vérifier la structure.",
+   "Pare-vapeur mal posé : isolant dégradé.",
+   "Revêtement réfléchissant : effet faible sur une toiture déjà isolée."
+  ],
+  "apres": "Visite annuelle de la toiture ; comparer les températures du dernier niveau l'été suivant."
+ },
+ "8": {
+  "titre": "Ombrage de la cour et adaptation du préau",
+  "en_bref": "L'ombre crée une zone refuge pour les récréations et protège les façades. Voiles sur mâts (rapide), voile adossée, toiture claire du préau, ombrières fixes ; les arbres prennent le relais à long terme.",
+  "etapes": [
+   [
+    "Cartographier l'ombre et les usages",
+    "Zones d'ombre à 10 h, 12 h, 15 h ; jeux, assises, circulations, accès des secours, réseaux."
+   ],
+   [
+    "Fixer l'objectif de surface d'ombre",
+    "0,8 m² par enfant en élémentaire ; 100 m² (5 classes ou moins) ou 150 m² en maternelle."
+   ],
+   [
+    "Choisir les dispositifs",
+    "Provisoire (voiles) et définitif (arbres, ombrières)."
+   ],
+   [
+    "Faire les vérifications",
+    "DT-DICT, vent, réaction au feu de la toile, accès des secours, aires de jeux, urbanisme, charpente du préau."
+   ],
+   [
+    "Consulter",
+    "Trois devis sur le CCTP du kit, avec note de calcul des mâts et ancrages (niveau B) ; MOE ou paysagiste (niveau C)."
+   ],
+   [
+    "Réceptionner",
+    "Hauteur libre conforme au CCTP, tension, mâts protégés, pas de pincement ; démonstration du démontage."
+   ]
+  ],
+  "vigilances": [
+   "Ne pas remplacer les voiles par des plantations sans relais.",
+   "Démonter les voiles l'hiver et par vent fort.",
+   "Repérer les réseaux avant tout scellement."
+  ],
+  "apres": "Démontage saisonnier, contrôle annuel des ancrages et des toiles."
+ },
+ "9": {
+  "titre": "Végétalisation et cour nature",
+  "en_bref": "Arbres, sols perméables et végétation font baisser la température de la cour. Solution la plus durable mais la plus lente ; projet d'aménagement avec maîtrise d'œuvre paysagiste. Aides à demander avant de commencer.",
+  "etapes": [
+   [
+    "Réunir les usagers",
+    "Équipe enseignante, périscolaire, espaces verts, parents, enfants (appui possible du CAUE)."
+   ],
+   [
+    "Diagnostics préalables",
+    "Sols, pollution, réseaux, arbres existants, eaux pluviales."
+   ],
+   [
+    "Écrire le programme",
+    "Surfaces désimperméabilisées, ombre, ambiances, entretien, budget."
+   ],
+   [
+    "Missionner une MOE paysagiste",
+    "Cahier des charges MOE du kit, volet paysage."
+   ],
+   [
+    "Valider l'avant-projet et déposer les aides",
+    "Agence de l'eau, Fonds vert : avant le début des travaux."
+   ],
+   [
+    "Réaliser en deux temps",
+    "Sols l'été, plantations de novembre à mars ; garantie de reprise."
+   ]
+  ],
+  "vigilances": [
+   "Essences non toxiques, peu allergènes, adaptées au climat futur.",
+   "Arrosage et entretien les premières années.",
+   "5 à 10 ans avant l'ombre d'un arbre."
+  ],
+  "apres": "Plan d'entretien partagé entre les services et l'école."
+ },
+ "10": {
+  "titre": "Réduction des charges internes",
+  "en_bref": "L'éclairage ancien, les appareils qui chauffent et une forte densité d'occupants ajoutent de la chaleur dans les locaux. Ce sont des actions simples, souvent sans travaux.",
+  "etapes": [
+   [
+    "Déplacer ou mettre en veille les équipements qui chauffent",
+    "Copieurs, réfrigérateurs, baies informatiques hors des locaux occupés (règle CQ-1 du diagnostic)."
+   ],
+   [
+    "Revoir l'occupation des locaux trop denses",
+    "Bureaux occupés en continu avec moins de 6 m² par personne (règle CO-1) : redistribuer si possible."
+   ],
+   [
+    "Passer l'éclairage en LED",
+    "Trois devis d'électricien ; si des certificats d'économies d'énergie sont mobilisés, engager le dossier avant de signer."
+   ],
+   [
+    "Réceptionner",
+    "Niveau d'éclairement adapté, luminaires conformes au devis ; notices remises."
+   ]
+  ],
+  "vigilances": [
+   "Ces actions ne remplacent pas la protection des vitrages.",
+   "L'organisation de l'école pendant les épisodes de chaleur (gestes, local refuge) relève des ressources existantes, par exemple la fiche « plan canicule » des rapports EduRénov et le guide vague de chaleur de l'ANDEV, et non de ce kit."
+  ],
+  "apres": "Vérifier chaque année que les équipements déplacés ne sont pas revenus dans les locaux occupés."
+ }
+}

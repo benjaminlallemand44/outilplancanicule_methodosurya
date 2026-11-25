@@ -12,6 +12,8 @@ délégué à ``surya.moteur`` et le PDF à ``surya.rapport``, qui ne dépendent
 from __future__ import annotations
 
 import csv
+import datetime as dt
+import re
 import base64
 import html
 import io
@@ -23,7 +25,22 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-from surya import moteur, plan, version
+# Streamlit Cloud peut garder en mémoire l'ancienne version des modules « surya » après une mise à jour du dépôt
+# (seul app.py est relu). On compare une signature des fichiers du moteur et on recharge tout s'ils ont changé.
+import sys as _sys  # noqa: E402
+
+_SIGNATURE = max((f.stat().st_mtime_ns, f.stat().st_size) for f in (Path(__file__).parent / "surya").rglob("*")
+                 if f.is_file() and f.suffix in (".py", ".json", ".md", ".csv"))
+if "surya" in _sys.modules and getattr(_sys.modules["surya"], "_signature", None) != _SIGNATURE:
+    for _nom in [n for n in _sys.modules if n == "surya" or n.startswith("surya.")]:
+        del _sys.modules[_nom]
+import surya as _surya  # noqa: E402
+
+_surya._signature = _SIGNATURE
+from surya import cctp as CC
+from surya import ingenierie as IG
+from surya import lecture_ia as IA
+from surya import moteur, plan, rapport_preprogramme, rapport_travaux, travaux, version
 from surya import photos as PH
 from surya import supabase as SB
 from surya import questionnaire as QU
@@ -47,11 +64,23 @@ MODES = {
         "titre": "Diagnostic complet",
         "court": "Diagnostic complet",
         "etapes": ["Identification", "Bâtiment", "Locaux", "Espaces extérieurs", "Façades", "Questionnaires usagers",
-                   "Vérification",
-                   "Documents"],
+                   "Vérification", "Documents"],
+    },
+    # 3e parcours : passage en travaux, à partir de l'audit en cours (diagnostic complet) ou d'un diagnostic existant
+    "travaux": {
+        "titre": "Passage en travaux",
+        "court": "Travaux",
+        "etapes": ["Pré-programme", "Accompagnement", "Mise en œuvre", "Consultations"],
+    },
+    "externe": {
+        "titre": "Passage en travaux — diagnostic existant",
+        "court": "Travaux",
+        "etapes": ["Diagnostic existant", "Pré-programme", "Accompagnement", "Mise en œuvre", "Consultations"],
     },
 }
-COURTS = {"Espaces extérieurs": "Espaces ext.", "Questionnaires usagers": "Questionnaires"}  # barre d'étapes
+PARCOURS_TRAVAUX = ("travaux", "externe")
+COURTS = {"Espaces extérieurs": "Espaces ext.", "Questionnaires usagers": "Questionnaires",
+          "Accompagnement": "Accompagnement"}  # barre d'étapes
 SAISIES = {
     "guidee": ("Pas à pas",
                "Le bâtiment puis chaque local et chaque espace sont remplis bloc par bloc (usages, ouvertures en "
@@ -105,7 +134,7 @@ ss = st.session_state
 # ------------------------------------------------------------------ état
 def donnees_vides() -> dict:
     return {"audit": {}, "batiment": {}, "facades": {}, "locaux": [], "espaces": [], "parametres": {},
-            "questionnaires": [], "photos": []}
+            "questionnaires": [], "photos": [], "travaux": {}, "diagnostic_externe": {}}
 
 
 def charger(d: dict, contenus: dict | None = None):
@@ -132,6 +161,7 @@ for k, v in (("mode", None), ("saisie", "guidee"), ("etape", 0), ("etape_max", 0
     ss.setdefault(k, v)
 D = ss.donnees
 D.setdefault("photos", [])  # saisies antérieures aux photos
+D.setdefault("travaux", {})  # saisies antérieures au module passage en travaux
 for k, v in (("audit_id", None), ("photos_supprimees", []), ("enregistre_le", None)):
     ss.setdefault(k, v)
 SB_CONF = SB.configuration(st.secrets)  # None : mode maquette, rien n'est enregistré sur un serveur
@@ -389,6 +419,32 @@ def ecran_depart():
         if st.button("Commencer — diagnostic complet", type="primary", width="stretch"):
             demarrer("complet")
 
+    st.subheader("3. Passer à l'action")
+    with st.container(border=True):
+        st.markdown("### Passage en travaux")
+        st.markdown("Une fois le diagnostic fait : **pré-programme** à présenter aux élus, **accompagnement** "
+                    "(maîtrise d'œuvre, ingénierie du territoire), **mise en œuvre** (CCTP de maîtrise d'œuvre ou "
+                    "fiches travaux) et **consultations** (CCTP des prestataires et des travaux).")
+        st.markdown(f":gray[{len(MODES['travaux']['etapes'])} étapes : {' → '.join(MODES['travaux']['etapes'])}]")
+        audit_en_cours = bool(D["locaux"] or D["espaces"])
+        b1, b2 = st.columns(2)
+        with b1:
+            if st.button("À partir de l'audit en cours", type="primary", width="stretch", disabled=not audit_en_cours,
+                         help=None if audit_en_cours else "Faites d'abord un diagnostic complet, ou ouvrez un audit "
+                                                          "enregistré ou un exemple."):
+                demarrer("travaux")
+            st.caption("Diagnostic complet fait avec l'outil (méthode ACTEE-SURYA)." if audit_en_cours else
+                       "Disponible dès qu'un audit est en cours (diagnostic complet, audit enregistré ou exemple).")
+        with b2:
+            if st.button("À partir d'un diagnostic existant", width="stretch"):
+                demarrer("externe")
+            st.caption("Diagnostic réalisé hors de la méthode (par exemple « plan canicule » de la Banque des "
+                       "Territoires) : vous reportez ses préconisations, puis les mêmes étapes s'appliquent.")
+            if st.button("Essayer avec un diagnostic Inddigo (école de Bretignolles-sur-Mer)", width="stretch"):
+                charger(json.loads((RACINE / "surya" / "exemple_diagnostic_externe.json").read_text(encoding="utf-8")))
+                demarrer("externe")
+                st.rerun()
+
     with st.expander("Reprendre une saisie existante ou essayer avec un exemple"):
         bloc_donnees(prefixe="depart")
     with st.expander("Notice d'utilisation : vos données, l'hébergement, le lien avec l'Excel"):
@@ -483,7 +539,8 @@ def notice():
 def demarrer(mode: str):
     ss.mode = mode
     ss.etape, ss.etape_max = 0, 0
-    if D["locaux"] or D["espaces"]:  # saisie reprise : toutes les étapes sont accessibles
+    d = ss.donnees  # et non D : un exemple vient peut-être d'être chargé dans ce même passage
+    if d["locaux"] or d["espaces"] or (mode == "externe" and travaux.externe(d)):  # saisie reprise
         ss.etape_max = len(etapes()) - 1
     aller(0)
 
@@ -586,6 +643,10 @@ def pied(suivant_label: str | None = None, precedent: bool = True):
     c1, _, c3 = st.columns([1, 2, 1.3])
     if precedent and ss.etape > 0 and c1.button("← Étape précédente", width="stretch"):
         aller(ss.etape - 1)
+    if ss.mode == "travaux" and ss.etape == 0 and c1.button("← Documents du diagnostic", width="stretch"):
+        ss.mode = "complet"
+        ss.etape_max = len(MODES["complet"]["etapes"]) - 1
+        aller("Documents")
     if ss.etape < len(etapes()) - 1:
         lib = suivant_label or f"Suivant : {etapes()[ss.etape + 1]} →"
         if c3.button(lib, type="primary", width="stretch"):
@@ -1482,6 +1543,18 @@ def etape_documents():
                     ss.etape_max = len(etapes()) - 1
                     ss.message = None
                     aller("Identification")
+    if complet:
+        with st.container(border=True):
+            st.subheader("Et maintenant : passer à l'action")
+            st.markdown("Le **passage en travaux** reprend cet audit pour préparer le pré-programme à présenter aux élus, "
+                        "choisir l'accompagnement (maîtrise d'œuvre, ingénierie du territoire) et produire les pièces "
+                        "de consultation (CCTP).")
+            if st.button("Préparer le passage en travaux →", type="primary", key="vers_travaux"):
+                enregistrer(silencieux=True)
+                ss.mode = "travaux"
+                ss.etape, ss.etape_max = 0, len(MODES["travaux"]["etapes"]) - 1
+                ss.vue, ss.haut = "parcours", True
+                st.rerun()
     schema = plan.svg(D, res)
     if schema:
         st.subheader("Plan simplifié")
@@ -1501,6 +1574,704 @@ def etape_documents():
                         _detail(x, s)
     pied()
 
+
+# ------------------------------------------------------------------ passage en travaux
+COULEURS_NIVEAU = {"A": "#5bba50", "B": "#ffc300", "C": "#ff5400"}
+
+
+@st.cache_data(max_entries=20, show_spinner="Préparation du plan d'action…")
+def _pdf_travaux(donnees_json: str) -> bytes:
+    return rapport_travaux.generer_pdf(json.loads(donnees_json))
+
+
+@st.cache_data(max_entries=20, show_spinner="Préparation des CCTP…")
+def _zip_cctp(donnees_json: str) -> bytes:
+    return CC.dossier(json.loads(donnees_json))
+
+
+@st.cache_data(max_entries=20, show_spinner="Préparation du pré-programme…")
+def _pdf_preprogramme(donnees_json: str) -> bytes:
+    return rapport_preprogramme.generer_pdf(json.loads(donnees_json))
+
+
+@st.cache_data(max_entries=40, show_spinner="Préparation du CCTP…")
+def _docx_piece(donnees_json: str, n) -> bytes:
+    d = json.loads(donnees_json)
+    e = travaux.etat(d)
+    mention = "Généré par l'outil ACTEE à partir du diagnostic (" + ("version validée" if e["valide"] else
+                                                                    "PROJET non validé") + "). Modèle à adapter."
+    return CC.docx(CC.remplir(n, d, e), mention)
+
+
+def _euros(c) -> str:
+    if not c:
+        return "à chiffrer"
+    if c["haut"] == 0:
+        return "sans coût"
+    if c["bas"] == c["haut"]:
+        return f"env. {c['bas']:,.0f} € HT".replace(",", " ")
+    return f"{c['bas']:,.0f} à {c['haut']:,.0f} € HT".replace(",", " ")
+
+
+def _travaux_contexte():
+    """Résultats, choix et état du module ; None (avec message) s'il n'y a ni local ni espace."""
+    if travaux.externe(D):
+        res = None
+    elif ss.mode == "externe":
+        st.info("Indiquez au moins une action préconisée par le diagnostic à l'étape « Diagnostic existant ».")
+        pied()
+        return None
+    else:
+        res = moteur.calculer(D)
+        if not res["locaux"] and not res["espaces"]:
+            st.info("Ajoutez au moins un local ou un espace extérieur pour préparer le passage en travaux.")
+            pied()
+            return None
+    T = D.setdefault("travaux", {})
+    return res, T, travaux.etat(D, res)
+
+
+def _suffixe() -> str:
+    base = unicodedata.normalize("NFKD", D["audit"].get("etablissement", "ecole")).encode("ascii", "ignore").decode()
+    return "".join(c if c.isalnum() else "_" for c in base).strip("_") or "ecole"
+
+
+def _pastille(texte, couleur):
+    return (f"<span style='background:{couleur};padding:.1em .5em;font-weight:700;font-size:.8em;"
+            f"white-space:nowrap'>{html.escape(texte)}</span>")
+
+
+COULEURS_HORIZON = {1: "#5bba50", 2: "#0dcccc", 3: "#8dc8f8"}
+
+
+def _vue_par_local(e) -> list[dict]:
+    ordre = [x.get("L-01") or x.get("E-01") for x in D.get("locaux", []) + D.get("espaces", [])]
+    par_nom = {}
+    for o in e["retenues"]:
+        for x in o["a_engager"] + o["a_valider"]:
+            r = par_nom.setdefault(x["nom"], {"ops": [], "vig": {}})
+            r["ops"].append(rapport_preprogramme.court(o) + (" (à confirmer)" if x in o["a_valider"] else ""))
+            r["vig"].update(dict(x["vigilances"]))
+    return [{"Local ou espace": n, "Opérations prévues": " · ".join(par_nom[n]["ops"]),
+             "À vérifier": " · ".join(par_nom[n]["vig"].values()) or "—"}
+            for n in sorted(par_nom, key=lambda n: ordre.index(n) if n in ordre else 999)]
+
+
+# ------------------------------------------------------------------ étape : diagnostic existant
+CHAMPS_BATIMENT_EXTERNE = [
+    ("B-01", "Période de construction (le bâtiment le plus ancien concerné par les travaux)"),
+    ("B-05", "Bâtiment classé ou inscrit au titre des monuments historiques"),
+    ("B-06", "Abords de monument historique, site patrimonial remarquable ou repérage patrimonial"),
+    ("B-04", "Isolation des murs"),
+    ("B-08", "Alarme anti-intrusion"),
+    ("B-09", "Ventilation mécanique existante"),
+    ("B-10", "Type de ventilation mécanique"),
+    ("B-14", "La ventilation peut-elle passer en grande vitesse ?"),
+    ("B-15", "Programmation horaire possible (horloge, GTB)"),
+    ("B-18", "Type de toiture au-dessus du dernier niveau"),
+    ("B-21", "Combles ou espace non aménagé sous la toiture"),
+    ("B-22", "Isolation des combles"),
+    ("B-26", "Combles accessibles (trappe)"),
+]
+
+
+def _options_question(code: str) -> list[str]:
+    def chercher(o):
+        if isinstance(o, dict):
+            if o.get("code") == code and o.get("options"):
+                return o["options"]
+            for v in o.values():
+                r = chercher(v)
+                if r:
+                    return r
+        elif isinstance(o, list):
+            for v in o:
+                r = chercher(v)
+                if r:
+                    return r
+    return chercher(REFERENTIEL) or []
+
+
+def _lignes(texte: str) -> list[str]:
+    return [x.strip(" -•\t") for x in (texte or "").splitlines() if x.strip(" -•\t")]
+
+
+def _config_ia() -> tuple[str | None, str | None]:
+    try:
+        conf = st.secrets["anthropic"]
+        return conf.get("cle"), conf.get("modele")
+    except Exception:
+        return None, None
+
+
+@st.cache_data(max_entries=10, ttl=86400, show_spinner="Lecture du rapport par l'IA : une à deux minutes…")
+def _lecture_ia(pdf: bytes, modele: str | None) -> dict:
+    return IA.analyser(pdf, _config_ia()[0], modele)
+
+
+def bloc_lecture_ia(de: dict):
+    """Dépôt du PDF du rapport et pré-remplissage de la saisie par l'IA."""
+    st.subheader("Pré-remplir à partir du rapport (IA)")
+    cle_ia, modele = _config_ia()
+    st.caption("Déposez le PDF du rapport : l'IA propose l'école, le bâtiment et les actions préconisées, avec pour "
+               "chacune l'extrait du rapport et la page. Tout reste modifiable et doit être vérifié avant de continuer. "
+               "Le rapport est envoyé au service d'IA (API Claude d'Anthropic) pour l'analyse.")
+    if not cle_ia:
+        st.info("Le module IA n'est pas encore configuré sur cette application : remplissez la saisie ci-dessous à la "
+                "main, ou ajoutez la clé d'accès dans les réglages de l'application (section « anthropic » des secrets).")
+        return
+    fichier = st.file_uploader("PDF du rapport de diagnostic", type=["pdf"], key=cle("ext", "pdf"))
+    if fichier is None:
+        return
+    libelle = "Remplacer la saisie par la lecture de l'IA" if de.get("operations") else "Lire le rapport et pré-remplir"
+    if st.button(libelle, type="primary", key=cle("ext", "lire")):
+        try:
+            proposition = _lecture_ia(fichier.getvalue(), modele)
+        except IA.LectureImpossible as err:
+            st.error(str(err))
+            return
+        saisie, remarques = IA.vers_saisie(proposition, fichier.name)
+        for k, v in saisie["audit"].items():
+            if not D["audit"].get(k):
+                D["audit"][k] = v
+        for k, v in saisie["batiment"].items():
+            D["batiment"].setdefault(k, v)
+        D["diagnostic_externe"] = saisie["diagnostic_externe"]
+        ss.remarques_ia = remarques
+        ss.generation += 1  # les champs affichent les nouvelles valeurs
+        st.rerun()
+
+
+def etape_diagnostic_externe():
+    """Saisie simplifiée d'un diagnostic réalisé hors de la méthode ACTEE-SURYA."""
+    st.header("Diagnostic existant")
+    st.markdown("<p class='actee-chapo'>Reportez ici les préconisations d'un diagnostic de confort d'été réalisé hors de "
+                "la méthode ACTEE-SURYA. L'outil leur applique ensuite les mêmes règles que pour un diagnostic complet : "
+                "niveau de mise en œuvre, maîtrise d'œuvre, prestations préalables, CCTP. L'auditeur reste responsable "
+                "de la traduction du rapport : en cas de doute, cochez « à confirmer ».</p>", unsafe_allow_html=True)
+    de = D.setdefault("diagnostic_externe", {})
+    a = D.setdefault("audit", {})
+    bloc_lecture_ia(de)
+    li = de.get("lecture_ia")
+    if li:
+        st.warning(f"**Saisie pré-remplie par l'IA** à partir de « {li.get('fichier', '')} » le {li.get('date', '')}. "
+                   "Vérifiez chaque champ et chaque action avec l'extrait cité avant de passer au pré-programme.",
+                   icon="🤖")
+        for r in ss.get("remarques_ia") or [f"À classer à la main (sans équivalent dans la liste) : {h}"
+                                             for h in li.get("hors_catalogue", [])]:
+            st.caption("• " + r)
+
+    st.subheader("1. Le diagnostic d'origine et l'école")
+    c1, c2 = st.columns(2)
+    de["source"] = c1.text_input("Diagnostic d'origine (bureau d'études, programme)", value=de.get("source", ""),
+                                 placeholder="Ex. : Inddigo – diagnostic confort estival (Banque des Territoires)",
+                                 key=cle("ext", "source")).strip()
+    de["date"] = c2.text_input("Date du rapport", value=de.get("date", ""), placeholder="jj/mm/aaaa",
+                               key=cle("ext", "date")).strip()
+    for k, lib in (("etablissement", "Établissement"), ("adresse", "Adresse"), ("commune", "Commune"),
+                   ("moa", "Maître d'ouvrage")):
+        a[k] = (c1 if k in ("etablissement", "commune") else c2).text_input(lib, value=a.get(k, ""),
+                                                                             key=cle("ext", k)).strip()
+    a.setdefault("auditeur", de.get("source", ""))
+    a["date_visite"] = c2.text_input("Date de la visite du diagnostic", value=a.get("date_visite", ""),
+                                     placeholder="jj/mm/aaaa", key=cle("ext", "visite")).strip()
+
+    st.subheader("2. Le bâtiment")
+    st.caption("Ces informations modifient le niveau des opérations et le contenu des CCTP (amiante, patrimoine, "
+               "ventilation, toiture). Laissez « non renseigné » si le rapport ne le dit pas.")
+    b = D.setdefault("batiment", {})
+    cols = st.columns(2)
+    for i, (code, lib) in enumerate(CHAMPS_BATIMENT_EXTERNE):
+        if code == "B-10" and b.get("B-09") != "Oui":
+            continue
+        if code in ("B-14", "B-15") and b.get("B-09") != "Oui":
+            continue
+        if code in ("B-22", "B-26") and b.get("B-21") != "Oui":
+            continue
+        opts = [""] + _options_question(code)
+        val = b.get(code, "")
+        choix_b = cols[i % 2].selectbox(lib, opts, index=opts.index(val) if val in opts else 0,
+                                        format_func=lambda x: x or "Non renseigné", key=cle("ext", code))
+        if choix_b:
+            b[code] = choix_b
+        else:
+            b.pop(code, None)
+
+    st.subheader("3. Les actions préconisées par le diagnostic")
+    st.caption("Cochez chaque action du rapport et indiquez où elle s'applique. Une action sans équivalent dans la liste "
+               "peut être décrite dans le commentaire de l'action la plus proche.")
+    actuelles = {x["solution"]: x for x in de.get("operations") or []}
+    nouvelles = []
+    ordre = list(travaux.LEVIERS)
+    par_groupe = {}
+    for sol in travaux.CATALOGUE:
+        par_groupe.setdefault(travaux.GROUPES.get(sol, "Autres"), []).append(sol)
+    for g in sorted(par_groupe, key=lambda g: ordre.index(g) if g in ordre else 99):
+        st.markdown(f"#### {travaux.LEVIERS.get(g, (g,))[0]}")
+        for sol in par_groupe[g]:
+            x = actuelles.get(sol, {})
+            c = travaux.CATALOGUE[sol]
+            with st.container(border=True):
+                coche = st.checkbox(f"**{c['action']}**", value=bool(x), key=cle("ext", sol, "on"),
+                                    help=f"Fiche {c['fiche']} du kit · {c['prestataire']}")
+                if not coche:
+                    continue
+                if x.get("origine") == "ia":
+                    st.caption("🤖 Proposé par l'IA" + (f" — p. {x['page']}" if x.get("page") else "")
+                               + (f" : « {x['extrait']} »" if x.get("extrait") else "") + " — à vérifier")
+                c1, c2 = st.columns(2)
+                locaux = c1.text_area("Locaux ou espaces concernés (un par ligne)", value="\n".join(x.get("locaux", [])),
+                                      key=cle("ext", sol, "locaux"), height=90)
+                conf = c2.text_area("À confirmer (un par ligne)", value="\n".join(x.get("a_confirmer", [])),
+                                    key=cle("ext", sol, "conf"), height=90,
+                                    help="Locaux où le diagnostic émet une réserve ou manque d'une donnée.")
+                y = {"solution": sol, "locaux": _lignes(locaux), "a_confirmer": _lignes(conf)}
+                y.update({k: x[k] for k in ("origine", "extrait", "page") if x.get(k)})
+                alertes = travaux.ALERTES_PAR_SOLUTION.get(sol, [])
+                if alertes:
+                    y["alertes"] = st.multiselect("Points d'alerte relevés", alertes, default=[a_ for a_ in x.get("alertes", [])
+                                                                                          if a_ in alertes],
+                                                  format_func=lambda k: f"{k} — {REGLES[k]['regle'][:110]}",
+                                                  key=cle("ext", sol, "alertes"))
+                if sol == "Mise en place de brasseurs d'air plafonniers":
+                    y["hauteur_limite"] = st.checkbox("Hauteur sous plafond limite ou faux plafond à traverser",
+                                                      value=x.get("hauteur_limite", False), key=cle("ext", sol, "h"))
+                vig = st.text_area("Points de vigilance du rapport (un par ligne)", value="\n".join(x.get("vigilances", [])),
+                                   key=cle("ext", sol, "vig"), height=70)
+                y["vigilances"] = _lignes(vig)
+                c3, c4 = st.columns([1, 2])
+                niv = c3.selectbox("Niveau", ["", "A", "B", "C"], index=["", "A", "B", "C"].index(x.get("niveau", "")),
+                                   format_func=lambda k: k or "Proposé par l'outil", key=cle("ext", sol, "niv"))
+                if niv:
+                    y["niveau"] = niv
+                com = c4.text_input("Commentaire", value=x.get("commentaire", ""), key=cle("ext", sol, "com")).strip()
+                if com:
+                    y["commentaire"] = com
+                nouvelles.append(y)
+    de["operations"] = nouvelles
+    if de.get("lecture_ia") and not nouvelles:
+        de.pop("lecture_ia", None)
+    if nouvelles:
+        st.success(f"{len(nouvelles)} action(s) reportée(s). Le pré-programme les reprend à l'étape suivante.")
+    pied("Suivant : Pré-programme →")
+
+
+# ------------------------------------------------------------------ étape : pré-programme
+def etape_preprogramme():
+    """Ce que l'on propose de faire, pourquoi, où, pour quel coût : relu par l'auditeur, téléchargeable en PDF."""
+    st.header("Pré-programme")
+    ctx_t = _travaux_contexte()
+    if not ctx_t:
+        return
+    res, T, e = ctx_t
+    st.markdown("<p class='actee-chapo'>Le pré-programme traduit le diagnostic en <b>opérations</b> : ce que la "
+                "collectivité peut faire pour protéger les occupants de la chaleur, <b>pourquoi</b>, <b>où</b>, "
+                "<b>quand</b> et pour quel <b>coût indicatif</b>. L'auditeur relit chaque opération et peut la "
+                "retirer, avec un motif. Le PDF est le document à présenter aux élus.</p>", unsafe_allow_html=True)
+    if not e["operations"]:
+        st.success("Le diagnostic ne fait ressortir aucune opération à engager.")
+        pied()
+        return
+
+    st.subheader("1. Ce que nous proposons, et pourquoi")
+    st.caption("Dans l'ordre de la démarche : empêcher la chaleur d'entrer, l'évacuer la nuit, rendre la chaleur "
+               "restante supportable.")
+    ops_choix = T.setdefault("operations", {})
+    ordre = list(travaux.LEVIERS)
+    for g in sorted({o["groupe"] for o in e["operations"]}, key=lambda g: ordre.index(g) if g in ordre else 99):
+        titre, pourquoi = travaux.LEVIERS.get(g, (g, ""))
+        st.markdown(f"#### {titre}")
+        st.caption(pourquoi)
+        for o in [o for o in e["operations"] if o["groupe"] == g]:
+            with st.container(border=True):
+                st.markdown(f"**{html.escape(o['action'])}** &nbsp; "
+                            + _pastille(travaux.HORIZONS[o["horizon"]], COULEURS_HORIZON[o["horizon"]]) + " &nbsp; "
+                            + _pastille(f"niveau {o['niveau']}", COULEURS_NIVEAU[o["niveau"]]),
+                            unsafe_allow_html=True)
+                ou = [x["nom"] for x in o["a_engager"]] + [f"{x['nom']} (à confirmer)" for x in o["a_valider"]]
+                st.caption(f"Où : {', '.join(ou)}")
+                retenue = st.checkbox("Retenir cette opération", value=o["retenue"], key=cle("trav", o["id"], "ret"))
+                motif = o["motif"]
+                if not retenue:
+                    motif = st.text_input("Motif du retrait (obligatoire)", value=o["motif"],
+                                          key=cle("trav", o["id"], "motif"),
+                                          placeholder="Déjà programmé, refus de la commune, solution de repli inutile…")
+                    if not motif.strip():
+                        st.warning("Indiquez le motif du retrait.")
+                ops_choix[o["id"]] = {"retenue": retenue, "motif": motif.strip()}
+                with st.expander("Ce que le diagnostic a constaté"):
+                    st.markdown(f"*{rapport_preprogramme._bref(o['fiche'], o['solution'])}*")
+                    for x in o["a_engager"] + o["a_valider"]:
+                        vig = "".join(f"  \n⚠️ {html.escape(t)}" for a, t in x["vigilances"])
+                        st.markdown(f"**{html.escape(x['nom'])}** — {x['statut']}"
+                                    + (f" : {html.escape(x['libelle_regle'])}" if x["libelle_regle"] else "") + vig)
+                    if o["raisons_niveau"]:
+                        st.caption("Niveau " + o["niveau"] + " : " + " ; ".join(o["raisons_niveau"]))
+                    if o["hypotheses"]:
+                        st.caption("Quantité estimée pour les CCTP : " + " ; ".join(o["hypotheses"]))
+    e = travaux.etat(D, res)
+
+    st.subheader("2. Local par local")
+    st.caption("Les opérations prévues dans chaque local ou espace, et ce qu'il faut vérifier avant les travaux.")
+    st.dataframe(_vue_par_local(e), hide_index=True, width="stretch")
+    if e["completer"]:
+        st.info("Données à compléter : " + " ; ".join(f"**{n}** ({', '.join(s)})" for n, s in e["completer"].items()))
+
+    st.subheader("3. Calendrier")
+    st.metric("Opérations retenues", len(e["retenues"]))
+    for h in (1, 2, 3):
+        ops = [o for o in e["retenues"] if o["horizon"] == h]
+        if ops:
+            st.markdown(_pastille(travaux.HORIZONS[h], COULEURS_HORIZON[h]) + " &nbsp; "
+                        + html.escape(", ".join(rapport_preprogramme.court(o) for o in ops)), unsafe_allow_html=True)
+    st.info(travaux.MESSAGE_COUTS)
+
+    st.subheader("4. Le document à présenter")
+    st.download_button("Télécharger le pré-programme (PDF)", _pdf_preprogramme(json.dumps(D, ensure_ascii=False,
+                                                                                       sort_keys=True)),
+                       file_name=f"pre_programme_{_suffixe()}.pdf", mime="application/pdf", type="primary")
+    st.caption("Quoi, pourquoi, où, comment ; local par local ; études préalables ; prochaines étapes. Il porte la "
+               "mention « projet » tant que la validation (étape suivante) n'est pas faite.")
+    pied("Suivant : maîtrise d'œuvre et accompagnement →")
+
+
+# ------------------------------------------------------------------ étape : accompagnement
+def etape_accompagnement():
+    """Maîtrise d'œuvre en priorité, mise en garde, ingénierie du territoire ; validation du pré-programme."""
+    st.header("Accompagnement")
+    ctx_t = _travaux_contexte()
+    if not ctx_t:
+        return
+    res, T, e = ctx_t
+    st.markdown("<p class='actee-chapo'>Avant de consulter des prestataires, la collectivité choisit comment elle "
+                "conduit son projet : avec une <b>maîtrise d'œuvre</b>, recommandée dès que les travaux touchent "
+                "le bâtiment, et avec l'appui d'une <b>structure d'ingénierie</b> si elle n'a pas de service "
+                "technique.</p>", unsafe_allow_html=True)
+
+    st.subheader("1. Maîtrise d'œuvre")
+    m = T.setdefault("moe", {"choix": "auto", "motif": ""})
+    if e["moe_auto"]:
+        st.error("**Une maîtrise d'œuvre est fortement recommandée pour cette école.**  \n"
+                 + "  \n".join(f"- {r.split(' — ', 1)[-1]}" for r in e["raisons_moe"]))
+        st.markdown("Elle conçoit l'ensemble des travaux, vérifie leur faisabilité (structure, urbanisme, sécurité "
+                    "incendie), consulte les entreprises et suit le chantier. **Toutes les opérations de travaux lui "
+                    "sont confiées**, quel que soit leur niveau, pour qu'un seul professionnel en soit responsable.")
+    else:
+        st.info("Au vu des opérations retenues, une maîtrise d'œuvre n'est pas indispensable. Elle reste utile si la "
+                "collectivité veut confier la conception et le suivi à un professionnel.")
+    with st.container(border=True):
+        st.markdown("**⚠️ Faire sans maîtrise d'œuvre expose à des risques :**")
+        st.markdown("\n".join(f"- {r}" for r in travaux.RISQUES_SANS_MOE))
+    options = {"auto": "Suivre la proposition de l'outil", "oui": "Recommander une maîtrise d'œuvre",
+               "non": "Ne pas recommander de maîtrise d'œuvre"}
+    m["choix"] = st.radio("Verdict retenu par l'auditeur", list(options), format_func=options.get,
+                          index=list(options).index(m.get("choix", "auto")), key=cle("trav", "moe"), horizontal=True)
+    if m["choix"] != "auto":
+        m["motif"] = st.text_input("Motif (obligatoire si le verdict diffère de la proposition)", value=m.get("motif", ""),
+                                   key=cle("trav", "moe_motif")).strip()
+        if e["moe_auto"] and m["choix"] == "non":
+            st.warning("Écarter la maîtrise d'œuvre recommandée demande un motif et le visa du chargé de mission ou "
+                       "de l'économe de flux (section 3).")
+    with st.expander("Règles de l'outil (M1 à M5)"):
+        st.caption("M1 : opération de niveau C · M2 : plusieurs familles touchent l'enveloppe, la toiture ou les "
+                   "extérieurs · M3 : alerte de structure · M4 : bâtiment protégé avec travaux de façade · M5 : coût "
+                   "au-delà du seuil, **inactive tant que la base de données de coûts n'existe pas**. Propositions "
+                   "ACTEE, à valider.")
+        seuil = st.number_input("Seuil de coût de la règle M5 (€ HT)", min_value=0, step=10000,
+                                value=int(e["choix"]["seuil_moe"]), key=cle("trav", "seuil"))
+    if seuil != travaux.SEUIL_MOE_DEFAUT:
+        T["seuil_moe"] = seuil
+    else:
+        T.pop("seuil_moe", None)
+    e = travaux.etat(D, res)
+
+    st.subheader("2. Ingénierie de la collectivité")
+    a = T.setdefault("accompagnement", {"ingenierie": ""})
+    choix_ing = {"": "Non renseigné", "oui": "Oui", "non": "Non", "nsp": "Ne sait pas"}
+    a["ingenierie"] = st.radio("La collectivité dispose-t-elle d'un service technique capable de piloter les études "
+                               "et les travaux ?", list(choix_ing), format_func=choix_ing.get,
+                               index=list(choix_ing).index(a.get("ingenierie", "")), key=cle("trav", "ing"),
+                               horizontal=True)
+    if a["ingenierie"] in ("non", "nsp"):
+        st.info("**Nous recommandons de se faire accompagner par une structure d'ingénierie du territoire**, pour "
+                "préparer les consultations, choisir les prestataires et suivre les travaux.")
+    structures_locales(a, e)
+    e = travaux.etat(D, res)
+
+    st.subheader("3. Validation du pré-programme")
+    v = T.setdefault("validation", {})
+    c1, c2 = st.columns(2)
+    v["auditeur"] = c1.text_input("Revue par (auditeur)", value=v.get("auditeur", D["audit"].get("auditeur", "")),
+                                  key=cle("trav", "auditeur")).strip()
+    v["date_revue"] = c2.text_input("Date de la revue", value=v.get("date_revue", ""), placeholder="jj/mm/aaaa",
+                                    key=cle("trav", "date_revue")).strip()
+    v["visa"] = c1.text_input("Visa (chargé de mission ou économe de flux)", value=v.get("visa", ""),
+                              key=cle("trav", "visa")).strip()
+    v["date_visa"] = c2.text_input("Date du visa", value=v.get("date_visa", ""), placeholder="jj/mm/aaaa",
+                                   key=cle("trav", "date_visa")).strip()
+    e = travaux.etat(D, res)
+    for x in e["anomalies"]:
+        st.error(x)
+    if e["valide"]:
+        st.success("Pré-programme validé : les documents ne portent plus la mention « projet ».")
+    else:
+        st.caption("Tant que la revue, le visa et leurs dates ne sont pas renseignés (et sans anomalie), les documents "
+                   "portent la mention « projet ».")
+    st.download_button("Télécharger le pré-programme (PDF)", _pdf_preprogramme(json.dumps(D, ensure_ascii=False,
+                                                                                       sort_keys=True)),
+                       file_name=f"pre_programme_{_suffixe()}.pdf", mime="application/pdf",
+                       key="pdf_pp_accompagnement")
+    pied("Suivant : " + ("recruter la maîtrise d'œuvre →" if e["moe"] else "fiches travaux →"))
+
+
+# ------------------------------------------------------------------ structures d'ingénierie locale
+@st.cache_data(ttl=86400, max_entries=200, show_spinner="Recherche de la commune…")
+def _communes(cp: str) -> list[dict]:
+    return IG.communes(cp)
+
+
+@st.cache_data(ttl=86400, max_entries=200, show_spinner="Recherche des structures du territoire…")
+def _structures(commune_json: str) -> dict:
+    return IG.rechercher(json.loads(commune_json))
+
+
+def _carte(commune: dict, structures: list[dict]):
+    """Carte : la commune et les structures géolocalisées (une couleur par type)."""
+    points = [{"lat": commune["lat"], "lon": commune["lon"], "nom": f"{commune['nom']} (commune)",
+               "type": "Commune", "couleur": [0, 0, 0, 230], "rayon": 1400}] if commune.get("lat") else []
+    for x in structures:
+        if x.get("lat") is not None and x.get("lon") is not None:
+            lib, _, rgb = IG.TYPES.get(x["type"], (x["type"], "", (90, 90, 90)))
+            points.append({"lat": x["lat"], "lon": x["lon"], "nom": x["nom"], "type": lib,
+                           "couleur": [*rgb, 220], "rayon": 1000})
+    if not points:
+        return
+    try:
+        import pydeck as pdk
+        couche = pdk.Layer("ScatterplotLayer", data=points, get_position="[lon, lat]", get_fill_color="couleur",
+                           get_radius="rayon", radius_min_pixels=6, radius_max_pixels=14, pickable=True,
+                           stroked=True, get_line_color=[255, 255, 255], line_width_min_pixels=1)
+        vue = pdk.ViewState(latitude=commune.get("lat") or points[0]["lat"],
+                            longitude=commune.get("lon") or points[0]["lon"], zoom=8.2)
+        st.pydeck_chart(pdk.Deck(layers=[couche], initial_view_state=vue, map_provider="carto",
+                                 map_style=getattr(pdk.map_styles, "CARTO_LIGHT", "light"),
+                                 tooltip={"text": "{nom}\n{type}"}), height=380)
+    except Exception:  # pydeck indisponible : carte simple
+        import pandas as pd
+        st.map(pd.DataFrame(points)[["lat", "lon"]], height=380)
+    vus = []
+    for p in points:
+        if p["type"] not in [v[0] for v in vus]:
+            vus.append((p["type"], p["couleur"]))
+    st.markdown(" ".join(f"<span style='display:inline-block;width:.8em;height:.8em;border-radius:50%;"
+                         f"background:rgb({c[0]},{c[1]},{c[2]});margin:0 .3em 0 .8em'></span>{html.escape(t)}"
+                         for t, c in vus), unsafe_allow_html=True)
+
+
+def _carte_structure(x: dict):
+    tel = x["telephone"]
+    liens = []
+    if tel:
+        liens.append("📞 " + " / ".join(f"[{t.strip()}](tel:{re.sub(r'[^0-9+]', '', t)})" for t in tel.split("/")))
+    if x["courriel"]:
+        liens.append("✉️ " + " / ".join(f"[{c.strip()}](mailto:{c.strip()})" for c in x["courriel"].split("/")))
+    if x["site"]:
+        liens.append(f"🌐 [{'fiche SIRENE' if 'annuaire-entreprises' in x['site'] else 'site'}]({x['site']})")
+    with st.container(border=True):
+        st.markdown(f"**{x['nom']}**" + (" &nbsp; :orange[à vérifier]" if x.get("a_verifier") else "")
+                    + (f" &nbsp; :gray[{x['distance_km']:g} km]" if x.get("distance_km") is not None else ""))
+        if x.get("adresse"):
+            st.caption(x["adresse"])
+        st.markdown(" &nbsp;·&nbsp; ".join(liens) if liens else ":gray[Coordonnées non disponibles en données ouvertes.]")
+
+
+def structures_locales(a: dict, e: dict):
+    """Recherche par code postal des structures qui peuvent accompagner la commune, avec carte et contacts."""
+    st.markdown("#### Qui peut vous accompagner sur votre territoire ?")
+    st.caption("Saisissez le code postal de la commune : l'outil cherche les structures d'ingénierie qui peuvent, au "
+               "moins en théorie, l'accompagner (intercommunalité, syndicat d'énergie, agence technique, CAUE, ALEC, "
+               "SPL, centre de ressources…). Contactez-les pour leur demander si elles peuvent vous aider sur le "
+               "passage en travaux.")
+    c1, c2 = st.columns([1, 2], vertical_alignment="bottom")
+    cp = c1.text_input("Code postal de la commune", value=a.get("code_postal", ""), max_chars=5,
+                       key=cle("trav", "cp")).strip()
+    choisie = None
+    if cp:
+        try:
+            liste = _communes(cp)
+        except ValueError as err:
+            st.warning(str(err))
+            liste = []
+        except Exception:
+            st.error("Le service de recherche des communes ne répond pas. Réessayez dans un instant.")
+            liste = []
+        if cp and liste:
+            noms = [f"{c['nom']} ({c['code']})" for c in liste]
+            defaut = next((i for i, c in enumerate(liste) if c["code"] == a.get("code_insee")), 0)
+            i = c2.selectbox("Commune", range(len(liste)), format_func=lambda i: noms[i], index=defaut,
+                             key=cle("trav", "commune")) if len(liste) > 1 else 0
+            choisie = liste[i or 0]
+        elif cp and len(re.sub(r"\D", "", cp)) == 5:
+            st.warning("Aucune commune trouvée pour ce code postal.")
+    if not choisie:
+        return
+    if c2.button("Rechercher les structures", type="primary", key=cle("trav", "chercher")) or (
+            a.get("code_insee") == choisie["code"] and a.get("structures")):
+        if a.get("code_insee") != choisie["code"] or not a.get("structures"):
+            r = _structures(json.dumps(choisie, sort_keys=True))
+            a.update({"code_postal": cp, "code_insee": choisie["code"], "commune": choisie["nom"],
+                      "structures": r["structures"], "date_recherche": dt.date.today().strftime("%d/%m/%Y")})
+            for err in r["erreurs"]:
+                st.warning(err)
+        structures = a.get("structures") or []
+        if not structures:
+            st.info("Aucune structure trouvée.")
+            return
+        st.markdown(f"**{len(structures)} structures** autour de {html.escape(a.get('commune', ''))} "
+                    f"(recherche du {a.get('date_recherche', '')}).")
+        _carte(choisie, structures)
+        for t, (lib, pourquoi, _) in IG.TYPES.items():
+            xs = [x for x in structures if x["type"] == t]
+            if not xs:
+                continue
+            st.markdown(f"**{lib}**")
+            st.caption(pourquoi)
+            for x in xs:
+                _carte_structure(x)
+        with st.expander("Modèle de message à envoyer"):
+            st.code(IG.message(a.get("commune", ""), D["audit"].get("etablissement", ""), e["moe"]), language=None)
+        st.caption("Sources : annuaire de l'administration (service-public.gouv.fr), répertoire SIRENE (API Recherche "
+                   "d'entreprises) et fichier de contacts ACTEE. « À vérifier » : structure repérée automatiquement dans "
+                   "SIRENE, dont il faut confirmer le rôle et chercher les coordonnées sur son site. La liste figure "
+                   "dans le PDF du pré-programme.")
+        if st.button("Relancer la recherche", key=cle("trav", "relancer")):
+            a.pop("structures", None)
+            _structures.clear()
+            st.rerun()
+
+
+# ------------------------------------------------------------------ étape : mise en œuvre
+def _fiche_ui(o, e):
+    f = travaux.FICHES[o["fiche"]]
+    with st.container(border=True):
+        st.markdown(f"**{html.escape(o['action'])}** &nbsp; "
+                    + _pastille(travaux.HORIZONS[o["horizon"]], COULEURS_HORIZON[o["horizon"]]),
+                    unsafe_allow_html=True)
+        pieces = ", ".join(travaux.pieces_operation(o, e)) or "fiche du kit seule"
+        st.caption(f"Prestataire : {o['prestataire']} · Fiche {o['fiche']} « {f['titre']} » · {pieces}")
+        with st.expander("Rôle du maître d'ouvrage, étape par étape"):
+            if travaux.sans_fiche(o):
+                st.markdown(travaux.sans_fiche(o))
+            else:
+                st.markdown("\n".join(f"{i}. **{t}** — {txt}" for i, (t, txt) in enumerate(f["etapes"], 1)))
+            if o.get("commentaire"):
+                st.caption("Note du diagnostic : " + o["commentaire"])
+            vig_site = [(x["nom"], t) for x in o["a_engager"] + o["a_valider"] for a, t in x["vigilances"]]
+            if vig_site:
+                st.markdown("**Points de vigilance propres à l'école**")
+                st.markdown("\n".join(f"- {html.escape(n)} : {html.escape(t)}" for n, t in vig_site))
+            if f.get("vigilances") and not travaux.sans_fiche(o):
+                st.markdown("**Vigilances générales**  \n" + " ".join(f["vigilances"]))
+
+
+def etape_mise_en_oeuvre():
+    """Avec MOE : le CCTP de maîtrise d'œuvre ; sans MOE : les fiches travaux."""
+    st.header("Mise en œuvre")
+    ctx_t = _travaux_contexte()
+    if not ctx_t:
+        return
+    res, T, e = ctx_t
+    dj = json.dumps(D, ensure_ascii=False, sort_keys=True)
+    if e["moe"]:
+        st.subheader("Recruter la maîtrise d'œuvre")
+        st.markdown("<p class='actee-chapo'>Le cahier des charges de maîtrise d'œuvre est construit à partir du "
+                    "pré-programme : <b>toutes les opérations de travaux</b> sont confiées à l'équipe, et chaque "
+                    "famille d'opérations active un <b>volet</b> de la mission (compétences, relevés, choix à "
+                    "justifier, points d'arrêt de chantier).</p>", unsafe_allow_html=True)
+        volets = sorted({travaux._volet(o) for o in e["ops_moe"]})
+        st.markdown("**Volets activés** : " + ", ".join(CC.VOLETS[v] for v in volets))
+        st.markdown("**Opérations confiées** :  \n" + "  \n".join(f"- {o['action']}" for o in e["ops_moe"]))
+        c1, c2 = st.columns(2)
+        c1.download_button("CCTP de maîtrise d'œuvre (Word)", _docx_piece(dj, "MOE"),
+                           file_name=f"CCTP_MOE_{_suffixe()}.docx", type="primary", width="stretch",
+                           mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        c1.caption("Modifiable ; les champs à compléter sont surlignés.")
+        c2.download_button("Plan d'action (PDF)", _pdf_travaux(dj), file_name=f"plan_action_{_suffixe()}.pdf",
+                           mime="application/pdf", width="stretch")
+        c2.caption("Opérations, fiches et feuille de route du maître d'ouvrage.")
+        with st.expander("Aperçu du CCTP de maîtrise d'œuvre"):
+            st.markdown(CC.remplir("MOE", D, e))
+        if e["ops_moa"]:
+            st.markdown("#### À engager tout de suite par la collectivité")
+            st.caption("Actions d'organisation ou de réglage, sans travaux : elles n'attendent pas la maîtrise d'œuvre.")
+            for o in e["ops_moa"]:
+                _fiche_ui(o, e)
+    else:
+        st.subheader("Fiches travaux")
+        st.markdown("<p class='actee-chapo'>Sans maîtrise d'œuvre, la collectivité conduit elle-même chaque "
+                    "opération. Chaque fiche dit ce qu'elle doit faire, étape par étape, avec les points de "
+                    "vigilance relevés dans cette école. Les cahiers des charges sont à l'étape suivante.</p>",
+                    unsafe_allow_html=True)
+        for h in (1, 2, 3):
+            ops = [o for o in e["retenues"] if o["horizon"] == h]
+            if ops:
+                st.markdown(f"#### {travaux.HORIZONS[h]}")
+                for o in ops:
+                    _fiche_ui(o, e)
+        st.download_button("Plan d'action avec les fiches (PDF)", _pdf_travaux(dj),
+                           file_name=f"plan_action_{_suffixe()}.pdf", mime="application/pdf", type="primary")
+    pied("Suivant : cahiers des charges →")
+
+
+# ------------------------------------------------------------------ étape : consultations
+def etape_consultations():
+    """Prestations préalables puis CCTP travaux, et le dossier complet en ZIP."""
+    st.header("Consultations")
+    ctx_t = _travaux_contexte()
+    if not ctx_t:
+        return
+    res, T, e = ctx_t
+    dj = json.dumps(D, ensure_ascii=False, sort_keys=True)
+    st.markdown("<p class='actee-chapo'>Les cahiers des charges sont pré-remplis avec les données du diagnostic. "
+                "Ils sont à relire et à compléter (champs surlignés en jaune) avant envoi.</p>", unsafe_allow_html=True)
+    if e["pieces"]:
+        st.download_button("Tout le dossier (ZIP de fichiers Word)", _zip_cctp(dj), file_name=f"cctp_{_suffixe()}.zip",
+                           mime="application/zip", type="primary")
+    pourquoi = {
+        6: "L'installation de ventilation ne permet peut-être pas le mode été par simple réglage.",
+        7: "Connaître l'état de la toiture et de son isolant avant de choisir une solution.",
+        10: "Obligatoire avant travaux dans un bâtiment construit avant juillet 1997.",
+        11: "Vérifier que les supports peuvent porter ou ancrer les équipements prévus.",
+        12: "Travaux qui chargent la structure ou touchent à la sécurité incendie d'un établissement recevant du public.",
+        13: "Obligatoire dès que plusieurs entreprises interviennent.",
+    }
+    sections = [("prealable", "1. Prestations préalables",
+                 "Diagnostics, contrôle et coordination, commandés directement par la collectivité."),
+                ("travaux", "2. Travaux et commandes", "Un CCTP par prestataire."),
+                ("reference", "2. CCTP travaux, base pour la maîtrise d'œuvre",
+                 "La maîtrise d'œuvre rédige les pièces de consultation des entreprises ; ces CCTP du kit lui sont "
+                 "transmis comme base.")]
+    for cat, titre, aide in sections:
+        pcs = [(n, x) for n, x in e["pieces"].items() if x["categorie"] == cat]
+        if not pcs:
+            continue
+        st.subheader(titre)
+        st.caption(aide)
+        for n, x in pcs:
+            with st.container(border=True):
+                c1, c2 = st.columns([0.75, 0.25], vertical_alignment="center")
+                c1.markdown(f"**{travaux.CCTP[n]}**")
+                c1.caption((pourquoi.get(n, "") + " " if cat == "prealable" else "") + "Pour : "
+                           + ", ".join(rapport_preprogramme.court(o) for o in x["operations"]))
+                c2.download_button("Word", _docx_piece(dj, n), file_name=f"{CC.nom_fichier(n)}_{_suffixe()}.docx",
+                                   key=f"docx_{n}", width="stretch",
+                                   mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                with st.expander("Aperçu"):
+                    st.markdown(CC.remplir(n, D, e))
+    st.subheader("Feuille de route du maître d'ouvrage")
+    st.dataframe([{"Phase": t["phase"], "Ce qu'il faut faire": t["quoi"], "Qui": t["qui"], "Quand": t["quand"],
+                   "Ce qui en sort": t["sortie"]} for t in e["feuille_de_route"]], hide_index=True, width="stretch")
+    pied()
 
 # ------------------------------------------------------------------ réglages
 def vue_reglages():
@@ -1541,10 +2312,12 @@ def vue_reglages():
 
 
 # ------------------------------------------------------------------ aiguillage
-ETAPES = {"Identification": etape_identification, "Bâtiment": etape_batiment, "Façades": etape_facades,
+ETAPES = {"Diagnostic existant": lambda: etape_diagnostic_externe(), "Identification": etape_identification, "Bâtiment": etape_batiment, "Façades": etape_facades,
           "Locaux": lambda: etape_entites("locaux"), "Espaces extérieurs": lambda: etape_entites("espaces"),
           "Questionnaires usagers": etape_questionnaires,
-          "Vérification": etape_verification, "Résultats": etape_documents, "Documents": etape_documents}
+          "Vérification": etape_verification, "Résultats": etape_documents, "Documents": etape_documents,
+          "Pré-programme": lambda: etape_preprogramme(), "Accompagnement": lambda: etape_accompagnement(),
+          "Mise en œuvre": lambda: etape_mise_en_oeuvre(), "Consultations": lambda: etape_consultations()}
 
 charte()
 if st.query_params.get("questionnaire"):

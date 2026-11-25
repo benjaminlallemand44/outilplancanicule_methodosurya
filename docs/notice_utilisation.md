@@ -17,6 +17,11 @@ il sert à éprouver la méthode et le parcours de saisie, pas encore à conduir
   photographier des personnes : les visages détectés sur les photos sont floutés automatiquement, mais
   la détection n'est pas infaillible.
 
+- Passage en travaux : la recherche des structures d'ingénierie interroge des services publics (API
+  Découpage administratif, Annuaire de l'administration, Recherche d'entreprises) avec le code postal de la
+  commune. La lecture d'un rapport de diagnostic par IA, facultative, envoie le PDF au service d'IA (API
+  Claude d'Anthropic) : ne l'utilisez qu'avec des rapports que vous pouvez transmettre.
+
 ## Hébergement et mesure d'audience
 
 L'application est hébergée gratuitement sur **Streamlit Community Cloud** (société Snowflake, traitement

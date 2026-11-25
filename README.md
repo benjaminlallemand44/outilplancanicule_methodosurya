@@ -17,6 +17,17 @@ streamlit run app.py
 Menu **Réglages** (en haut à droite) : charger un exemple, importer un Excel de la méthode déjà rempli
 (`.xlsx`), exporter / réimporter une saisie (`.json`, ou `.zip` avec les photos), notice d'utilisation.
 
+## Passage en travaux (3ᵉ parcours)
+
+Après le diagnostic : **pré-programme** à présenter aux élus (opérations par levier, niveaux, horizons),
+**accompagnement** (maîtrise d'œuvre, structures d'ingénierie du territoire trouvées à partir du code
+postal), **mise en œuvre** (CCTP de maîtrise d'œuvre ou fiches travaux) et **consultations** (CCTP des
+prestations préalables et des travaux, archive ZIP). Accessible depuis l'étape Documents du diagnostic
+complet, ou depuis l'écran de départ, à partir de l'audit en cours ou d'un diagnostic existant réalisé
+hors de la méthode (saisie simplifiée, lecture du rapport par IA facultative). Détail :
+`docs/passage_en_travaux.md` ; code : `surya/travaux.py`, `surya/cctp.py`, `surya/ingenierie.py`,
+`surya/lecture_ia.py`, `surya/rapport_preprogramme.py`, `surya/rapport_travaux.py`, `surya/kit/`.
+
 ## Base de données (Supabase)
 
 Facultative : sans la section `[supabase]` dans les secrets Streamlit, l'outil reste une maquette.

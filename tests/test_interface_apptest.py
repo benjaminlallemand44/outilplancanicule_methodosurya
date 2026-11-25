@@ -72,7 +72,10 @@ def charger(at, d):
 def demarrer(at, mode="resultats", saisie="guidee"):
     if saisie != "guidee":
         at.radio[0].set_value(saisie).run()
-    clic(at, "Commencer — résultats" if mode == "resultats" else "Commencer — diagnostic complet")
+    libelles = {"resultats": "Commencer — résultats", "complet": "Commencer — diagnostic complet",
+                "travaux": "À partir de l'audit en cours", "externe": "À partir d'un diagnostic existant"}
+    clic(at, libelles[mode])
+    assert at.session_state["mode"] == mode
     return at
 
 
@@ -480,7 +483,7 @@ def test_saisie_papier_ajoute_une_reponse():
 
 
 def test_aucune_exception_sur_toutes_les_etapes_avec_l_exemple():
-    for mode, n in (("resultats", 6), ("complet", 8)):
+    for mode, n in (("resultats", 6), ("complet", 8), ("travaux", 4)):  # externe : test dédié
         at = app()
         clic(at, key="depart:exemple")
         demarrer(at, mode, "guidee")
@@ -599,3 +602,32 @@ def test_photos_dans_le_diagnostic_complet():
     clic(at, key="nav:2")
     clic(at, key=f"mod:locaux:{D(at)['locaux'][0]['_id']}")
     assert any("Photos" in o for o in at.get("segmented_control")[0].options)
+
+
+
+# ------------------------------------------------------------------ 3e parcours : passage en travaux
+def test_documents_renvoient_au_passage_en_travaux():
+    at = app()
+    assert bouton(at, "À partir de l'audit en cours").disabled  # pas d'audit en cours
+    clic(at, key="depart:ecole_sud")
+    demarrer(at, "complet")
+    clic(at, key="nav:7")  # Documents
+    assert etape(at) == "Documents"
+    clic(at, key="vers_travaux")
+    assert at.session_state["mode"] == "travaux" and etape(at) == "Pré-programme"
+    assert [b.label for b in at.button if (b.key or "").startswith("nav:")][-1].endswith("Consultations")
+    for i in range(4):
+        clic(at, key=f"nav:{i}")
+        assert not at.exception
+    clic(at, key="nav:0")
+    clic(at, "← Documents du diagnostic")
+    assert at.session_state["mode"] == "complet" and etape(at) == "Documents"
+
+
+def test_passage_en_travaux_depuis_un_diagnostic_existant():
+    at = app()
+    clic(at, contient="Essayer avec un diagnostic Inddigo")
+    assert at.session_state["mode"] == "externe" and etape(at) == "Diagnostic existant"
+    for i in range(5):
+        clic(at, key=f"nav:{i}")
+        assert not at.exception
