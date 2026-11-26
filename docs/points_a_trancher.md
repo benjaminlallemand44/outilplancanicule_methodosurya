@@ -1,23 +1,24 @@
 # Points à trancher — outil méthode SURYA
 
-Mise à jour du 20/11/2026, après la campagne de tests n° 1 (`docs/rapport_tests.md`). Relevé établi en
-portant dans l'outil :
+Mise à jour du 26/11/2026 (première version du 20/11/2026, après la campagne de tests n° 1,
+`docs/rapport_tests.md`). Relevé établi en portant dans l'outil :
 
 - toutes les formules de l'Excel `2611111_outil_aide_test_methode-1.xlsx` (règles « version du
   27/10/2026 ») ;
-- le document « Méthode de l'audit de faisabilité d'actions d'adaptation » (version 01 du 27/10/2026) ;
+- le document de la méthode SURYA « Méthode de l'audit de faisabilité d'actions d'adaptation » (version 01 du
+  27/10/2026, © ACTEE et SURYA Ingénierie, licence Creative Commons BY-SA 4.0) ;
 - le « Questionnaire confort estival » (version 01 du 11/11/2026).
 
 Chaque point a été revérifié sur l'outil, et par la campagne de tests. Sept catégories :
 
 - **A. Erreurs de l'Excel** : des références cassées. La correction ne fait pas débat, mais elle change
   des résultats ; à valider.
-- **B. Points de méthode à trancher** : le libellé d'une règle et sa formule ne disent pas la même
+- **B. Règles de la méthode SURYA à trancher** : le libellé d'une règle et sa formule ne disent pas la même
   chose, ou un cas n'est pas prévu.
 - **C. Points mineurs** : cohérence des libellés, questions sans effet.
-- **D. Écarts entre l'Excel et le document de méthode.**
+- **D. Écarts entre l'Excel et le document de la méthode SURYA.**
 - **E. Questionnaire usagers** : matrice de correspondance proposée et points à préciser.
-- **F. Questions de méthode issues de la campagne de tests.**
+- **F. Questions sur la méthode SURYA issues de la campagne de tests.**
 - **G. Compte rendu orienté décision** : ordre de mise en œuvre, synthèse, plan simplifié.
 
 Les décisions déjà prises sont regroupées à la fin.
@@ -45,7 +46,7 @@ de l'Excel actuel, tous dus à A1 et A2 :
 
 Avec les références réparées, l'Excel recalculé donne exactement les résultats de l'outil.
 
-## B. Points de méthode à trancher
+## B. Règles de la méthode SURYA à trancher
 
 ### B1. VN-7 : « orientations différentes » n'est pas vérifié
 
@@ -161,7 +162,7 @@ un électricien) est « toujours » vraie, y compris quand les brasseurs sont no
 | C6 | Limites de l'Excel : 10 locaux, 5 espaces, 4 murs par local. L'outil n'a pas de limite de locaux ni d'espaces, mais garde 4 murs par local ; à confirmer. |
 | C7 | F-05 propose « Non évalué », pas F-02 à F-04. |
 
-## D. Écarts entre l'Excel et le document de méthode
+## D. Écarts entre l'Excel et le document de la méthode SURYA
 
 Relevés en comparant l'Excel au document « Méthode de l'audit de faisabilité d'actions d'adaptation »
 (SURYA, version 01 du 27/10/2026, copie dans `reference/`). Les règles sont pour l'essentiel identiques
@@ -169,7 +170,7 @@ dans les deux documents (exceptions : voir F2) ; les autres écarts portent sur 
 
 ### D1. Type des alertes (AL / VA) non renseigné dans l'Excel
 
-La méthode distingue l'**alerte maîtrise d'œuvre (AL)**, qui exige une étude avant de consulter, et le
+La méthode SURYA distingue l'**alerte maîtrise d'œuvre (AL)**, qui exige une étude avant de consulter, et le
 **point de validation ponctuelle (VA)**, qu'un professionnel peut lever (§ I.e). L'Excel ne type pas ses
 alertes. Le compte rendu PDF les classe ainsi, d'après le tableau du § I.e. **Proposition à valider :**
 
@@ -192,16 +193,16 @@ alertes. Le compte rendu PDF les classe ainsi, d'après le tableau du § I.e. **
 Dans le plan d'action du compte rendu, une solution Recommandée ou À optimiser portant une alerte AL
 passe dans « À valider avant de consulter ».
 
-**À trancher aussi :** la méthode classe en AL le « réglementaire et patrimonial ». Les règles PV-3,
+**À trancher aussi :** la méthode SURYA classe en AL le « réglementaire et patrimonial ». Les règles PV-3,
 PH-5, FT-5, VV-6, OA-5 et OC-3 (monument historique, abords) donnent « Sous réserve » mais ne
 déclenchent pas d'alerte. Faut-il ajouter une alerte AL patrimoine sur ces solutions ?
 
 ### D2. Photos normées obligatoires
 
-Principe de traçabilité (§ I.c) : « photos normées obligatoires sur les questions décisives ». Ni
-l'Excel ni l'outil ne prévoient de photos. **À trancher :** quelles questions exigent une photo ?
-L'outil pourra les recueillir et les insérer dans le compte rendu une fois la base de données
-(Supabase) en place ; la maquette n'en stocke pas.
+Principe de traçabilité (§ I.c) : « photos normées obligatoires sur les questions décisives ». L'Excel
+n'en prévoit pas. L'outil permet désormais de prendre ou de charger des photos pour le bâtiment, chaque local
+et chaque espace (visages floutés automatiquement), insérées dans le compte rendu et enregistrées avec l'audit
+pour un auditeur connecté. **À trancher :** quelles questions exigent une photo ?
 
 ### D3. CO-1 : « occupé en continu » n'est pas relevé
 
@@ -215,7 +216,7 @@ copieurs, baies informatiques, appareils de cuisson, aucun, autre.
 
 ### D5. Règle du doute et option « Non évalué »
 
-La méthode demande de cocher « non évaluable » en cas d'hésitation (§ I.f). Ces questions à choix
+La méthode SURYA demande de cocher « non évaluable » en cas d'hésitation (§ I.f). Ces questions à choix
 n'ont pas d'option « Non évalué » : B-03, B-04, B-07, B-18, B-22, B-26, L-02, L-09, MEX-14, MEX-16,
 MEX-17, MEX-20, MEX-21, MEX-24, PL-01, BA-05, E-15, E-21, E-24, E-25, E-26, E-27, E-28. Dans l'outil,
 laisser la question vide revient au même (donnée inconnue). À ajouter dans la grille de visite ?
@@ -266,7 +267,7 @@ de l'indicateur, et le traitement des « Non corroboré ».
 
 ### E2. Question ouverte annoncée mais non rédigée
 
-La méthode du questionnaire (§ I.b) annonce « une seule question ouverte facultative pour les
+La méthode SURYA, pour le questionnaire, (§ I.b) annonce « une seule question ouverte facultative pour les
 remarques libres », qui ne figure pas dans la liste. **Dans l'outil** : ajoutée en Q24 « Remarques
 libres (facultatif) ». À confirmer.
 
@@ -291,19 +292,21 @@ mobile). Passer en choix multiple ?
 
 ### E6. Public visé
 
-La méthode du questionnaire indique « échelle à 7 points (ISO 7730 / ISO 10551) pour les adultes ».
+La méthode SURYA, pour le questionnaire, indique « échelle à 7 points (ISO 7730 / ISO 10551) pour les adultes ».
 Le questionnaire s'adresse-t-il uniquement aux adultes (enseignants, personnel) ? Une version
 élèves est-elle prévue ?
 
 ### E7. Collecte en ligne : données personnelles
 
-Pour la version avec base de données (Supabase) : anonymat des répondants, durée de conservation,
-hébergement des données (RGPD), limitation du nombre de réponses par lien. Voir `docs/supabase.md`.
+La collecte en ligne fonctionne (Supabase) : réponses anonymes, questionnaire ouvert 90 jours, réponses
+brutes conservées 12 mois (décision du 26/11/2026). **Reste à décider avant un usage réel :** registre
+de traitement et mention d'information (RGPD), limitation du nombre de réponses par lien. Voir
+`docs/supabase.md`.
 
-## F. Questions de méthode issues de la campagne de tests
+## F. Questions sur la méthode SURYA issues de la campagne de tests
 
 Relevées par la campagne de tests n° 1 (`docs/rapport_tests.md`, § 2.4). L'outil se comporte comme
-l'Excel sur tous ces points ; ils demandent une décision de méthode.
+l'Excel sur tous ces points ; ils demandent une décision sur la méthode SURYA.
 
 ### F1. Ventilation mécanique : VM-9 et VM-11 ne sont jamais retenues
 
@@ -317,7 +320,7 @@ nocturne doit-elle être « Recommandé » ?
 
 PV-0, PH-0 et FS-0 (« Non concerné » quand le local n'a aucune baie), ainsi que la condition « et
 MEX-14 = Non » de VN-1, n'existent que dans l'Excel. Sans elles, un local aveugle serait
-« Recommandé » pour des protections solaires. **À reporter dans le document de méthode.**
+« Recommandé » pour des protections solaires. **À reporter dans le document de la méthode SURYA.**
 
 ### F3. Toiture : B-18 vide avec des combles perdus décrits
 
@@ -353,20 +356,20 @@ réponses). Appliquer aussi le seuil de 30 % ?
 ### F9. CP-6 et la période de construction
 
 La colonne « Questions » de CP-6 cite B-01 (période de construction), que ni l'Excel ni l'outil
-n'utilisent ; la méthode parle de « suspicion d'amiante ». Déduire la suspicion d'une construction
+n'utilisent ; la méthode SURYA parle de « suspicion d'amiante ». Déduire la suspicion d'une construction
 d'avant 1997, comme PR-AL3 ?
 
 ### F10. Équation 1 des brasseurs : bornes incluses ou non ?
 
 L'Excel lit « 0,2 < diamètre / (√surface / nombre) < 0,4 » avec des bornes exclues ; l'image de
-l'équation dans la méthode (III.a.i-4) ne permet pas de le confirmer.
+l'équation dans la méthode SURYA (III.a.i-4) ne permet pas de le confirmer.
 
 ## G. Compte rendu orienté décision (propositions)
 
 Le compte rendu complet commence par 5 parties courtes pensées pour la décision : synthèse en une page,
 bâtiment et plan simplifié, ressenti des usagers, pistes d'action dans l'ordre de mise en œuvre, ce
 qu'il reste à lever avant de consulter. Le détail (statuts, plan d'action par local, fiches, seuils)
-passe en annexes A à H. Trois choix sont des propositions de l'outil, absentes de la méthode.
+passe en annexes A à H. Trois choix sont des propositions de l'outil, absentes de la méthode SURYA.
 
 ### G1. Ordre de mise en œuvre en trois étapes
 
@@ -414,4 +417,9 @@ plan de l'établissement.
 | Réglages | Seuils et import / export dans un menu « Réglages » discret. |
 | Questionnaire usagers | Collecte par questionnaire en ligne, ou import d'un fichier au même format ; synthèse globale pour l'établissement (pas de rattachement aux locaux) ; matrice de correspondance proposée par l'outil (E1). |
 | Compte rendu complet | Orienté décision : synthèse en une page, présentation du bâtiment, rapprochement usagers / visite, détail en annexe. |
-| Base de données | Supabase dans une étape ultérieure ; la maquette ne stocke aucune donnée, mais le code est prêt (`surya/stockage.py`, `docs/supabase.md`). |
+| Base de données | Supabase, offre gratuite pour la phase de maquette et de test ; sans compte, rien n'est enregistré (`docs/supabase.md`). |
+| Comptes | Inscriptions ouvertes à tous (26/11/2026). |
+| Conservation (26/11/2026) | Audits et photos : 3 ans après la dernière modification (ouvrir un audit le conserve 3 ans de plus, rappel un mois avant). Questionnaire ouvert 90 jours ; réponses brutes conservées 12 mois. Comptes inactifs : supprimés après 3 ans sans connexion. Purge hebdomadaire des seules données dont le délai est dépassé. |
+| Passage en travaux | Troisième parcours, proposé depuis les documents du diagnostic (pré-programme, CCTP, ingénierie) ; il accepte aussi un diagnostic externe. |
+| Lecture par IA d'un diagnostic externe | Annoncée pour février 2027 ; saisie manuelle en attendant. |
+| Nom et licence | « Méthode SURYA » partout ; méthode diffusée sous licence Creative Commons BY-SA 4.0, logo SURYA sur l'écran de départ de l'outil et la couverture des présentations. |
