@@ -4,7 +4,7 @@
   "adresse": "19 avenue du Parc des Sports",
   "commune": "Bretignolles-sur-Mer",
   "moa": "Commune de Bretignolles-sur-Mer",
-  "auditeur": "Inddigo",
+  "auditeur": "Bureau d'études (exemple)",
   "date_visite": "27/07/2026"
  },
  "batiment": {
@@ -16,9 +16,9 @@
   "B-18": "Toiture à pentes (tuiles, ardoises, zinc)"
  },
  "diagnostic_externe": {
-  "source": "Inddigo – Diagnostic confort estival (programme EduRénov, Banque des Territoires)",
+  "source": "Diagnostic confort estival d'un bureau d'études (programme EduRénov, Banque des Territoires)",
   "date": "18/09/2026",
-  "commentaire": "Exemple de test : préconisations du rapport Inddigo reportées dans la saisie simplifiée.",
+  "commentaire": "Exemple de test : préconisations du rapport du bureau d'études reportées dans la saisie simplifiée.",
   "operations": [
    {
     "solution": "Protections verticales",

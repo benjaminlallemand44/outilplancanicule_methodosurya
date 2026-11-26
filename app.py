@@ -456,7 +456,7 @@ def ecran_depart():
                 demarrer("externe")
             st.caption("Diagnostic réalisé hors de la méthode SURYA (par exemple « plan canicule » de la Banque des "
                        "Territoires) : vous reportez ses préconisations, puis les mêmes étapes s'appliquent.")
-            if st.button("Essayer avec un diagnostic Inddigo (école de Bretignolles-sur-Mer)", width="stretch"):
+            if st.button("Essayer avec un exemple de diagnostic externe (école de Bretignolles-sur-Mer)", width="stretch"):
                 charger(json.loads((RACINE / "surya" / "exemple_diagnostic_externe.json").read_text(encoding="utf-8")))
                 demarrer("externe")
                 st.rerun()
@@ -1799,7 +1799,7 @@ def etape_diagnostic_externe():
     st.subheader("1. Le diagnostic d'origine et l'école")
     c1, c2 = st.columns(2)
     de["source"] = c1.text_input("Diagnostic d'origine (bureau d'études, programme)", value=de.get("source", ""),
-                                 placeholder="Ex. : Inddigo – diagnostic confort estival (Banque des Territoires)",
+                                 placeholder="Ex. : Bureau d'études X – diagnostic confort estival (Banque des Territoires)",
                                  key=cle("ext", "source")).strip()
     de["date"] = c2.text_input("Date du rapport", value=de.get("date", ""), placeholder="jj/mm/aaaa",
                                key=cle("ext", "date")).strip()

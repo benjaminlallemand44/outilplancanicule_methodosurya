@@ -18,7 +18,7 @@ travaux → » ; le passage en travaux propose en retour « ← Documents du dia
   ensuite (niveaux, maîtrise d'œuvre, prestations préalables, CCTP). Le catalogue comprend des actions que
   la méthode SURYA ne produit pas : végétalisation de la cour, création d'une ventilation mécanique,
   rafraîchissement d'un local refuge, protections intérieures, adaptation des usages. Exemple :
-  `surya/exemple_diagnostic_externe.json` (diagnostic Inddigo de l'école de Bretignolles-sur-Mer).
+  `surya/exemple_diagnostic_externe.json` (diagnostic d'un bureau d'études, école de Bretignolles-sur-Mer).
 
 ### Lecture du rapport par IA (facultatif)
 
@@ -110,7 +110,7 @@ Markdown simple, avec `{{variable}}`, `{{tableau:locaux|baies|espaces}}` et des 
 - Ombre manquante : 0,8 m² par enfant (élémentaire), 100 ou 150 m² (maternelle), ombre existante hors
   végétaux déduite.
 - Prix unitaires : trois audits de 2026 (diag flash CDC, école Françoise Dolto ; maquette ACTEE et
-  Inddigo, école de Sécheras). Voir `CATALOGUE` dans `surya/travaux.py`.
+  d'un bureau d'études, école de Sécheras). Voir `CATALOGUE` dans `surya/travaux.py`.
 
 ## Ce qui reste à faire
 

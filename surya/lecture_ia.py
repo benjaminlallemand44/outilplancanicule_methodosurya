@@ -79,7 +79,7 @@ def schema() -> dict:
                 "etablissement": texte, "adresse": texte, "commune": texte, "moa": {**texte, "description": "Maître d'ouvrage (commune, communauté…)"},
                 "date_visite": {**texte, "description": "Date de la visite, jj/mm/aaaa"}}},
             "diagnostic": {"type": "object", "properties": {
-                "source": {**texte, "description": "Bureau d'études et nature du diagnostic, ex. « Inddigo – diagnostic confort estival »"},
+                "source": {**texte, "description": "Bureau d'études et nature du diagnostic, ex. « Bureau d'études X – diagnostic confort estival »"},
                 "date": {**texte, "description": "Date du rapport ou de sa validation, jj/mm/aaaa"}}},
             "batiment": {"type": "object", "properties": batiment,
                          "description": "Ne renseigner que ce que le rapport dit explicitement."},

@@ -31,7 +31,7 @@ class FauxClaude:
 
 PROPOSITION = {
     "ecole": {"etablissement": "École Benjamin Rabier", "commune": "Bretignolles-sur-Mer", "date_visite": "27/07/2026"},
-    "diagnostic": {"source": "Inddigo – diagnostic confort estival", "date": "18/09/2026"},
+    "diagnostic": {"source": "Bureau d'études X – diagnostic confort estival", "date": "18/09/2026"},
     "batiment": {"B-01": "De 1975 à 1997", "B-09": "Oui", "B-10": "Simple flux", "B-18": "Inventée"},
     "operations": [
         {"solution": "Protections verticales", "locaux": ["Salles façade est"], "extrait": "Ajout de protections solaires "
@@ -52,7 +52,7 @@ def reponse_api(entree, stop="tool_use"):
 def test_requete_envoyee_a_l_api():
     http = FauxClaude(reponse_api(PROPOSITION))
     sortie = IA.analyser(PDF, "cle-test", http=http)
-    assert sortie["diagnostic"]["source"].startswith("Inddigo")
+    assert sortie["diagnostic"]["source"].startswith("Bureau d'études")
     url, corps, entetes = http.requetes[0]
     assert url == IA.API and entetes["x-api-key"] == "cle-test" and entetes["anthropic-version"]
     assert corps["model"] == IA.MODELE_DEFAUT
@@ -84,7 +84,7 @@ def test_erreurs_du_service():
 
 def test_conversion_en_saisie_et_etat():
     saisie, remarques = IA.vers_saisie(PROPOSITION, "rapport.pdf")
-    assert saisie["audit"]["commune"] == "Bretignolles-sur-Mer" and saisie["audit"]["auditeur"].startswith("Inddigo")
+    assert saisie["audit"]["commune"] == "Bretignolles-sur-Mer" and saisie["audit"]["auditeur"].startswith("Bureau d'études")
     assert saisie["batiment"] == {"B-01": "De 1975 à 1997", "B-09": "Oui", "B-10": "Simple flux"}  # valeur inventée écartée
     ops = saisie["diagnostic_externe"]["operations"]
     assert [o["solution"] for o in ops] == ["Protections verticales", "Mise en place de brasseurs d'air plafonniers"]
