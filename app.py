@@ -225,6 +225,48 @@ def ouvrir_audit(id_audit: str):
     enregistrer(silencieux=True)  # ouvrir un audit le conserve 3 ans de plus (date de dernière modification)
 
 
+def saisie_commencee() -> bool:
+    d = ss.donnees
+    return any(d[k] for k in ("audit", "batiment", "facades", "locaux", "espaces", "questionnaires", "photos",
+                              "travaux", "diagnostic_externe"))
+
+
+def nom_audit() -> str:
+    return (ss.donnees.get("audit") or {}).get("etablissement") or "Audit sans nom"
+
+
+def nouvel_audit():
+    """Repart d'un audit vide. Connecté : l'audit en cours est d'abord enregistré, il reste dans la liste."""
+    if connecte() and saisie_commencee():
+        enregistrer(silencieux=True)
+    charger(donnees_vides())
+    ss.mode, ss.vue, ss.etape, ss.etape_max = None, "parcours", 0, 0
+    ss.confirmer_nouveau = None
+    if connecte():
+        ss.message = "Nouvel audit : choisissez ci-dessous ce que vous voulez produire."
+
+
+def bouton_nouvel_audit(cle_bouton: str):
+    """« Nouvel audit » ; sans compte, la saisie en cours serait perdue : confirmation demandée."""
+    if st.button("➕ Nouvel audit", key=cle_bouton, width="stretch",
+                 help="L'audit en cours reste enregistré dans « Vos audits enregistrés »." if connecte()
+                 else "Sans compte, la saisie en cours n'est pas enregistrée : exportez-la d'abord."):
+        if connecte() or not saisie_commencee():
+            nouvel_audit()
+            st.rerun()
+        ss.confirmer_nouveau = cle_bouton
+    if ss.get("confirmer_nouveau") == cle_bouton:
+        st.warning("Sans compte, la saisie en cours sera perdue. Exportez-la d'abord (Réglages, Données) si "
+                   "vous voulez la garder.")
+        o1, o2 = st.columns(2)
+        if o1.button("Effacer et commencer", key=f"{cle_bouton}:oui", type="primary", width="stretch"):
+            nouvel_audit()
+            st.rerun()
+        if o2.button("Annuler", key=f"{cle_bouton}:non", width="stretch"):
+            ss.confirmer_nouveau = None
+            st.rerun()
+
+
 def cle(*parts) -> str:
     return ":".join(str(p) for p in (ss.generation, *parts))
 
@@ -514,6 +556,20 @@ def bloc_compte():
     if not audits:
         st.caption("Aucun audit enregistré : choisissez un type d'audit ci-dessous ; il sera enregistré à chaque "
                    "étape.")
+    if ss.audit_id is not None or saisie_commencee():
+        n1, n2 = st.columns([4, 1.4], vertical_alignment="center")
+        n1.caption(f"Audit en cours : **{html.escape(nom_audit())}**. « Nouvel audit » l'enregistre et repart d'une "
+                   "saisie vide.")
+        with n2:
+            bouton_nouvel_audit("nouveau:liste")
+    if len(audits) > 5:
+        cherche = st.text_input("Rechercher un audit", key="recherche_audit", placeholder="Nom de l'établissement ou code",
+                                label_visibility="collapsed")
+        audits = SB.filtrer_audits(audits, cherche)
+        if cherche and not audits:
+            st.caption("Aucun audit ne correspond à cette recherche.")
+    if len(audits) > 20:
+        st.caption(f"{len(audits)} audits : les 20 plus récents sont affichés, affinez la recherche pour les autres.")
     for a in audits[:20]:
         with st.container(border=True):
             l1, l2, l3 = st.columns([4, 1, 1], vertical_alignment="center")
@@ -640,6 +696,7 @@ def entete():
             if st.button("💾 Enregistrer", width="stretch", type="primary"):
                 if enregistrer():
                     st.toast("Audit enregistré.", icon="✅")
+            st.caption(f"Audit en cours : **{html.escape(nom_audit())}**")
             st.caption(f"Connecté : {(ss.sb.utilisateur or {}).get('email', '')}"
                        + (f" · enregistré à {ss.enregistre_le}" if ss.enregistre_le else " · pas encore enregistré"))
         if st.button("Seuils et données", width="stretch"):
@@ -648,6 +705,7 @@ def entete():
         if st.button("Changer de type d'audit", width="stretch", help="Revenir à l'écran de départ ; la saisie est conservée."):
             ss.mode = None
             st.rerun()
+        bouton_nouvel_audit("nouveau:entete")
     # Barre d'étapes : sur une seule ligne, défilable horizontalement sur téléphone
     st.html("<style>.st-key-etapes [data-testid='stHorizontalBlock']{flex-wrap:nowrap;overflow-x:auto;gap:.4rem}"
             ".st-key-etapes [data-testid='stColumn']{min-width:max-content;flex:1 0 auto}"
@@ -2318,14 +2376,13 @@ def vue_reglages():
     with t3:
         notice()
     with t1:
-        st.caption("Maquette : rien n'est enregistré sur un serveur. Exportez la saisie (JSON) pour la conserver et "
+        st.caption("Votre audit est enregistré à chaque étape (bouton « 💾 Enregistrer » pour le faire tout de suite). "
+                   "L'export (JSON) en garde une copie sur votre poste." if connecte() else
+                   "Sans compte, rien n'est enregistré sur un serveur. Exportez la saisie (JSON) pour la conserver et "
                    "la réimporter plus tard.")
         bloc_donnees(prefixe="reglages")
         st.divider()
-        if st.button("🗑 Tout effacer et recommencer", help="Nouvel audit vide (un audit déjà enregistré reste en base)."):
-            charger(donnees_vides())
-            ss.mode, ss.vue = None, "parcours"
-            st.rerun()
+        bouton_nouvel_audit("nouveau:reglages")
     with t2:
         st.caption("Valeurs de l'onglet « Paramètres » de l'Excel. Toute modification s'applique immédiatement aux "
                    "règles citées et est signalée dans le compte rendu.")

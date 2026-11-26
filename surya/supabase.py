@@ -248,6 +248,17 @@ CONSERVATION_AUDIT_JOURS = 3 * 365
 RAPPEL_AVANT_SUPPRESSION_JOURS = 30
 
 
+def filtrer_audits(audits: list[dict], recherche: str) -> list[dict]:
+    """Audits dont le nom ou le code contient tous les mots cherchés (sans tenir compte des accents ni de la casse)."""
+    import unicodedata
+
+    def simple(t: str) -> str:
+        return "".join(c for c in unicodedata.normalize("NFD", t or "").lower() if unicodedata.category(c) != "Mn")
+
+    mots = simple(recherche).split()
+    return [a for a in audits if all(m in simple(f"{a.get('nom', '')} {a.get('code', '')}") for m in mots)]
+
+
 def suppression_prevue(modifie_le: str, aujourd_hui=None) -> tuple[str, bool]:
     """(date de suppression « jj/mm/aaaa », True si elle tombe dans le mois) pour un audit."""
     import datetime as dt

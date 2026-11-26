@@ -235,3 +235,48 @@ def test_ouvrir_un_audit_le_conserve(serveur):
     assert any("suppression prévue le 31/12/2026" in m.value for m in at2.markdown)
     next(b for b in at2.button if b.key == f"ouvrir:{serveur.audits[0]['id']}").click().run()
     assert not at2.exception and serveur.audits[0]["modifie_le"] > "2026"
+
+
+# ------------------------------------------------------------------ plusieurs audits
+def test_filtrer_audits():
+    audits = [{"nom": "École Jules Ferry", "code": "a1"}, {"nom": "Groupe scolaire Les Pins", "code": "b2"}]
+    assert [a["code"] for a in SB.filtrer_audits(audits, "ecole ferry")] == ["a1"]  # sans accent ni casse
+    assert [a["code"] for a in SB.filtrer_audits(audits, "PINS")] == ["b2"]
+    assert SB.filtrer_audits(audits, "b2") == [audits[1]] and SB.filtrer_audits(audits, "  ") == audits
+    assert SB.filtrer_audits(audits, "ferry pins") == []
+
+
+def test_nouvel_audit_garde_le_precedent(serveur):
+    at = app_connectee(serveur)
+    next(b for b in at.button if b.key == "depart:ecole_sud").click().run()
+    next(b for b in at.button if b.label == "Commencer — diagnostic complet").click().run()
+    next(b for b in at.button if b.key == "nouveau:entete").click().run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert len(serveur.audits) == 1 and serveur.audits[0]["nom"].startswith("Groupe scolaire Les Pins")
+    assert at.session_state["donnees"]["locaux"] == [] and at.session_state["audit_id"] is None
+    assert at.session_state["mode"] is None and not at.warning  # connecté : pas de confirmation
+    assert any(f"ouvrir:{serveur.audits[0]['id']}" == b.key for b in at.button)
+    next(b for b in at.button if b.key == "depart:exemple").click().run()
+    next(b for b in at.button if b.label == "Commencer — diagnostic complet").click().run()
+    next(b for b in at.button if b.label.startswith("Suivant :")).click().run()
+    assert len(serveur.audits) == 2
+
+
+def test_recherche_dans_les_audits(serveur):
+    sb = SB.Supabase(URL, CLE)
+    sb.inscription("a@ecole.fr", "motdepasse1")
+    sb.connexion("a@ecole.fr", "motdepasse1")
+    for nom in ("École maternelle Jules Ferry", "École Victor Hugo", "Collège Camus", "École des Pins",
+                "Groupe scolaire Pasteur", "École du Port"):
+        SB.DepotAudits(sb).enregistrer({"audit": {"etablissement": nom}})
+    at = app_connectee(serveur)
+    ouvrir = lambda: [b for b in at.button if (b.key or "").startswith("ouvrir:")]
+    assert len(ouvrir()) == 6
+    at.text_input(key="recherche_audit").set_value("ecole p").run()
+    assert {serveur_nom(serveur, b.key) for b in ouvrir()} == {"École des Pins", "École du Port"}
+    at.text_input(key="recherche_audit").set_value("lycée").run()
+    assert not ouvrir() and any("Aucun audit ne correspond" in c.value for c in at.caption)
+
+
+def serveur_nom(serveur, cle_bouton):
+    return next(a["nom"] for a in serveur.audits if a["id"] == cle_bouton.split(":", 1)[1])

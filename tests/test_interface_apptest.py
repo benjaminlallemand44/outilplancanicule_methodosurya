@@ -347,7 +347,9 @@ def test_reglages_tout_effacer():
     clic(at, key="depart:exemple")
     demarrer(at)
     _reglages(at)
-    clic(at, "🗑 Tout effacer et recommencer")
+    clic(at, key="nouveau:reglages")  # sans compte : la saisie serait perdue, confirmation demandée
+    assert D(at)["locaux"] and any("sera perdue" in w.value for w in at.warning)
+    clic(at, key="nouveau:reglages:oui")
     assert D(at)["locaux"] == [] and at.session_state["mode"] is None
 
 
