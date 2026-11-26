@@ -21,7 +21,7 @@ La campagne a deux volets : **non-régression** (toute la campagne n° 1 rejoué
 | Comparaison à l'Excel recalculé (LibreOffice) | 5 graines × 40 tirages (3 000 locaux et espaces) : **0 écart** |
 | Corrections de la campagne n° 1 | **36 / 37 vérifiées** (ANO-12 laissée en attente de la décision B6, comme annoncé) |
 | Nouveaux tests | `tests/test_campagne2.py` : 22 cas, dont **15 « xfail » stricts** qui reproduisent les anomalies ; scénario navigateur `interface_playwright_c2.js` |
-| Suite complète après la campagne | __TOTAL__ |
+| Suite complète après la campagne | **1 000 tests** : 984 réussis, 16 « xfail » (15 anomalies de la campagne n° 2 + C1) |
 
 | Gravité | Nombre | Anomalies |
 |---|---|---|
