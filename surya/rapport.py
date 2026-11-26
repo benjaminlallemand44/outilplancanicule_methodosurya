@@ -60,6 +60,7 @@ NOIR = colors.black
 GRIS = colors.HexColor("#e0e6de")
 STATIQUE = Path(__file__).resolve().parent.parent / "static"
 LOGO = STATIQUE / "logos" / "actee-fnccr-couleur.png"
+LOGO_CEE = STATIQUE / "logos" / "cee.png"  # logo CEE officiel (modèle PowerPoint ACTEE)
 
 
 def _polices():
@@ -392,8 +393,14 @@ def _page_de_garde(audit, res, S):
            Paragraph(_t(f"Méthode SURYA Ingénierie / ACTEE — {REFERENTIEL['version']}."), S["petit"]),
            Paragraph("Document établi à partir d'observations factuelles relevées lors de la visite. Il s'agit d'une "
                      "faisabilité de principe, qui ne vaut pas validation technique : l'audit n'est pas une mission "
-                     "de maîtrise d'œuvre.", S["petit"]),
-           PageBreak()]
+                     "de maîtrise d'œuvre.", S["petit"])]
+    if LOGO_CEE.exists():  # charte : logo de financement CEE en bas de la couverture
+        cee = Image(str(LOGO_CEE), width=30 * mm, height=30 * mm * 83 / 187)
+        t = Table([[Paragraph("Programme financé par", S["petit"]), cee]], colWidths=[34 * mm, 34 * mm])
+        t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+        t.hAlign = "LEFT"
+        el += [Spacer(1, 6 * mm), t]
+    el.append(PageBreak())
     return el
 
 

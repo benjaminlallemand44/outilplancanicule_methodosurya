@@ -109,6 +109,7 @@ st.set_page_config(page_title="ACTEE — Audit de faisabilité d'actions d'adapt
                    page_icon=str(RACINE / "static" / "logos" / "actee-favicon.png"), layout="wide",
                    initial_sidebar_state="collapsed")
 LOGO = RACINE / "static" / "logos" / "actee-fnccr-couleur.png"
+LOGO_CEE = RACINE / "static" / "logos" / "cee.png"  # logo CEE officiel (modèle PowerPoint ACTEE)
 BLEU, ORANGE, NOIR = "#0a17a6", "#ff5400", "#000000"
 
 
@@ -125,9 +126,21 @@ def charte():
     </style>""")
 
 
-def logo():
-    """Logo ACTEE + FNCCR officiel, en haut à gauche (jamais centré)."""
-    st.image(str(LOGO), width=190)
+def logo(cee: bool = False):
+    """Logo ACTEE + FNCCR officiel, en haut à gauche (jamais centré) ; ``cee`` : avec le logo CEE
+    (« Programme financé par »), comme le demande la charte sur les supports de communication."""
+    if not cee:
+        st.image(str(LOGO), width=190)
+        return
+    c1, c2, _ = st.columns([1.15, 1.1, 4], vertical_alignment="center")
+    c1.image(str(LOGO), width=190)
+    with c2:
+        st.caption("Programme financé par")
+        st.image(str(LOGO_CEE), width=120)
+
+
+def _img64(chemin: Path) -> str:
+    return "data:image/png;base64," + base64.b64encode(chemin.read_bytes()).decode()
 ss = st.session_state
 
 
@@ -378,7 +391,7 @@ CB = moteur.etats_batiment(D["batiment"], D["facades"])
 
 # ------------------------------------------------------------------ écran de départ
 def ecran_depart():
-    logo()
+    logo(cee=True)
     st.title("Audit de faisabilité d'actions d'adaptation")
     st.markdown("Méthode SURYA Ingénierie / ACTEE — plan rafraîchissement des écoles. À partir des relevés de visite, "
                 "l'outil établit pour chaque local et chaque espace extérieur le **statut de faisabilité** de chaque "
@@ -2346,5 +2359,8 @@ else:
     ss.etape = min(ss.etape, len(etapes()) - 1)
     entete()
     ETAPES[etapes()[ss.etape]]()
-st.caption(f"<div style='text-align:right;margin-top:2rem'>{version.libelle()}</div>", unsafe_allow_html=True)
+st.html(f"<div style='display:flex;justify-content:space-between;align-items:center;margin-top:2rem;"
+        f"font-size:0.8rem;color:#000'><div style='display:flex;align-items:center;gap:10px'>"
+        f"<span>Programme financé par</span><img src='{_img64(LOGO_CEE)}' alt='Les certificats d’économies d’énergie (CEE)' "
+        f"style='height:36px'></div><div>{version.libelle()}</div></div>")
 remonter()
