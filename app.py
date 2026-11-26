@@ -513,7 +513,7 @@ def ecran_depart():
             f"<a href='https://creativecommons.org/licenses/by-sa/4.0/deed.fr' target='_blank'>"
             f"<img src='{_img64(BADGE_CC)}' alt='Licence Creative Commons BY-SA 4.0' style='height:26px'></a>"
             f"<div style='font-size:0.85rem;color:#000;max-width:640px'>Méthode SURYA — © 2026 ACTEE et SURYA "
-            f"Ingénierie, diffusée sous licence Creative Commons BY-SA 4.0. {html.escape(REFERENTIEL['version'])}.</div></div>")
+            f"Ingénierie. Diffusion prévue sous licence Creative Commons BY-SA 4.0 (dépôt à venir). {html.escape(REFERENTIEL['version'])}.</div></div>")
     st.caption("Maquette : sans compte, les données ne sont pas enregistrées sur un serveur ; exportez la saisie pour la "
                "conserver.")
 

@@ -251,7 +251,7 @@ def bandeau_methode(slide):
     y = 6.85  # axe du bandeau blanc en bas du gabarit
     slide.shapes.add_picture(str(LOGOS / "surya.png"), Inches(3.25), Inches(y - 0.23), width=Inches(1.5))
     slide.shapes.add_picture(str(LOGOS / "cc-by-sa.png"), Inches(4.95), Inches(y - 0.085), width=Inches(1.35))
-    for x, w, texte in ((6.4, 2.05, "Méthode SURYA — © 2026 ACTEE et SURYA Ingénierie, licence Creative Commons BY-SA 4.0"),
+    for x, w, texte in ((6.4, 2.05, "Méthode SURYA — © 2026 ACTEE et SURYA Ingénierie, licence Creative Commons BY-SA 4.0 prévue (dépôt à venir)"),
                         (8.5, 0.85, "Programme financé par")):
         tb = slide.shapes.add_textbox(Inches(x), Inches(y - 0.25), Inches(w), Inches(0.5))
         tb.text_frame.word_wrap = True

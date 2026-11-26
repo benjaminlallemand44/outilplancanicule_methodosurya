@@ -48,7 +48,7 @@ ligne enregistré dans la base, photos dans un stockage privé. Mise en service,
 - **Notice d'utilisation** : `docs/notice_utilisation.md` (données, hébergement et mesure d'audience
   de la plateforme, écarts avec l'Excel), aussi affichée dans l'application.
 - **Licences** : code sous licence MIT (`LICENSE`) ; contenu de la méthode © ACTEE et SURYA
-  Ingénierie, CC BY-SA 4.0 ; polices Bitter et Schibsted Grotesk sous SIL OFL 1.1
+  Ingénierie, diffusion prévue sous CC BY-SA 4.0 (licence pas encore déposée) ; polices Bitter et Schibsted Grotesk sous SIL OFL 1.1
   (`static/fonts/OFL-*.txt`) ; logos ACTEE et FNCCR hors licence MIT.
 
 ## Ce que fait l'outil
@@ -182,5 +182,6 @@ formule de l'Excel compte les murs sans comparer leurs orientations. Le moteur f
 
 ## Licence
 
-Contenu de la méthode : © 2026 ACTEE et SURYA Ingénierie,
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr).
+Contenu de la méthode : © 2026 ACTEE et SURYA Ingénierie. Diffusion prévue sous licence
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr) : la licence n'est pas encore déposée,
+le bandeau de l'application est prêt pour ce dépôt.

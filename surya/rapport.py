@@ -794,7 +794,7 @@ def _annexe(d, S, titre="Annexe — seuils utilisés"):
                      Paragraph(_t(q["signification"]), S["cellule"]), Paragraph(_t(q["regles"]), S["cellule"])])
     el.append(_tableau(data, [32 * mm, 30 * mm, 93 * mm, 25 * mm]))
     el += [Spacer(1, 6 * mm),
-           Paragraph("Méthode SURYA : © 2026 ACTEE et SURYA Ingénierie, diffusée sous licence CC BY-SA 4.0 "
+           Paragraph("Méthode SURYA : © 2026 ACTEE et SURYA Ingénierie ; diffusion prévue sous licence CC BY-SA 4.0 (dépôt à venir) "
                      "(https://creativecommons.org/licenses/by-sa/4.0/deed.fr).", S["petit"])]
     return el
 

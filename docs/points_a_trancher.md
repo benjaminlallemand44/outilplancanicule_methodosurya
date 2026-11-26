@@ -6,7 +6,8 @@ Mise à jour du 26/11/2026 (première version du 20/11/2026, après la campagne 
 - toutes les formules de l'Excel `2611111_outil_aide_test_methode-1.xlsx` (règles « version du
   27/10/2026 ») ;
 - le document de la méthode SURYA « Méthode de l'audit de faisabilité d'actions d'adaptation » (version 01 du
-  27/10/2026, © ACTEE et SURYA Ingénierie, licence Creative Commons BY-SA 4.0) ;
+  27/10/2026, © ACTEE et SURYA Ingénierie ; diffusion prévue sous licence Creative Commons BY-SA 4.0, pas encore
+  déposée) ;
 - le « Questionnaire confort estival » (version 01 du 11/11/2026).
 
 Chaque point a été revérifié sur l'outil, et par la campagne de tests. Sept catégories :
@@ -422,4 +423,4 @@ plan de l'établissement.
 | Conservation (26/11/2026) | Audits et photos : 3 ans après la dernière modification (ouvrir un audit le conserve 3 ans de plus, rappel un mois avant). Questionnaire ouvert 90 jours ; réponses brutes conservées 12 mois. Comptes inactifs : supprimés après 3 ans sans connexion. Purge hebdomadaire des seules données dont le délai est dépassé. |
 | Passage en travaux | Troisième parcours, proposé depuis les documents du diagnostic (pré-programme, CCTP, ingénierie) ; il accepte aussi un diagnostic externe. |
 | Lecture par IA d'un diagnostic externe | Annoncée pour février 2027 ; saisie manuelle en attendant. |
-| Nom et licence | « Méthode SURYA » partout ; méthode diffusée sous licence Creative Commons BY-SA 4.0, logo SURYA sur l'écran de départ de l'outil et la couverture des présentations. |
+| Nom et licence | « Méthode SURYA » partout ; diffusion prévue sous licence Creative Commons BY-SA 4.0 (pas encore déposée : le bandeau est prêt), logo SURYA sur l'écran de départ de l'outil et la couverture des présentations. |
