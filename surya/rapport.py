@@ -82,7 +82,7 @@ def _polices():
     return polices
 
 # Type de chaque alerte de l'Excel, selon le tableau « Limites déclenchant une alerte maîtrise
-# d'œuvre » de la méthode (§ I.e). AL : étude par une maîtrise d'œuvre avant de consulter ;
+# d'œuvre » de la méthode SURYA (§ I.e). AL : étude par une maîtrise d'œuvre avant de consulter ;
 # VA : validation ponctuelle par un professionnel ; INFO : point d'attention sans validation.
 # L'Excel ne type pas les alertes : ce classement est une PROPOSITION (voir docs/points_a_trancher.md).
 TYPES_ALERTE = {
@@ -130,7 +130,7 @@ def donnee_manquante(x: dict, s: dict) -> bool:
     """Le statut « Sous réserve » de la solution ``s`` vient-il d'une donnée manquante ?"""
     if s["statut"] != SOUS_RESERVE:
         return False
-    if not s["blocs"]:  # aucun bloc applicable : faute de donnée, ou cas non prévu par la méthode
+    if not s["blocs"]:  # aucun bloc applicable : faute de donnée, ou cas non prévu par la méthode SURYA
         return s.get("cas_inconnu", True)
     return any(x["blocs"][b]["manquante"] for b in s["blocs"])
 
@@ -158,7 +158,7 @@ def justification(x: dict, s: dict) -> tuple[str, str]:
         if s["statut"] == NON_CONCERNE:
             return "", "L'espace ne comporte pas de cour de récréation."
         if not s.get("cas_inconnu", True):
-            return "", ("Configuration non prévue par les règles de la méthode (aucun cas ne s'applique) : "
+            return "", ("Configuration non prévue par les règles de la méthode SURYA (aucun cas ne s'applique) : "
                         "à examiner au cas par cas.")
         return "", f"Cas non déterminé : renseigner {QUESTIONS_DU_CAS.get(s['solution'], '—')}."
     codes, textes = [], []
@@ -537,7 +537,7 @@ def _plan_action(res, d, S, titre="3. Plan d'action par solution"):
 def _alertes(res, S, titre="4. Alertes et points de vigilance", saut=True):
     el = ([PageBreak()] if saut else []) + [Titre1(titre, S["h1"]),
           Paragraph("Le type d'alerte (AL / VA) est proposé par l'outil d'après le tableau « Limites déclenchant une "
-                    "alerte maîtrise d'œuvre » de la méthode.", S["petit"])]
+                    "alerte maîtrise d'œuvre » de la méthode SURYA.", S["petit"])]
     concernes = defaultdict(list)
     for cle, defaut in (("locaux", "Local"), ("espaces", "Espace")):
         for i, x in enumerate(res[cle]):
@@ -794,7 +794,7 @@ def _annexe(d, S, titre="Annexe — seuils utilisés"):
                      Paragraph(_t(q["signification"]), S["cellule"]), Paragraph(_t(q["regles"]), S["cellule"])])
     el.append(_tableau(data, [32 * mm, 30 * mm, 93 * mm, 25 * mm]))
     el += [Spacer(1, 6 * mm),
-           Paragraph("Méthode : © 2026 ACTEE et SURYA Ingénierie, diffusée sous licence CC BY-SA 4.0 "
+           Paragraph("Méthode SURYA : © 2026 ACTEE et SURYA Ingénierie, diffusée sous licence CC BY-SA 4.0 "
                      "(https://creativecommons.org/licenses/by-sa/4.0/deed.fr).", S["petit"])]
     return el
 

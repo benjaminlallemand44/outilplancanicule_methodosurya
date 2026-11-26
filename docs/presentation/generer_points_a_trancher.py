@@ -9,6 +9,7 @@ retirées ; on garde le masque, les mises en page, les logos ACTEE + FNCCR et CE
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
@@ -33,10 +34,10 @@ SLIDES = [
                   "Trois réponses possibles : valider, modifier, ou reporter pour instruction par SURYA.",
                   "Les points mineurs sont validés par écrit après la réunion."],
         "chiffres": [("49", "points relevés (A à G)"), ("4", "statuts changent"), ("3", "réponses possibles")],
-        "notes": "49 points relevés en portant l’Excel, la méthode et le questionnaire dans l’outil. 4 statuts de "
+        "notes": "49 points relevés en portant l’Excel, la méthode SURYA et le questionnaire dans l’outil. 4 statuts de "
                  "l’exemple de l’Excel changent avec les corrections : l’Excel réparé donne les résultats de l’outil."}),
     ("sommaire", {"lignes": ["A. Corrections de l’Excel — à valider · 5 min",
-                             "B. Règles de méthode et alertes — les décisions qui changent des statuts · 30 min",
+                             "B. Règles de la méthode SURYA et alertes — les décisions qui changent des statuts · 30 min",
                              "C. Questionnaire usagers — matrice et contenu · 10 min",
                              "D. Compte rendu et passage à l’action — ordre de mise en œuvre, synthèse, photos · 10 min",
                              "E. L’outil : données et suites — points mineurs, qui fait quoi · 5 min"]}),
@@ -49,12 +50,12 @@ SLIDES = [
                      ("A2", "MEX-17 (commande des baies en plafond) en #REF! : règle FT-7 cassée", "FT-7 teste « ni électrique ni automatique » : valider"),
                      ("A3", "BA-18 (débit de ventilation) sans ligne de saisie : VM-7, 9 et 10 ignorées", "Question ajoutée en m³/h ; débit inconnu, « Sous réserve » : valider"),
                      ("A4", "Valeur pile sur un seuil ; surface ou hauteur égale à 0", "Arrondi avant comparaison ; valeur nulle, « Sous réserve » : valider"),
-                     ("F2", "Règles « aucune baie » (PV-0, PH-0, FS-0) dans l’Excel seulement", "Les reporter dans le document de méthode")],
+                     ("F2", "Règles « aucune baie » (PV-0, PH-0, FS-0) dans l’Excel seulement", "Les reporter dans le document de la méthode SURYA")],
                  "notes": "Sur l’exemple de l’Excel, 4 statuts changent (dus à A1 et A2) : Classe CM1, ventilation naturelle "
                           "nocturne et protections horizontales ; salle de motricité, protections horizontales ; salle de classe, "
                           "fenêtres de toit. Recalculé avec ses références réparées, l’Excel donne exactement les résultats de "
                           "l’outil (vérifié sur 3 000 cas tirés au hasard)."}),
-    ("partie", {"num": "B.", "titre": "Règles de méthode et alertes", "layout": "Partie 2",
+    ("partie", {"num": "B.", "titre": "Règles de la méthode SURYA et alertes", "layout": "Partie 2",
                 "desc": "Le libellé d’une règle et sa formule divergent, ou un cas n’est pas prévu. Ce sont les décisions "
                         "qui changent des statuts."}),
     ("tableau", {"titre": "Ventilation et brasseurs d’air", "lignes": [
@@ -75,7 +76,7 @@ SLIDES = [
         ("B10", "Façade non décrite : les règles PV, PH et OA qui la lisent restent indéterminées", "Garder un avertissement non bloquant, à l’étape Vérification"),
         ("B11", "Alerte de mutualisation OA-AL1 : n’importe quel local du rez-de-chaussée la déclenche", "Suffisant pour l’instant ; rattacher locaux et espaces plus tard")]}),
     ("tableau", {"titre": "Règles générales de calcul et de saisie", "lignes": [
-        ("B7", "Une règle indéterminée masque les suivantes (PH-1 inconnue cache PH-2, pourtant certaine)", "Garder ce principe prudent, conforme à la méthode"),
+        ("B7", "Une règle indéterminée masque les suivantes (PH-1 inconnue cache PH-2, pourtant certaine)", "Garder ce principe prudent, conforme à la méthode SURYA"),
         ("B6", "« Aucun » peut être coché avec d’autres options (8 questions, dont E-20)", "Rendre « Aucun » exclusif dans la saisie"),
         ("D5", "23 questions à choix sans option « Non évalué », que demande la règle du doute (§ I.f)", "Ajouter « Non évalué » à ces questions de la grille de visite"),
         ("B12", "Occupation : seuls bureaux et classes ; EX-AL divise l’ombre par l’effectif, adultes compris", "Étendre aux autres locaux occupés ; relever l’effectif d’enfants à part")]}),
@@ -86,7 +87,7 @@ SLIDES = [
                      ("VA : validation ponctuelle", "BR-AL, VN-AL1", "Électricité et fixation des brasseurs ; grilles ou ventelles pour ventiler la nuit"),
                      ("Point d’attention", "VN-AL2, FT-AL, EX-AL, OA-AL1, PR-AL4", "Pluie, fenêtres de toit, ombre insuffisante, mutualisation, préau petit"),
                      ("Nouvelle alerte AL ?", "PV-3, PH-5, FT-5, VV-6, OA-5, OC-3", "Patrimoine (monument historique, abords) : ajouter une alerte AL. Proposition : oui")],
-                 "notes": "L’Excel ne type pas ses alertes. L’outil les classe d’après le § I.e de la méthode : une alerte AL "
+                 "notes": "L’Excel ne type pas ses alertes. L’outil les classe d’après le § I.e de la méthode SURYA : une alerte AL "
                           "fait passer la solution en « À valider avant de consulter ». Deux décisions : valider ce classement ; "
                           "ajouter l’alerte patrimoine."}),
     ("tableau", {"titre": "Alertes : quand les déclencher", "lignes": [
@@ -95,7 +96,7 @@ SLIDES = [
         ("F5", "EX-AL indéterminée (effectif ou surface d’ombre manquant) : ni affichée ni signalée", "La signaler « à vérifier »"),
         ("F6", "VV-AL ignore les puits de lumière et atriums du bloc VV", "Étendre l’alerte à ces cas")]}),
     ("partie", {"num": "C.", "titre": "Questionnaire usagers", "layout": "Partie 3",
-                "desc": "La méthode prévoit une matrice ressenti / préconisations et un indicateur de cohérence, sans les "
+                "desc": "La méthode SURYA prévoit une matrice ressenti / préconisations et un indicateur de cohérence, sans les "
                         "définir : l’outil fait une proposition."}),
     ("tableau", {"titre": "Matrice ressenti / préconisations (proposition)",
                  "entete": ["N°", "Proposition de l’outil", "À décider", "Décision"], "lignes": [
@@ -106,13 +107,13 @@ SLIDES = [
         "notes": "Sur l’exemple fictif (14 réponses) : 7 croisements évalués, 1 « À vérifier » (fenêtres fermées la nuit "
                  "alors que la ventilation naturelle est recommandée) ; indicateur de cohérence 86 %."}),
     ("tableau", {"titre": "Contenu du questionnaire", "lignes": [
-        ("E2", "Question ouverte annoncée par la méthode mais absente", "Q24 « Remarques libres » ajoutée : confirmer"),
+        ("E2", "Question ouverte annoncée par la méthode SURYA mais absente", "Q24 « Remarques libres » ajoutée : confirmer"),
         ("E4", "Questions « si vous en avez » (Q12 à Q15, Q17)", "Posées seulement si elles ont un objet : confirmer"),
         ("E5", "Q20 n’admet qu’un seul équipement de rafraîchissement", "Passer en choix multiple"),
         ("E6", "Public : adultes seulement (échelle ISO à 7 points) ?", "Adultes pour l’instant ; version élèves à instruire"),
         ("E3", "Étage et orientation (Q2, Q3) moins détaillés que la grille", "Garder : sans incidence tant que la synthèse est globale")]}),
     ("partie", {"num": "D.", "titre": "Compte rendu et passage à l’action", "layout": "Partie 4",
-                "desc": "Des propositions de l’outil, absentes de la méthode : ordre de mise en œuvre, synthèse en une page, "
+                "desc": "Des propositions de l’outil, absentes de la méthode SURYA : ordre de mise en œuvre, synthèse en une page, "
                         "plan simplifié, photos."}),
     ("colonne", {"titre": "Ordre de mise en œuvre en trois étapes", "sous": "De la plus simple à la plus lourde",
                  "paras": [("1. Dès maintenant : usages, réglages, remise en état. Par l’exploitant ou en régie, coût faible, effet dès l’été.", 0),
@@ -149,7 +150,7 @@ SLIDES = [
                            ("C7 · « Non évalué » sur F-05 seulement : l’étendre à F-02, F-03 et F-04.", 1)],
                  "notes": "Proposition : envoyer ce tableau à SURYA après la réunion, avec un délai de retour à fixer ensemble."}),
     ("tableau", {"titre": "Qui fait quoi", "entete": ["Action", "Qui", "Quand"], "largeurs": [7.6, 2.9, 1.7], "lignes": [
-        ("Mettre à jour le document de méthode (décisions B, D et F2)", "SURYA", "[date]"),
+        ("Mettre à jour le document de la méthode SURYA (décisions B, D et F2)", "SURYA", "[date]"),
         ("Appliquer les décisions dans l’outil et refaire la campagne de tests", "[ACTEE]", "[date]"),
         ("Valider les points mineurs par écrit", "SURYA, ACTEE", "[date]"),
         ("Base de coûts et relecture des CCTP du passage en travaux", "[équipe passage en travaux]", "[date]"),
@@ -232,6 +233,22 @@ def tableau(slide, entete, lignes, largeurs):
             c.fill.fore_color.rgb = BLEU if i == 0 else (ALT if i % 2 == 0 else BLANC)
 
 
+LOGOS = Path(__file__).resolve().parents[2] / "static" / "logos"
+
+
+def bandeau_methode(slide):
+    """Couverture seulement : logo SURYA, badge Creative Commons et financement CEE (fichiers officiels)."""
+    y = 6.85  # axe du bandeau blanc en bas du gabarit
+    slide.shapes.add_picture(str(LOGOS / "surya.png"), Inches(3.25), Inches(y - 0.23), width=Inches(1.5))
+    slide.shapes.add_picture(str(LOGOS / "cc-by-sa.png"), Inches(4.95), Inches(y - 0.085), width=Inches(1.35))
+    for x, w, texte in ((6.4, 2.05, "Méthode SURYA — © 2026 ACTEE et SURYA Ingénierie, licence Creative Commons BY-SA 4.0"),
+                        (8.5, 0.85, "Programme financé par")):
+        tb = slide.shapes.add_textbox(Inches(x), Inches(y - 0.25), Inches(w), Inches(0.5))
+        tb.text_frame.word_wrap = True
+        ecrire(tb.text_frame, [texte], taille=8, couleur=NOIR, sans_puce=True)
+    slide.shapes.add_picture(str(LOGOS / "cee.png"), Inches(9.35), Inches(y - 0.21), width=Inches(0.95))
+
+
 def construire(gabarit, sortie):
     prs = Presentation(gabarit)
     vider(prs)
@@ -242,7 +259,8 @@ def construire(gabarit, sortie):
             ecrire(zone(s, 1).text_frame, ["Réunion de décision · audit de faisabilité d’actions d’adaptation, plan "
                                            "rafraîchissement des écoles"])
             ecrire(zone(s, 15).text_frame, ["[Date de la réunion]", "ACTEE"])
-            notes(s, "Objet : prendre les décisions de méthode qui conditionnent la suite de l’outil. Le document complet "
+            bandeau_methode(s)
+            notes(s, "Objet : prendre les décisions de la méthode SURYA qui conditionnent la suite de l’outil. Le document complet "
                      "« Points à trancher » (Word) est joint à l’invitation.")
         elif genre == "sommaire":
             s = prs.slides.add_slide(mise_en_page(prs, "Sommaire"))

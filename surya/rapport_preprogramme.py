@@ -87,7 +87,7 @@ def _essentiel(d, e, S):
     if de:
         el.append(Paragraph("Établi à partir du diagnostic « " + _t(de.get("source") or "diagnostic existant") + " »"
                             + (f" du {_t(de['date'])}" if de.get("date") else "")
-                            + ", réalisé hors de la méthode ACTEE-SURYA et repris par l'auditeur.", S["petit"]))
+                            + ", réalisé hors de la méthode SURYA et repris par l'auditeur.", S["petit"]))
     statut = ("Version validée par l'auditeur et visée par "
               f"{_t(e['choix']['validation']['visa'])}" if e["valide"] else
               "PROJET — à valider par l'auditeur et à viser par le chargé de mission ou l'économe de flux avant remise")

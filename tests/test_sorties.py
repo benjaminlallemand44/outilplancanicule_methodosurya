@@ -403,7 +403,7 @@ def test_page_de_garde_et_annexe(sortie):
 
 def test_decimales_a_la_francaise(sortie):
     d, res, _, pdf = sortie("seuils modifiés")
-    annexe = sorties.texte(pdf).split("Annexe H — Seuils utilisés")[1].split("Méthode : ©")[0]  # hors « CC BY-SA 4.0 »
+    annexe = sorties.texte(pdf).split("Annexe H — Seuils utilisés")[1].split("Méthode SURYA : ©")[0]  # hors « CC BY-SA 4.0 »
     assert not re.search(r"\d\.\d", annexe)
 
 

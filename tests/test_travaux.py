@@ -319,7 +319,7 @@ def test_diagnostic_externe_bretignolles():
     assert any(c == "Diagnostic" for x in brasseurs["a_engager"] for c, _ in x["vigilances"])
     with pdfplumber.open(io.BytesIO(rapport_preprogramme.generer_pdf(d))) as p:
         texte = " ".join((page.extract_text() or "") for page in p.pages).replace("\n", " ")
-    assert "Inddigo" in texte and "hors de la méthode ACTEE-SURYA" in texte
+    assert "Inddigo" in texte and "hors de la méthode SURYA" in texte
     assert "pompe à chaleur" in texte and "mode été" not in texte.split("Rafraîchir un local refuge")[1][:400]
     z = zipfile.ZipFile(io.BytesIO(cctp.dossier(d)))
     assert "1_Maitrise_d_oeuvre/CCTP_MOE_adaptation.docx" in z.namelist()

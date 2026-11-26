@@ -110,6 +110,8 @@ st.set_page_config(page_title="ACTEE — Audit de faisabilité d'actions d'adapt
                    initial_sidebar_state="collapsed")
 LOGO = RACINE / "static" / "logos" / "actee-fnccr-couleur.png"
 LOGO_CEE = RACINE / "static" / "logos" / "cee.png"  # logo CEE officiel (modèle PowerPoint ACTEE)
+LOGO_SURYA = RACINE / "static" / "logos" / "surya.png"  # logo SURYA Ingénierie (document de méthode SURYA)
+BADGE_CC = RACINE / "static" / "logos" / "cc-by-sa.png"  # badge Creative Commons BY-SA 4.0 (document de méthode)
 BLEU, ORANGE, NOIR = "#0a17a6", "#ff5400", "#000000"
 
 
@@ -393,7 +395,7 @@ CB = moteur.etats_batiment(D["batiment"], D["facades"])
 def ecran_depart():
     logo(cee=True)
     st.title("Audit de faisabilité d'actions d'adaptation")
-    st.markdown("Méthode SURYA Ingénierie / ACTEE — plan rafraîchissement des écoles. À partir des relevés de visite, "
+    st.markdown("Méthode SURYA (ACTEE et SURYA Ingénierie) — plan rafraîchissement des écoles. À partir des relevés de visite, "
                 "l'outil établit pour chaque local et chaque espace extérieur le **statut de faisabilité** de chaque "
                 "solution de confort d'été.")
 
@@ -415,7 +417,7 @@ def ecran_depart():
     c1, c2 = st.columns(2, gap="large")
     with c1.container(border=True, height="stretch"):
         st.markdown("### Résultats de faisabilité")
-        st.markdown("L'équivalent de l'Excel de la méthode : vous saisissez le bâtiment, les façades, les locaux et "
+        st.markdown("L'équivalent de l'Excel de la méthode SURYA : vous saisissez le bâtiment, les façades, les locaux et "
                     "les espaces extérieurs, et vous obtenez les statuts de chaque solution.")
         st.markdown("**À la fin :** tableau des statuts à l'écran, **PDF des résultats** (2 à 3 pages), export CSV.")
         st.markdown(f":gray[{len(MODES['resultats']['etapes'])} étapes : "
@@ -447,12 +449,12 @@ def ecran_depart():
                          help=None if audit_en_cours else "Faites d'abord un diagnostic complet, ou ouvrez un audit "
                                                           "enregistré ou un exemple."):
                 demarrer("travaux")
-            st.caption("Diagnostic complet fait avec l'outil (méthode ACTEE-SURYA)." if audit_en_cours else
+            st.caption("Diagnostic complet fait avec l'outil (méthode SURYA)." if audit_en_cours else
                        "Disponible dès qu'un audit est en cours (diagnostic complet, audit enregistré ou exemple).")
         with b2:
             if st.button("À partir d'un diagnostic existant", width="stretch"):
                 demarrer("externe")
-            st.caption("Diagnostic réalisé hors de la méthode (par exemple « plan canicule » de la Banque des "
+            st.caption("Diagnostic réalisé hors de la méthode SURYA (par exemple « plan canicule » de la Banque des "
                        "Territoires) : vous reportez ses préconisations, puis les mêmes étapes s'appliquent.")
             if st.button("Essayer avec un diagnostic Inddigo (école de Bretignolles-sur-Mer)", width="stretch"):
                 charger(json.loads((RACINE / "surya" / "exemple_diagnostic_externe.json").read_text(encoding="utf-8")))
@@ -464,9 +466,14 @@ def ecran_depart():
     with st.expander("Notice d'utilisation : vos données, l'hébergement, le lien avec l'Excel"):
         notice()
     st.divider()
-    st.caption(f"{REFERENTIEL['version']}. © 2026 ACTEE et SURYA Ingénierie — contenu de la méthode diffusé sous "
-               "licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr). Maquette : les "
-               "données ne sont pas enregistrées sur un serveur ; exportez la saisie pour la conserver.")
+    st.html(f"<div style='display:flex;align-items:center;gap:22px;flex-wrap:wrap'>"
+            f"<img src='{_img64(LOGO_SURYA)}' alt='SURYA Ingénierie' style='height:54px'>"
+            f"<a href='https://creativecommons.org/licenses/by-sa/4.0/deed.fr' target='_blank'>"
+            f"<img src='{_img64(BADGE_CC)}' alt='Licence Creative Commons BY-SA 4.0' style='height:26px'></a>"
+            f"<div style='font-size:0.85rem;color:#000;max-width:640px'>Méthode SURYA — © 2026 ACTEE et SURYA "
+            f"Ingénierie, diffusée sous licence Creative Commons BY-SA 4.0. {html.escape(REFERENTIEL['version'])}.</div></div>")
+    st.caption("Maquette : sans compte, les données ne sont pas enregistrées sur un serveur ; exportez la saisie pour la "
+               "conserver.")
 
 
 def bloc_compte():
@@ -585,7 +592,7 @@ def bloc_donnees(prefixe: str):
     else:
         c3.download_button("Exporter la saisie (JSON)", json.dumps(D, ensure_ascii=False, indent=1),
                            file_name="saisie_surya.json", mime="application/json", width="stretch", key=f"{prefixe}:export")
-    fichier = st.file_uploader("Importer une saisie (JSON, ou ZIP avec photos) ou un Excel de la méthode déjà rempli "
+    fichier = st.file_uploader("Importer une saisie (JSON, ou ZIP avec photos) ou un Excel de la méthode SURYA déjà rempli "
                                "(.xlsx)", type=["json", "zip", "xlsx"], key=cle(prefixe, "import"))
     if fichier is not None and st.button("Importer ce fichier", type="primary", key=f"{prefixe}:importer"):
         contenus = {}
@@ -601,7 +608,7 @@ def bloc_donnees(prefixe: str):
             st.error(f"Import impossible : {e}")
         except Exception:  # cas non prévu : message générique plutôt qu'une trace Python
             st.error("Import impossible : fichier illisible. Utilisez un fichier exporté par l'outil (.json) ou "
-                     "l'Excel de la méthode (.xlsx).")
+                     "l'Excel de la méthode SURYA (.xlsx).")
         else:
             charger(d, contenus)
             ss.message = (f"Fichier importé : {len(D['locaux'])} local(aux), {len(D['espaces'])} espace(s) extérieur(s)"
@@ -1181,7 +1188,7 @@ def premier_theme_incomplet(cle_liste: str, x: dict) -> int:
 def etape_verification():
     st.header("Vérification avant les documents")
     st.markdown("Récapitulatif de ce qui n'est pas renseigné. Vous pouvez générer les documents dès maintenant : "
-                "une donnée manquante fait passer la solution concernée « Sous réserve », comme dans la méthode.")
+                "une donnée manquante fait passer la solution concernée « Sous réserve », comme dans la méthode SURYA.")
     if not D["locaux"] and not D["espaces"]:
         st.error("Aucun local ni espace extérieur : ajoutez-en au moins un pour obtenir des résultats.")
         b1, b2 = st.columns(2)
@@ -1771,10 +1778,10 @@ def bloc_lecture_ia(de: dict):
 
 
 def etape_diagnostic_externe():
-    """Saisie simplifiée d'un diagnostic réalisé hors de la méthode ACTEE-SURYA."""
+    """Saisie simplifiée d'un diagnostic réalisé hors de la méthode SURYA."""
     st.header("Diagnostic existant")
     st.markdown("<p class='actee-chapo'>Reportez ici les préconisations d'un diagnostic de confort d'été réalisé hors de "
-                "la méthode ACTEE-SURYA. L'outil leur applique ensuite les mêmes règles que pour un diagnostic complet : "
+                "la méthode SURYA. L'outil leur applique ensuite les mêmes règles que pour un diagnostic complet : "
                 "niveau de mise en œuvre, maîtrise d'œuvre, prestations préalables, CCTP. L'auditeur reste responsable "
                 "de la traduction du rapport : en cas de doute, cochez « à confirmer ».</p>", unsafe_allow_html=True)
     de = D.setdefault("diagnostic_externe", {})

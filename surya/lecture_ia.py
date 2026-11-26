@@ -1,7 +1,7 @@
 """Lecture d'un rapport de diagnostic par IA pour pré-remplir la saisie « diagnostic existant ».
 
 Le PDF du rapport (par exemple un diagnostic « plan canicule » réalisé par un bureau d'études hors de la méthode
-ACTEE-SURYA) est envoyé à l'API Claude (Anthropic) avec la liste des actions du catalogue, les codes d'alerte et
+SURYA) est envoyé à l'API Claude (Anthropic) avec la liste des actions du catalogue, les codes d'alerte et
 les questions sur le bâtiment. Le modèle répond en remplissant un outil dont le schéma correspond exactement aux
 champs de la saisie (``tool_choice`` forcé) : la réponse est donc directement exploitable.
 

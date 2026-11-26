@@ -7,7 +7,7 @@ travaux → » ; le passage en travaux propose en retour « ← Documents du dia
 
 ## Deux façons d'y arriver
 
-- à partir de l'**audit en cours** (diagnostic complet ACTEE-SURYA, audit enregistré ou exemple) : depuis
+- à partir de l'**audit en cours** (diagnostic complet de la méthode SURYA, audit enregistré ou exemple) : depuis
   l'étape Documents, ou depuis l'écran de départ (« Passer à l'action », « À partir de l'audit en cours ») ;
 - directement, à partir d'un **diagnostic existant** réalisé hors de la méthode (par exemple un diagnostic
   « plan canicule » financé par la Banque des Territoires) : mode « Passage en travaux à partir d'un

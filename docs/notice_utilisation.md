@@ -1,7 +1,7 @@
 # Notice d'utilisation — outil d'audit de faisabilité d'actions d'adaptation
 
 Outil de test de la méthode SURYA Ingénierie / ACTEE (plan rafraîchissement des écoles). **Maquette** :
-il sert à éprouver la méthode et le parcours de saisie, pas encore à conduire des audits officiels.
+il sert à éprouver la méthode SURYA et le parcours de saisie, pas encore à conduire des audits officiels.
 
 ## Vos données
 
@@ -42,7 +42,7 @@ d'audience (**Google Tag Manager** et **Segment**) et un passage par son service
 désactivée, mais il n'a pas la main sur ces traceurs. Avant tout usage institutionnel, prévoir un
 hébergement maîtrisé et une notice RGPD complète.
 
-## Lien avec l'Excel de la méthode
+## Lien avec l'Excel de la méthode SURYA
 
 L'outil reprend toutes les formules de l'Excel « Outil d'aide au test de la méthode d'audit de
 faisabilité d'actions d'adaptation » (règles du 27/10/2026). Il donne **les mêmes résultats**, sauf là où
@@ -59,7 +59,7 @@ Sur l'exemple fourni dans l'Excel, **quatre statuts** diffèrent pour ces raison
 réparées, l'Excel recalculé donne exactement les résultats de l'outil (vérifié sur 3 000 cas tirés au
 hasard). Détail : document « Points à trancher », partie A.
 
-## Ce que l'outil ajoute à la méthode (propositions à valider)
+## Ce que l'outil ajoute à la méthode SURYA (propositions à valider)
 
 - le type des alertes : AL (étude de maîtrise d'œuvre) ou VA (validation ponctuelle) ;
 - la matrice de correspondance entre le questionnaire usagers et les résultats de la visite ;
