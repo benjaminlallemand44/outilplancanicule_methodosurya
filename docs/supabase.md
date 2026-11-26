@@ -21,7 +21,7 @@ d'accès (`tests/faux_supabase.py`).
 
 - Un auditeur ne voit, ne modifie et ne supprime **que ses audits**, leurs réponses et leurs photos.
 - Un usager anonyme peut **seulement déposer** une réponse, et seulement si le code correspond à un
-  audit existant dont le questionnaire est **ouvert** et **non expiré** (120 jours après la création).
+  audit existant dont le questionnaire est **ouvert** et **non expiré** (90 jours après la création).
 - **Limite de débit** : 60 réponses par 10 minutes et 2 000 réponses au plus par audit.
 - Taille bornée : 20 Ko par réponse, 2 Mo par saisie, 5 Mo par photo (JPEG uniquement).
 - La clé utilisée par l'application est la **clé publique** (« publishable ») : ce sont les règles RLS qui
@@ -43,12 +43,27 @@ d'accès (`tests/faux_supabase.py`).
 4. Dans Supabase, « Authentication → URL configuration » : mettre l'adresse de l'application comme
    « Site URL » (lien de confirmation des e-mails).
 
+## Conservation des données (décision du 26/11/2026)
+
+| Données | Durée | Comment |
+|---|---|---|
+| Audits et leurs photos | 3 ans après la dernière modification | Ouvrir un audit le met à jour ; la liste « Vos audits enregistrés » affiche la date de suppression prévue et prévient un mois avant. |
+| Questionnaire en ligne | ouvert 90 jours | Valeur par défaut de la table `audits`. |
+| Réponses brutes des usagers | 12 mois après réception | Une fois récupérées par l'auditeur, elles sont copiées dans l'audit et suivent sa durée. |
+| Comptes inactifs | 3 ans sans connexion | Supprimés avec leurs audits et leurs photos. L'e-mail d'avertissement est prévu pour la mise en production (il demande un service d'envoi d'e-mails). |
+
+La purge est **hebdomadaire** (le lundi à 3 h 17 UTC) : tâche `pg_cron` qui appelle la fonction
+`supabase/functions/purge-conservation` (migration `20261126000000_conservation.sql`). La fonction utilise la
+clé de service du projet, qu'elle seule détient, et supprime aussi les fichiers des photos. L'adresse du projet et
+la clé publique qu'utilise la tâche sont rangées dans le coffre de la base (Vault), pas dans le dépôt.
+
+## Décisions prises
+
+- **Inscriptions ouvertes à tous** (26/11/2026).
+- **Supabase gratuit** pour la phase de maquette et de test.
+
 ## Points à décider avant un usage réel
 
-- **Inscriptions** : ouvertes à tous aujourd'hui. Les restreindre (invitation par l'administrateur, ou
-  domaine d'e-mail autorisé) avant de diffuser le lien.
-- **Durée de conservation** des audits, des photos et des réponses ; purge automatique à prévoir.
-- **Durée d'ouverture** du questionnaire (120 jours par défaut) et possibilité de le clore depuis l'outil.
 - **RGPD** : registre de traitement, mention d'information sur le questionnaire, sous-traitant
   (Supabase, hébergement AWS Paris), hébergement de l'application elle-même (Streamlit Community Cloud
   ajoute ses propres traceurs, voir `docs/notice_utilisation.md`).

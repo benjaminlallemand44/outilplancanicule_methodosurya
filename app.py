@@ -207,6 +207,7 @@ def ouvrir_audit(id_audit: str):
             pass
     charger(d, contenus)
     ss.audit_id = id_audit
+    enregistrer(silencieux=True)  # ouvrir un audit le conserve 3 ans de plus (date de dernière modification)
 
 
 def cle(*parts) -> str:
@@ -497,8 +498,12 @@ def bloc_compte():
         with st.container(border=True):
             l1, l2, l3 = st.columns([4, 1, 1], vertical_alignment="center")
             courant = " · :blue[en cours]" if a["id"] == ss.audit_id else ""
+            fin, proche = SB.suppression_prevue(a["modifie_le"])
             l1.markdown(f"**{html.escape(a['nom'])}** :gray[· modifié le {a['modifie_le'][8:10]}/{a['modifie_le'][5:7]}/"
-                        f"{a['modifie_le'][:4]}]{courant}")
+                        f"{a['modifie_le'][:4]} · suppression prévue le {fin}]{courant}")
+            if proche:
+                l1.warning(f"Cet audit sera supprimé le {fin} (3 ans sans modification). Ouvrez-le pour le "
+                           "conserver 3 ans de plus, ou exportez-le.", icon="🕑")
             if l2.button("Ouvrir", key=f"ouvrir:{a['id']}", width="stretch"):
                 try:
                     ouvrir_audit(a["id"])
@@ -1326,8 +1331,9 @@ def etape_questionnaires():
         if connecte():
             if ss.audit_id is None:
                 enregistrer(silencieux=True)  # le lien n'accepte des réponses que pour un audit enregistré
-            st.caption("Les réponses données par ce lien sont enregistrées dans la base (anonymes), pendant "
-                       "120 jours après la création de l'audit.")
+            st.caption("Le lien accepte des réponses pendant 90 jours après la création de l'audit. Elles sont "
+                       "enregistrées dans la base, anonymes, et conservées 12 mois ; une fois récupérées ici, elles "
+                       "suivent la durée de l'audit.")
             if st.button("Récupérer les réponses en ligne", type="primary"):
                 try:
                     distantes = SB.DepotReponsesSupabase(ss.sb).lister(code)

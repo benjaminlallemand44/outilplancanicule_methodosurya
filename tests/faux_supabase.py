@@ -111,7 +111,7 @@ class FauxSupabase:
                 return Reponse(409, {"code": "23505", "message": "code déjà utilisé"})
             a = {"id": str(uuid.uuid4()), "code": code, "proprietaire": uid, "nom": corps.get("nom", "Audit sans nom"),
                  "donnees": copy.deepcopy(corps["donnees"]), "questionnaire_ouvert": True,
-                 "questionnaire_expire_le": dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=120),
+                 "questionnaire_expire_le": dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=90),
                  "cree_le": maintenant, "modifie_le": maintenant}
             self.audits.append(a)
             return Reponse(201, self._select([a], params))

@@ -22,6 +22,17 @@ il sert à éprouver la méthode et le parcours de saisie, pas encore à conduir
   commune. La lecture automatique d'un rapport de diagnostic par IA n'est pas encore disponible : une solution
   est en cours de développement, prévue pour février 2027.
 
+## Combien de temps vos données sont conservées
+
+Avec la base de données (compte connecté) :
+
+- **audits et photos** : 3 ans après la dernière modification ; ouvrir un audit le conserve 3 ans de plus, et la
+  date de suppression prévue est affichée dans « Vos audits enregistrés » ;
+- **questionnaire en ligne** : ouvert 90 jours ; les réponses brutes sont conservées 12 mois ;
+- **comptes** : supprimés après 3 ans sans connexion, avec leurs audits.
+
+Les suppressions sont automatiques, une fois par semaine.
+
 ## Hébergement et mesure d'audience
 
 L'application est hébergée gratuitement sur **Streamlit Community Cloud** (société Snowflake, traitement

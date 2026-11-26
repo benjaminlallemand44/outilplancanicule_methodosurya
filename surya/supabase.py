@@ -241,6 +241,25 @@ def synchroniser_photos(depot: DepotPhotos, id_audit: str, donnees: dict, conten
     return n
 
 
+# Durées de conservation (décision du 26/11/2026), appliquées chaque semaine par la fonction
+# supabase/functions/purge-conservation : audits et photos 3 ans après la dernière modification,
+# réponses brutes 12 mois, comptes inactifs 3 ans. Questionnaire ouvert 90 jours.
+CONSERVATION_AUDIT_JOURS = 3 * 365
+RAPPEL_AVANT_SUPPRESSION_JOURS = 30
+
+
+def suppression_prevue(modifie_le: str, aujourd_hui=None) -> tuple[str, bool]:
+    """(date de suppression « jj/mm/aaaa », True si elle tombe dans le mois) pour un audit."""
+    import datetime as dt
+    try:
+        modif = dt.datetime.fromisoformat(str(modifie_le).replace("Z", "+00:00"))
+    except ValueError:
+        return "", False
+    fin = modif + dt.timedelta(days=CONSERVATION_AUDIT_JOURS)
+    jour = aujourd_hui or dt.datetime.now(tz=fin.tzinfo)
+    return fin.strftime("%d/%m/%Y"), (fin - jour) <= dt.timedelta(days=RAPPEL_AVANT_SUPPRESSION_JOURS)
+
+
 def configuration(secrets) -> tuple[str, str] | None:
     """(url, clé publique) lus dans les secrets Streamlit, ou None (mode maquette)."""
     try:

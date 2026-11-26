@@ -213,3 +213,25 @@ def test_questionnaire_en_ligne_enregistre(serveur):
     intrus.radio[0].set_value(intrus.radio[0].options[0]).run()
     next(b for b in intrus.button if b.label == "Envoyer mes réponses").click().run()
     assert any("pas valide" in e.value for e in intrus.error) and len(serveur.reponses) == 1
+
+
+# ------------------------------------------------------------------ conservation des données
+def test_date_de_suppression_et_rappel():
+    import datetime as dt
+    jour = dt.datetime(2026, 11, 26, tzinfo=dt.timezone.utc)
+    assert SB.suppression_prevue("2026-11-26T10:00:00+00:00", jour) == ("25/11/2029", False)
+    assert SB.suppression_prevue("2023-12-10T10:00:00Z", jour) == ("09/12/2026", True)  # dans le mois
+    assert SB.suppression_prevue("pas une date", jour) == ("", False)
+
+
+def test_ouvrir_un_audit_le_conserve(serveur):
+    """Ouvrir un audit met à jour sa date de dernière modification (le délai de 3 ans repart)."""
+    at = app_connectee(serveur)
+    next(b for b in at.button if b.key == "depart:ecole_sud").click().run()
+    next(b for b in at.button if b.label == "Commencer — diagnostic complet").click().run()
+    next(b for b in at.button if b.label.startswith("Suivant :")).click().run()
+    serveur.audits[0]["modifie_le"] = "2024-01-01T00:00:00+00:00"
+    at2 = app_connectee(serveur)
+    assert any("suppression prévue le 31/12/2026" in m.value for m in at2.markdown)
+    next(b for b in at2.button if b.key == f"ouvrir:{serveur.audits[0]['id']}").click().run()
+    assert not at2.exception and serveur.audits[0]["modifie_le"] > "2026"
