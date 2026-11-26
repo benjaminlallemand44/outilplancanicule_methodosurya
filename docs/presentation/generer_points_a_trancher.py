@@ -36,11 +36,15 @@ SLIDES = [
         "chiffres": [("49", "points relevés (A à G)"), ("4", "statuts changent"), ("3", "réponses possibles")],
         "notes": "49 points relevés en portant l’Excel, la méthode SURYA et le questionnaire dans l’outil. 4 statuts de "
                  "l’exemple de l’Excel changent avec les corrections : l’Excel réparé donne les résultats de l’outil."}),
-    ("sommaire", {"lignes": ["A. Corrections de l’Excel — à valider · 5 min",
-                             "B. Règles de la méthode SURYA et alertes — les décisions qui changent des statuts · 30 min",
-                             "C. Questionnaire usagers — matrice et contenu · 10 min",
-                             "D. Compte rendu et passage à l’action — ordre de mise en œuvre, synthèse, photos · 10 min",
-                             "E. L’outil : données et suites — points mineurs, qui fait quoi · 5 min"]}),
+    ("sommaire", {"lignes": ["Réunion 1 (après un temps de lecture du document)",
+                             "A. Corrections de l’Excel · 5 min",
+                             "B. Règles de la méthode SURYA et alertes, avec les questions F issues des tests · 35 min",
+                             "C. Points mineurs · 5 min",
+                             "Réunion 2 (points en suspens et suite)",
+                             "D. Écarts entre l’Excel et le document de la méthode SURYA",
+                             "E. Questionnaire usagers",
+                             "G. Compte rendu orienté décision",
+                             "L’outil : décisions et suites"]}),
     ("partie", {"num": "A.", "titre": "Corrections de l’Excel", "layout": "Partie 1",
                 "desc": "Des références cassées dans l’Excel, corrigées dans l’outil. Elles ne font pas débat, mais elles "
                         "changent des résultats."}),
@@ -49,15 +53,14 @@ SLIDES = [
                      ("A1", "Murs 2 à 4 lus une ligne trop bas : seul le mur 1 compte", "Les 4 murs lus correctement : valider"),
                      ("A2", "MEX-17 (commande des baies en plafond) en #REF! : règle FT-7 cassée", "FT-7 teste « ni électrique ni automatique » : valider"),
                      ("A3", "BA-18 (débit de ventilation) sans ligne de saisie : VM-7, 9 et 10 ignorées", "Question ajoutée en m³/h ; débit inconnu, « Sous réserve » : valider"),
-                     ("A4", "Valeur pile sur un seuil ; surface ou hauteur égale à 0", "Arrondi avant comparaison ; valeur nulle, « Sous réserve » : valider"),
-                     ("F2", "Règles « aucune baie » (PV-0, PH-0, FS-0) dans l’Excel seulement", "Les reporter dans le document de la méthode SURYA")],
+                     ("A4", "Valeur pile sur un seuil ; surface ou hauteur égale à 0", "Arrondi avant comparaison ; valeur nulle, « Sous réserve » : valider")],
                  "notes": "Sur l’exemple de l’Excel, 4 statuts changent (dus à A1 et A2) : Classe CM1, ventilation naturelle "
                           "nocturne et protections horizontales ; salle de motricité, protections horizontales ; salle de classe, "
                           "fenêtres de toit. Recalculé avec ses références réparées, l’Excel donne exactement les résultats de "
                           "l’outil (vérifié sur 3 000 cas tirés au hasard)."}),
     ("partie", {"num": "B.", "titre": "Règles de la méthode SURYA et alertes", "layout": "Partie 2",
-                "desc": "Le libellé d’une règle et sa formule divergent, ou un cas n’est pas prévu. Ce sont les décisions "
-                        "qui changent des statuts."}),
+                "desc": "Le libellé d’une règle et sa formule divergent, ou un cas n’est pas prévu. Avec les questions F "
+                        "issues des tests, rangées par thème. Ce sont les décisions qui changent des statuts."}),
     ("tableau", {"titre": "Ventilation et brasseurs d’air", "lignes": [
         ("B1", "VN-7 « orientations différentes » : la formule compte les murs, pas les orientations (deux murs « S » suffisent)", "Suivre le libellé : compter les orientations distinctes, condition d’un vrai balayage"),
         ("F1", "Ventilation mécanique : VM-9 n’est jamais retenue, VM-11 « Recommandé » n’est jamais atteinte", "Placer VM-9 avant VM-7 ; SURYA précise quand la ventilation mécanique nocturne est « Recommandé »"),
@@ -78,9 +81,26 @@ SLIDES = [
     ("tableau", {"titre": "Règles générales de calcul et de saisie", "lignes": [
         ("B7", "Une règle indéterminée masque les suivantes (PH-1 inconnue cache PH-2, pourtant certaine)", "Garder ce principe prudent, conforme à la méthode SURYA"),
         ("B6", "« Aucun » peut être coché avec d’autres options (8 questions, dont E-20)", "Rendre « Aucun » exclusif dans la saisie"),
-        ("D5", "23 questions à choix sans option « Non évalué », que demande la règle du doute (§ I.f)", "Ajouter « Non évalué » à ces questions de la grille de visite"),
         ("B12", "Occupation : seuls bureaux et classes ; EX-AL divise l’ombre par l’effectif, adultes compris", "Étendre aux autres locaux occupés ; relever l’effectif d’enfants à part")]}),
-    ("tableau", {"titre": "Alertes : maîtrise d’œuvre ou validation ponctuelle",
+    ("tableau", {"titre": "Alertes : quand les déclencher", "lignes": [
+        ("B13", "BR-AL est « toujours vraie », même quand les brasseurs sont non recommandés", "L’afficher seulement si la solution est envisagée (Recommandé, À optimiser, Sous réserve)"),
+        ("F4", "Alertes de l’ombrage adossé muettes quand le « Sous réserve » vient d’une donnée manquante", "Les déclencher aussi, par prudence"),
+        ("F5", "EX-AL indéterminée (effectif ou surface d’ombre manquant) : ni affichée ni signalée", "La signaler « à vérifier »"),
+        ("F6", "VV-AL ignore les puits de lumière et atriums du bloc VV", "Étendre l’alerte à ces cas")]}),
+    ("partie", {"num": "C.", "titre": "Points mineurs", "layout": "Partie 3",
+                "desc": "Cohérence des libellés et questions sans effet. Proposition : les valider par écrit avec SURYA."}),
+    ("colonne", {"titre": "À valider par écrit après la réunion", "sous": "Points mineurs",
+                 "paras": [("C1 · B-07 (local de repli plus frais) n’alimente aucune règle : la marquer « info » ou l’utiliser.", 1),
+                           ("C2 · Libellés des réponses de MEX-17 à aligner sur la liste déroulante.", 1),
+                           ("C3 · Libellé de CO-1 : un seul des quatre intitulés cités existe dans L-02.", 1),
+                           ("C4 · Deux questions portent le code MEX-25 : renuméroter.", 1),
+                           ("C5 · Trous de numérotation : confirmer qu’aucune question du carnet de visite ne manque.", 1),
+                           ("C6 · 4 murs par local au maximum : confirmer.", 1),
+                           ("C7 · « Non évalué » sur F-05 seulement : l’étendre à F-02, F-03 et F-04.", 1)],
+                 "notes": "Proposition : envoyer ce tableau à SURYA après la réunion, avec un délai de retour à fixer ensemble."}),
+    ("partie", {"num": "D.", "titre": "Écarts entre l’Excel et la méthode SURYA", "layout": "Partie 4",
+                "desc": "Ce que le document prévoit et que l’Excel ne fait pas, ou l’inverse."}),
+    ("tableau", {"titre": "D1 · Alertes : maîtrise d’œuvre ou validation ponctuelle",
                  "entete": ["Type proposé", "Alertes", "Objet", "Décision"], "largeurs": [2.6, 3.6, 4.4, 1.6],
                  "lignes": [
                      ("AL : étude de maîtrise d’œuvre", "VV-AL, OA-AL2, OA-AL3, PR-AL1, PR-AL2, PR-AL3", "Véranda, prise au vent et feu de la toile, avis de l’ABF, charpente du préau, amiante"),
@@ -90,12 +110,13 @@ SLIDES = [
                  "notes": "L’Excel ne type pas ses alertes. L’outil les classe d’après le § I.e de la méthode SURYA : une alerte AL "
                           "fait passer la solution en « À valider avant de consulter ». Deux décisions : valider ce classement ; "
                           "ajouter l’alerte patrimoine."}),
-    ("tableau", {"titre": "Alertes : quand les déclencher", "lignes": [
-        ("B13", "BR-AL est « toujours vraie », même quand les brasseurs sont non recommandés", "L’afficher seulement si la solution est envisagée (Recommandé, À optimiser, Sous réserve)"),
-        ("F4", "Alertes de l’ombrage adossé muettes quand le « Sous réserve » vient d’une donnée manquante", "Les déclencher aussi, par prudence"),
-        ("F5", "EX-AL indéterminée (effectif ou surface d’ombre manquant) : ni affichée ni signalée", "La signaler « à vérifier »"),
-        ("F6", "VV-AL ignore les puits de lumière et atriums du bloc VV", "Étendre l’alerte à ces cas")]}),
-    ("partie", {"num": "C.", "titre": "Questionnaire usagers", "layout": "Partie 3",
+    ("tableau", {"titre": "Autres écarts entre l’Excel et le document", "lignes": [
+        ("D2", "Photos « normées obligatoires » (§ I.c) : l’outil les recueille, avec une liste non bloquante", "Quelles questions exigent une photo ? Proposition : vue d’ensemble, baies, plafond, façade, ombrages"),
+        ("D3", "CO-1 vise un bureau « occupé en continu », ce qui n’est jamais relevé", "Ajouter la question, ou retirer « en continu » du libellé"),
+        ("D4", "CQ-1 cite les réfrigérateurs, absents de la question L-10", "Ajouter « Réfrigérateurs » à L-10"),
+        ("D5", "23 questions à choix sans option « Non évalué », que demande la règle du doute (§ I.f)", "Ajouter « Non évalué » à ces questions de la grille de visite"),
+        ("F2", "Règles « aucune baie » (PV-0, PH-0, FS-0) dans l’Excel seulement", "Les reporter dans le document de la méthode SURYA")]}),
+    ("partie", {"num": "E.", "titre": "Questionnaire usagers", "layout": "Partie 1",
                 "desc": "La méthode SURYA prévoit une matrice ressenti / préconisations et un indicateur de cohérence, sans les "
                         "définir : l’outil fait une proposition."}),
     ("tableau", {"titre": "Matrice ressenti / préconisations (proposition)",
@@ -112,9 +133,9 @@ SLIDES = [
         ("E5", "Q20 n’admet qu’un seul équipement de rafraîchissement", "Passer en choix multiple"),
         ("E6", "Public : adultes seulement (échelle ISO à 7 points) ?", "Adultes pour l’instant ; version élèves à instruire"),
         ("E3", "Étage et orientation (Q2, Q3) moins détaillés que la grille", "Garder : sans incidence tant que la synthèse est globale")]}),
-    ("partie", {"num": "D.", "titre": "Compte rendu et passage à l’action", "layout": "Partie 4",
+    ("partie", {"num": "G.", "titre": "Compte rendu orienté décision", "layout": "Partie 2",
                 "desc": "Des propositions de l’outil, absentes de la méthode SURYA : ordre de mise en œuvre, synthèse en une page, "
-                        "plan simplifié, photos."}),
+                        "plan simplifié."}),
     ("colonne", {"titre": "Ordre de mise en œuvre en trois étapes", "sous": "De la plus simple à la plus lourde",
                  "paras": [("1. Dès maintenant : usages, réglages, remise en état. Par l’exploitant ou en régie, coût faible, effet dès l’été.", 0),
                            ("2. Petits travaux : brasseurs, films solaires, LED, grilles de ventilation, ombrage de la cour. Pendant les vacances d’été.", 0),
@@ -125,14 +146,12 @@ SLIDES = [
                            ("Classement dans une étape : l’effectif seul, ou aussi le public sensible, l’exposition et le ressenti des usagers ?", 1)],
                  "notes": "Les coûts ne sont pas encore donnés : ils viendront d’une base de coûts, à brancher dans le module de "
                           "passage en travaux."}),
-    ("tableau", {"titre": "Synthèse, plan, photos et compléments de saisie", "lignes": [
+    ("tableau", {"titre": "Synthèse en une page et plan simplifié", "lignes": [
         ("G2", "Synthèse en une page : 7 solutions principales par étape, 3 à valider, 3 lieux cités pour chacune", "Valider"),
-        ("G3", "Plan simplifié : schéma par niveau (surface, solutions à engager, côtés exposés)", "Valider ; plan réel plus tard, par import d’un plan"),
-        ("D2", "Photos « normées obligatoires » (§ I.c) : l’outil les recueille, avec une liste non bloquante", "Valider la liste : vue d’ensemble, baies, plafond, façade, ombrages"),
-        ("D3", "CO-1 vise un bureau « occupé en continu », ce qui n’est jamais relevé", "Ajouter la question, ou retirer « en continu » du libellé"),
-        ("D4", "CQ-1 cite les réfrigérateurs, absents de la question L-10", "Ajouter « Réfrigérateurs » à L-10")]}),
-    ("partie", {"num": "E.", "titre": "L’outil : données et suites", "layout": "Partie 1",
-                "desc": "Ce qui est déjà décidé, les points mineurs à valider par écrit, et qui fait quoi."}),
+        ("G3", "Plan simplifié : schéma par niveau (surface, solutions à engager, côtés exposés)", "Valider ; plan réel plus tard, par import d’un plan")],
+        "notes": "G2 et G3 sont visibles dans le compte rendu complet de l’école type du Sud, pages 2 et 3."}),
+    ("partie", {"num": "", "titre": "L’outil : décisions et suites", "layout": "Partie 3",
+                "desc": "Ce qui est déjà décidé pour la maquette, et qui fait quoi."}),
     ("colonne", {"titre": "Ce qui est décidé, ce qui reste à décider", "sous": "L’outil",
                  "paras": [("Décidé", 0),
                            ("Maquette de test : Streamlit Cloud et base Supabase hébergée à Paris ; inscriptions ouvertes à tous.", 1),
@@ -140,15 +159,6 @@ SLIDES = [
                            ("Passage en travaux : un 3ᵉ parcours après le diagnostic. Lecture des rapports par IA : février 2027.", 1),
                            ("Avant toute diffusion institutionnelle", 0),
                            ("Un hébergement maîtrisé (Streamlit Cloud ajoute ses propres traceurs d’audience) et une notice RGPD.", 1)]}),
-    ("colonne", {"titre": "À valider par écrit après la réunion", "sous": "Points mineurs",
-                 "paras": [("C1 · B-07 (local de repli plus frais) n’alimente aucune règle : la marquer « info » ou l’utiliser.", 1),
-                           ("C2 · Libellés des réponses de MEX-17 à aligner sur la liste déroulante.", 1),
-                           ("C3 · Libellé de CO-1 : un seul des quatre intitulés cités existe dans L-02.", 1),
-                           ("C4 · Deux questions portent le code MEX-25 : renuméroter.", 1),
-                           ("C5 · Trous de numérotation : confirmer qu’aucune question du carnet de visite ne manque.", 1),
-                           ("C6 · 4 murs par local au maximum : confirmer.", 1),
-                           ("C7 · « Non évalué » sur F-05 seulement : l’étendre à F-02, F-03 et F-04.", 1)],
-                 "notes": "Proposition : envoyer ce tableau à SURYA après la réunion, avec un délai de retour à fixer ensemble."}),
     ("tableau", {"titre": "Qui fait quoi", "entete": ["Action", "Qui", "Quand"], "largeurs": [7.6, 2.9, 1.7], "lignes": [
         ("Mettre à jour le document de la méthode SURYA (décisions B, D et F2)", "SURYA", "[date]"),
         ("Appliquer les décisions dans l’outil et refaire la campagne de tests", "[ACTEE]", "[date]"),
