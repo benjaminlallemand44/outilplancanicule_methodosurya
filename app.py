@@ -1709,9 +1709,18 @@ def _lecture_ia(pdf: bytes, modele: str | None) -> dict:
     return IA.analyser(pdf, _config_ia()[0], modele)
 
 
+# Lecture des rapports par IA : désactivée en attendant la solution prévue pour février 2027 (le code est conservé).
+LECTURE_IA_DISPONIBLE = False
+
+
 def bloc_lecture_ia(de: dict):
     """Dépôt du PDF du rapport et pré-remplissage de la saisie par l'IA."""
     st.subheader("Pré-remplir à partir du rapport (IA)")
+    if not LECTURE_IA_DISPONIBLE:
+        st.info("**Bientôt disponible.** La lecture automatique du rapport de diagnostic par l'IA n'est pas encore "
+                "proposée : une solution est en cours de développement, prévue pour **février 2027**. En attendant, "
+                "reportez les préconisations du rapport dans la saisie ci-dessous.", icon="🕑")
+        return
     cle_ia, modele = _config_ia()
     st.caption("Déposez le PDF du rapport : l'IA propose l'école, le bâtiment et les actions préconisées, avec pour "
                "chacune l'extrait du rapport et la page. Tout reste modifiable et doit être vérifié avant de continuer. "

@@ -22,6 +22,9 @@ travaux → » ; le passage en travaux propose en retour « ← Documents du dia
 
 ### Lecture du rapport par IA (facultatif)
 
+> **Désactivée dans l'application** (`LECTURE_IA_DISPONIBLE = False` dans `app.py`) : un message indique
+> qu'une solution est en cours de développement, prévue pour février 2027. Le code ci-dessous est conservé.
+
 À l'étape « Diagnostic existant », le PDF du rapport peut être lu par l'API Claude (`surya/lecture_ia.py`) :
 l'école, le bâtiment et les actions sont pré-remplis, chaque action avec un extrait du rapport et sa page,
 marquée « proposée par l'IA, à vérifier ». Les préconisations sans équivalent dans le catalogue sont listées à

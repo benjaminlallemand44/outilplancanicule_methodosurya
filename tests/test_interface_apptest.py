@@ -631,3 +631,11 @@ def test_passage_en_travaux_depuis_un_diagnostic_existant():
     for i in range(5):
         clic(at, key=f"nav:{i}")
         assert not at.exception
+
+
+
+def test_lecture_ia_annoncee_pour_fevrier_2027():
+    at = app()
+    clic(at, contient="Essayer avec un diagnostic Inddigo")
+    assert any("février 2027" in i.value for i in at.info)
+    assert not at.get("file_uploader") or all("rapport" not in f.label.lower() for f in at.get("file_uploader"))

@@ -19,8 +19,8 @@ il sert à éprouver la méthode et le parcours de saisie, pas encore à conduir
 
 - Passage en travaux : la recherche des structures d'ingénierie interroge des services publics (API
   Découpage administratif, Annuaire de l'administration, Recherche d'entreprises) avec le code postal de la
-  commune. La lecture d'un rapport de diagnostic par IA, facultative, envoie le PDF au service d'IA (API
-  Claude d'Anthropic) : ne l'utilisez qu'avec des rapports que vous pouvez transmettre.
+  commune. La lecture automatique d'un rapport de diagnostic par IA n'est pas encore disponible : une solution
+  est en cours de développement, prévue pour février 2027.
 
 ## Hébergement et mesure d'audience
 
