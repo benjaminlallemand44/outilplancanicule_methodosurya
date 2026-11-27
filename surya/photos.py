@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime as dt
 import io
 import json
+import re
 import uuid
 import zipfile
 from pathlib import Path
@@ -33,6 +34,9 @@ ATTENDUES = {
     "espaces": ["Vue d'ensemble", "Ombrages existants"],
 }
 COTE_MAX = 1600       # px : côté le plus long après réduction
+COTE_DETECTION = 4096  # px : les visages sont cherchés avant réduction, jusqu'à cette taille (C2-12)
+ZIP_MAX_PHOTOS = 300  # garde-fous de l'import d'une archive (campagne n° 2)
+ZIP_MAX_OCTETS = 300 * 1024 * 1024
 QUALITE = 80          # JPEG
 MODELE_VISAGES = Path(__file__).resolve().parent / "modeles" / "face_detection_yunet_2023mar.onnx"
 FORMATS = ["jpg", "jpeg", "png", "webp"]
@@ -98,12 +102,23 @@ def preparer(contenu: bytes, flouter_visages: bool = True) -> tuple[bytes, dict]
     try:
         img = Image.open(io.BytesIO(contenu))
         img.load()
+    except Image.DecompressionBombError as e:  # C2-02 : plus de 179 mégapixels
+        raise ValueError("Cette image est trop grande (plus de 179 mégapixels) : réduisez-la avant de l'ajouter.") from e
     except (UnidentifiedImageError, OSError) as e:
         raise ValueError("Ce fichier n'est pas une image lisible (formats acceptés : JPEG, PNG, WebP).") from e
     prise_le = _date_exif(img)
     img = ImageOps.exif_transpose(img).convert("RGB")
+    zones = []
+    if flouter_visages:
+        # C2-12 : un petit visage (élève au fond d'une classe) disparaît à la réduction ; on le cherche
+        # donc sur l'image d'origine (ramenée au plus à 4 096 px), puis on reporte les zones sur l'image réduite.
+        recherche = img if max(img.size) <= COTE_DETECTION else img.copy()
+        recherche.thumbnail((COTE_DETECTION, COTE_DETECTION))
+        zones_recherche, larg_recherche = detecter_visages(recherche), recherche.width
     img.thumbnail((COTE_MAX, COTE_MAX))
-    zones = detecter_visages(img) if flouter_visages else []
+    if flouter_visages:
+        k = img.width / larg_recherche  # (recherche peut être img elle-même, réduite entre-temps)
+        zones = [tuple(round(v * k) for v in z) for z in zones_recherche]
     if zones:
         flouter(img, zones)
     sortie = io.BytesIO()
@@ -188,6 +203,11 @@ def lire_zip(contenu: bytes) -> tuple[dict, dict[str, bytes]]:
     with z:
         if "saisie.json" not in z.namelist():
             raise ValueError("Cette archive ne contient pas de saisie de l'outil (saisie.json absent).")
+        noms = [n for n in z.namelist() if n.startswith("photos/") and n.endswith(".jpg")]
+        if (len(noms) > ZIP_MAX_PHOTOS or z.getinfo("saisie.json").file_size > 20 * 1024 * 1024
+                or sum(z.getinfo(n).file_size for n in noms) > ZIP_MAX_OCTETS):
+            raise ValueError(f"Archive trop volumineuse (au plus {ZIP_MAX_PHOTOS} photos et "
+                             f"{ZIP_MAX_OCTETS // 1024 // 1024} Mo).")
         donnees = json.loads(z.read("saisie.json").decode("utf-8-sig"))
         contenus = {}
         for nom in z.namelist():
@@ -206,7 +226,10 @@ def valider(photos, notes: list[str]) -> list[dict]:
         if not isinstance(p, dict) or not p.get("id"):
             notes.append(f"Photo {i} sans identifiant, ignorée.")
             continue
-        q = {"id": str(p["id"])[:40], "cible": str(p.get("cible") or ""), "legende": str(p.get("legende") or "")[:300]}
+        if not re.fullmatch(r"[0-9A-Za-z]{1,40}", str(p["id"])):  # C2-07 : l'identifiant sert de nom de fichier
+            notes.append(f"Photo {i} : identifiant invalide, ignorée.")
+            continue
+        q = {"id": str(p["id"]), "cible": str(p.get("cible") or ""), "legende": str(p.get("legende") or "")[:300]}
         e = p.get("etiquette")
         q["etiquette"] = e if e in ETIQUETTES else "Autre"
         for k in ("prise_le", "visages_floutes", "envoyee"):

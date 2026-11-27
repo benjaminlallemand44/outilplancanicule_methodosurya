@@ -899,9 +899,25 @@ def _libelle_solution(s0: dict) -> str:
     return sol
 
 
+def _borner_phases(b: dict, ctx: dict) -> None:
+    """Étape bornée par le niveau d'accompagnement du passage en travaux (C2-05, proposition G4 des points à
+    trancher) : une action qui demande une consultation (niveau B) n'est pas « dès maintenant » (étape 2 au
+    moins), une action qui demande une maîtrise d'œuvre (niveau C) est une étape 3. Le compte rendu et le
+    pré-programme donnent ainsi la même étape aux élus."""
+    from . import travaux
+    entites = b["engager"] + b["valider"]
+    if b["solution"] not in travaux.CATALOGUE or not entites:
+        return
+    niveau, _ = travaux._niveau(b["solution"], [travaux._entite(e) for e in entites], ctx)
+    plancher = {"B": 2, "C": 3}.get(niveau, 1)
+    for e in entites:
+        e["phase"] = max(e["phase"], plancher)
+
+
 def _bilan(res: dict, d: dict) -> list[dict]:
     """Par solution : où l'engager, où la valider, où compléter, où elle est en place ou écartée."""
-    out = []
+    from . import travaux
+    out, ctx = [], travaux.contexte(d)
     for cle, defaut in (("locaux", "Local"), ("espaces", "Espace")):
         entites, entrees = res[cle], d.get(cle) or []
         if not entites:
@@ -926,6 +942,7 @@ def _bilan(res: dict, d: dict) -> list[dict]:
                 b[k].append({"nom": nom(x, i, defaut), "poids": _poids(entree, cle), "statut": s["statut"],
                              "x": x, "s": s, "entree": entree,
                              "phase": phase(s0["solution"], s["statut"], s["alertes"])})
+            _borner_phases(b, ctx)
             for k in SUITES:
                 b[k].sort(key=lambda e: -e["poids"])
             b["score"] = sum(e["poids"] for e in b["engager"]) + 0.5 * sum(e["poids"] for e in b["valider"])

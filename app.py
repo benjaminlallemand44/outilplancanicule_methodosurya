@@ -23,7 +23,6 @@ import uuid
 from pathlib import Path
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 # Streamlit Cloud peut garder en mémoire l'ancienne version des modules « surya » après une mise à jour du dépôt
 # (seul app.py est relu). On compare une signature des fichiers du moteur et on recharge tout s'ils ont changé.
@@ -152,9 +151,11 @@ def donnees_vides() -> dict:
             "questionnaires": [], "photos": [], "travaux": {}, "diagnostic_externe": {}}
 
 
-def charger(d: dict, contenus: dict | None = None):
+def charger(d: dict, contenus: dict | None = None, garder_sans_image: bool = False):
     """Remplace toutes les données (exemple, import) et réinitialise les champs affichés.
-    ``contenus`` : photos {id: jpeg} (import d'une archive ZIP)."""
+    ``contenus`` : photos {id: jpeg} (import d'une archive ZIP).
+    ``garder_sans_image`` : ouverture d'un audit enregistré ; une photo déjà envoyée dont l'image n'a pas pu être
+    téléchargée est gardée (C2-01 de la campagne n° 2 : sinon le réenregistrement la supprimait pour de bon)."""
     base = donnees_vides()
     base.update({k: v for k, v in d.items() if k in base})
     for x in base["locaux"] + base["espaces"] + base["questionnaires"]:
@@ -163,7 +164,8 @@ def charger(d: dict, contenus: dict | None = None):
     ss.audit_id = None  # nouvel audit, pas encore enregistré (ouvrir_audit le renseigne)
     ss.photos_supprimees = []
     ss.photos_bin = dict(contenus or {})
-    base["photos"] = [ph for ph in base["photos"] if ph.get("id") in ss.photos_bin]  # description sans image : retirée
+    base["photos"] = [ph for ph in base["photos"] if ph.get("id") in ss.photos_bin  # description sans image : retirée,
+                      or (garder_sans_image and ph.get("envoyee"))]  # sauf photo enregistrée non téléchargée
     ss.generation = ss.get("generation", 0) + 1
     ss.edition = {"locaux": None, "espaces": None}
     ss.theme = {"locaux": 0, "espaces": 0, "batiment": 0}
@@ -195,10 +197,13 @@ def enregistrer(silencieux: bool = False) -> bool:
     try:
         code_audit()
         depot = SB.DepotAudits(ss.sb)
+        # ss.donnees et non D : D est figé au début du passage, et charger() (ouverture d'un audit, exemple, import)
+        # a pu le remplacer depuis ; enregistrer D écraserait l'audit avec la saisie précédente.
+        d = ss.donnees
         if ss.audit_id is None:  # première fois : créer la ligne pour obtenir l'identifiant du dossier photos
-            ss.audit_id = depot.enregistrer(D)["id"]
-        SB.synchroniser_photos(SB.DepotPhotos(ss.sb), ss.audit_id, D, ss.photos_bin, ss.photos_supprimees)
-        depot.enregistrer(D, ss.audit_id)
+            ss.audit_id = depot.enregistrer(d)["id"]
+        SB.synchroniser_photos(SB.DepotPhotos(ss.sb), ss.audit_id, d, ss.photos_bin, ss.photos_supprimees)
+        depot.enregistrer(d, ss.audit_id)
         ss.enregistre_le = __import__("datetime").datetime.now().strftime("%H:%M")
         return True
     except SB.ErreurSupabase as e:
@@ -214,13 +219,16 @@ def ouvrir_audit(id_audit: str):
     ligne = SB.DepotAudits(ss.sb).ouvrir(id_audit)
     d, _ = valider(ligne["donnees"])
     d["audit"] = dict(d.get("audit") or {}, code=ligne["code"])
-    depot, contenus = SB.DepotPhotos(ss.sb), {}
+    depot, contenus, manquantes = SB.DepotPhotos(ss.sb), {}, 0
     for ph in d.get("photos") or []:
         try:
             contenus[ph["id"]] = depot.telecharger(id_audit, ph["id"])
         except SB.ErreurSupabase:
-            pass
-    charger(d, contenus)
+            manquantes += 1  # gardée dans l'audit (C2-01) ; image affichée à la prochaine ouverture
+    charger(d, contenus, garder_sans_image=True)
+    if manquantes:
+        st.toast(f"{manquantes} photo(s) n'ont pas pu être téléchargées : elles restent enregistrées, rouvrez l'audit "
+                 "plus tard pour les afficher.", icon="⚠️")
     ss.audit_id = id_audit
     enregistrer(silencieux=True)  # ouvrir un audit le conserve 3 ans de plus (date de dernière modification)
 
@@ -281,6 +289,8 @@ def aller(etape: str | int):
     enregistrer(silencieux=True)
     ss.etape = n
     ss.etape_max = max(ss.etape_max, n)
+    if ss.mode in PARCOURS_TRAVAUX:  # C2-10 : on retient les étapes vues, pour ne cocher que celles-là
+        D["travaux"]["etape_vue"] = max(D["travaux"].get("etape_vue", 0), n)
     ss.vue = "parcours"
     ss.haut = True
     st.rerun()
@@ -426,8 +436,9 @@ def remonter():
     if ss.haut:
         ss.haut = False
         ss.nonce = ss.get("nonce", 0) + 1
-        components.html(f"<script>/*{ss.nonce}*/const m=window.parent.document.querySelector('[data-testid=\"stMain\"]');"
-                        "if(m){m.scrollTo(0,0);}window.parent.scrollTo(0,0);</script>", height=0)
+        # C2-09 : st.iframe remplace st.components.v1.html, annoncé supprimé par Streamlit
+        st.iframe(f"<script>/*{ss.nonce}*/const m=window.parent.document.querySelector('[data-testid=\"stMain\"]');"
+                  "if(m){m.scrollTo(0,0);}window.parent.scrollTo(0,0);</script>", height=1)
 
 
 CB = moteur.etats_batiment(D["batiment"], D["facades"])
@@ -621,7 +632,9 @@ def demarrer(mode: str):
     ss.mode = mode
     ss.etape, ss.etape_max = 0, 0
     d = ss.donnees  # et non D : un exemple vient peut-être d'être chargé dans ce même passage
-    if d["locaux"] or d["espaces"] or (mode == "externe" and travaux.externe(d)):  # saisie reprise
+    if mode in PARCOURS_TRAVAUX:  # C2-10 : étapes ouvertes jusqu'à la dernière vue, pas au-delà
+        ss.etape_max = min(int((d.get("travaux") or {}).get("etape_vue") or 0), len(etapes()) - 1)
+    elif d["locaux"] or d["espaces"]:  # saisie reprise
         ss.etape_max = len(etapes()) - 1
     aller(0)
 
@@ -759,6 +772,8 @@ def vignette(ph: dict, pid: str, cibles: list[str] | None = None):
     img = ss.photos_bin.get(ph["id"])
     if img:
         st.image(img, width="stretch")
+    else:
+        st.caption("Image non disponible pour l'instant (téléchargement en échec) : elle reste enregistrée.")
     meta = [ph["prise_le"]] if ph.get("prise_le") else []
     if ph.get("visages_floutes"):
         meta.append(f"{ph['visages_floutes']} visage(s) flouté(s)")
@@ -1321,7 +1336,7 @@ def etape_verification():
 
 # --- questionnaires usagers ---------------------------------------------------------------------
 def code_audit() -> str:
-    a = D["audit"]
+    a = ss.donnees["audit"]
     if not a.get("code"):
         a["code"] = uuid.uuid4().hex[:10]
     return a["code"]
@@ -1636,7 +1651,7 @@ def etape_documents():
             if st.button("Préparer le passage en travaux →", type="primary", key="vers_travaux"):
                 enregistrer(silencieux=True)
                 ss.mode = "travaux"
-                ss.etape, ss.etape_max = 0, len(MODES["travaux"]["etapes"]) - 1
+                ss.etape, ss.etape_max = 0, min(int(D["travaux"].get("etape_vue") or 0), len(MODES["travaux"]["etapes"]) - 1)
                 ss.vue, ss.haut = "parcours", True
                 st.rerun()
     schema = plan.svg(D, res)
@@ -1823,7 +1838,11 @@ def bloc_lecture_ia(de: dict):
         except IA.LectureImpossible as err:
             st.error(str(err))
             return
-        saisie, remarques = IA.vers_saisie(proposition, fichier.name)
+        try:
+            saisie, remarques = IA.vers_saisie(proposition, fichier.name)
+        except Exception:  # C2-08 : filet de sécurité, vers_saisie écarte déjà ce qui est hors schéma
+            st.error("La réponse du service d'IA est inexploitable : réessayez, ou remplissez la saisie à la main.")
+            return
         for k, v in saisie["audit"].items():
             if not D["audit"].get(k):
                 D["audit"][k] = v

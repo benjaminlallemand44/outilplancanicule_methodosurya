@@ -33,7 +33,6 @@ FICHES = {int(k): v for k, v in json.loads((KIT / "fiches.json").read_text(encod
 # ------------------------------------------------------------------ hypothèses de chiffrage
 SURFACE_BAIE_TYPE = 2.0      # m² par baie, faute de métré (le diagnostic compte les baies, il ne les mesure pas)
 LARGEUR_BAIE_TYPE = 1.2      # m linéaire de casquette par baie
-OMBRE_PAR_ENFANT = 0.8       # m² d'ombre par enfant présent simultanément (élémentaire) — règle EX-AL
 SEUIL_MOE_DEFAUT = 100_000   # € HT : au-delà, la règle M5 recommande une MOE (à fixer par ACTEE)
 
 COUTS_DISPONIBLES = False  # passera à True quand la base de données de coûts sera branchée (voir _cout)
@@ -270,7 +269,8 @@ def contexte(donnees: dict) -> dict:
     """Indicateurs du bâtiment utiles aux niveaux, aux CCTP et à la feuille de route."""
     b = donnees.get("batiment") or {}
     return {
-        "amiante": b.get("B-01") in ("Avant 1948", "De 1948 à 1974", "De 1975 à 1997"),
+        # C2-04 : période inconnue = suspicion d'amiante, comme PR-AL3 (règle du doute) ; seul « Après 1997 » l'écarte
+        "amiante": b.get("B-01") != "Après 1997",
         "plomb": b.get("B-01") == "Avant 1948",
         "periode": b.get("B-01") or "non renseignée",
         "patrimoine": _oui(b, "B-05") or _oui(b, "B-06"),
@@ -326,15 +326,17 @@ def _quantite(solution: str, entites: list[dict], donnees: dict, ctx: dict) -> t
         return (s or None), "m²", hyp
     if solution == "Ombrage autoportant ou végétal de la cour":
         manque = 0.0
+        p = moteur.parametres(donnees.get("parametres"))  # C2-11 : mêmes seuils que EX-AL, y compris ceux modifiés dans les Réglages
         for e in entites:
             x = e["entree"]
             eff, ombre = _n(x.get("E-06")), _n(x.get("E-14")) or 0
-            cible = OMBRE_PAR_ENFANT * eff if eff else 0
+            cible = p["P_OMBRE_ELEM"] * eff if eff else 0
             if "Maternelle" in (x.get("E-04") or []):
-                cible = max(cible, 150 if (_n(x.get("E-07")) or 0) >= 6 else 100)
+                cible = max(cible, p["P_OMBRE_MAT_2"] if (_n(x.get("E-07")) or 0) > p["P_OMBRE_MAT_CL"]
+                            else p["P_OMBRE_MAT_1"])
             manque += max(0.0, cible - ombre)
-        hyp.append(f"écart à {OMBRE_PAR_ENFANT:g} m² d'ombre par enfant (100 ou 150 m² en maternelle), "
-                   "ombre existante hors végétaux déduite")
+        hyp.append(f"écart à {p['P_OMBRE_ELEM']:g} m² d'ombre par enfant ({p['P_OMBRE_MAT_1']:g} ou "
+                   f"{p['P_OMBRE_MAT_2']:g} m² en maternelle), ombre existante hors végétaux déduite")
         return (round(manque) or None), "m²", hyp
     if solution in ("Par ventilation mécanique nocturne", "Occupation", "Équipements"):
         return 1, "forfait", hyp
@@ -843,4 +845,7 @@ def valider_saisie(t) -> tuple[dict, list[str]]:
         out["seuil_moe"] = seuil
     elif t.get("seuil_moe") not in (None, ""):
         notes.append(f"Seuil de maîtrise d'œuvre « {t['seuil_moe']} » illisible : valeur par défaut conservée.")
+    ev = nombre(t.get("etape_vue"))
+    if ev is not None and 0 <= ev <= 4:
+        out["etape_vue"] = int(ev)
     return out, notes

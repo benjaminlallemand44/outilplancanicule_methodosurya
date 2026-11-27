@@ -153,7 +153,11 @@ def _murs(murs, ou: str, notes: list[str]):
 def valider(donnees: dict) -> tuple[dict, list[str]]:
     """Saisie normalisée et liste des corrections apportées."""
     d, notes = copy.deepcopy(donnees or {}), []
-    out = {k: d.get(k) for k in ("audit",) if k in d}
+    a = d.get("audit")  # C2-03 : identification de l'audit, textes courts seulement
+    if a is not None and not isinstance(a, dict):
+        notes.append("Bloc « audit » (identification) illisible : ignoré.")
+    out = {"audit": {str(k): str(v)[:300] for k, v in (a if isinstance(a, dict) else {}).items()
+                     if isinstance(v, (str, int, float)) and not isinstance(v, bool)}}
     out["batiment"] = _entite(d.get("batiment") or {}, QUESTIONS["batiment"], "Bâtiment", notes, garder=())
     facades = {}
     q_fac = {q["code"]: q for q in REFERENTIEL["facades"][1:]}

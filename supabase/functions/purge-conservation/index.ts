@@ -8,15 +8,23 @@
 // Le questionnaire en ligne reste ouvert 90 jours (valeur par défaut de la table audits).
 //
 // Appelée chaque semaine par pg_cron (migration 20261126000000_conservation.sql). Elle ne supprime que
-// des données expirées : un appel de plus ne fait rien de plus.
+// des données expirées : un appel de plus ne fait rien de plus. Elle exige l'en-tête x-purge-secret.
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
 const AN = 365 * 24 * 3600 * 1000;
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  // C2-06 (campagne n° 2) : seule la tâche planifiée connaît le secret partagé « purge_secret », rangé dans le
+  // coffre de la base (migration 20261127000000_purge_secret.sql) et vérifié côté base. Sans lui : refus.
+  const { data: autorise } = await sb.rpc("verifier_secret_purge", { p_secret: req.headers.get("x-purge-secret") ?? "" });
+  if (autorise !== true) {
+    return new Response(JSON.stringify({ erreur: "appel non autorisé" }), {
+      status: 401, headers: { "Content-Type": "application/json" },
+    });
+  }
   const maintenant = Date.now();
   const limite3ans = new Date(maintenant - 3 * AN).toISOString();
   const limite12mois = new Date(maintenant - AN).toISOString();

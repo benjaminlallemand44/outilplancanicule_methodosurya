@@ -179,18 +179,32 @@ def analyser(pdf: bytes, cle: str, modele: str | None = None, http=None) -> dict
 def vers_saisie(proposition: dict, nom_fichier: str = "") -> tuple[dict, list[str]]:
     """Convertit la proposition de l'IA en ``{"audit", "batiment", "diagnostic_externe"}`` contrôlés, et renvoie
     les remarques (actions hors catalogue, champs écartés)."""
+    # C2-08 : la réponse respecte en principe le schéma imposé ; si elle s'en écarte (rare), on garde ce qui est
+    # lisible et on écarte le reste, sans planter.
+    def dico(v):
+        return v if isinstance(v, dict) else {}
+
+    def liste(v):
+        return [str(e) for e in v] if isinstance(v, list) else ([str(v)] if isinstance(v, (str, int, float)) and v != "" else [])
+
+    proposition = dico(proposition)
     remarques = []
-    ecole = proposition.get("ecole") or {}
+    if proposition.get("ecole") is not None and not isinstance(proposition.get("ecole"), dict):
+        remarques.append("Identification de l'école illisible dans la réponse de l'IA : à saisir à la main.")
+    ecole = dico(proposition.get("ecole"))
     audit = {k: str(ecole[k]).strip()[:200] for k in ("etablissement", "adresse", "commune", "moa", "date_visite")
              if ecole.get(k)}
     batiment = {}
-    for code, v in (proposition.get("batiment") or {}).items():
+    for code, v in dico(proposition.get("batiment")).items():
         if code in CHAMPS_BATIMENT and v in (_question(code).get("options") or []):
             batiment[code] = v
-    diag = proposition.get("diagnostic") or {}
-    brut = {"source": diag.get("source") or "", "date": diag.get("date") or "", "operations": []}
+    diag = dico(proposition.get("diagnostic"))
+    brut = {"source": str(diag.get("source") or ""), "date": str(diag.get("date") or ""), "operations": []}
     vus = set()
-    for x in proposition.get("operations") or []:
+    operations = proposition.get("operations") if isinstance(proposition.get("operations"), list) else []
+    for x in operations:
+        if isinstance(x, dict):
+            x = {**x, **{k: liste(x[k]) for k in ("locaux", "a_confirmer", "vigilances", "alertes") if k in x}}
         if not isinstance(x, dict) or x.get("solution") not in travaux.CATALOGUE:
             remarques.append(f"Action non reconnue écartée : {x.get('solution') if isinstance(x, dict) else x}.")
             continue
@@ -205,7 +219,8 @@ def vers_saisie(proposition: dict, nom_fichier: str = "") -> tuple[dict, list[st
     remarques += notes
     if audit:
         audit.setdefault("auditeur", externe.get("source", ""))
-    for h in proposition.get("hors_catalogue") or []:
+    hors = proposition.get("hors_catalogue") if isinstance(proposition.get("hors_catalogue"), list) else []
+    for h in hors:
         if isinstance(h, dict) and h.get("intitule"):
             remarques.append(f"À classer à la main (sans équivalent dans la liste) : {h['intitule']}"
                              + (f" — {h['description']}" if h.get("description") else "")
@@ -213,6 +228,6 @@ def vers_saisie(proposition: dict, nom_fichier: str = "") -> tuple[dict, list[st
     if proposition.get("_avertissement"):
         remarques.append(proposition["_avertissement"])
     externe["lecture_ia"] = {"fichier": nom_fichier[:200], "date": dt.date.today().strftime("%d/%m/%Y"),
-                             "hors_catalogue": [str(h.get("intitule"))[:200] for h in proposition.get("hors_catalogue") or []
+                             "hors_catalogue": [str(h.get("intitule"))[:200] for h in hors
                                                 if isinstance(h, dict) and h.get("intitule")]}
     return {"audit": audit, "batiment": batiment, "diagnostic_externe": externe}, remarques
