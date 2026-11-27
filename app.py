@@ -632,9 +632,7 @@ def demarrer(mode: str):
     ss.mode = mode
     ss.etape, ss.etape_max = 0, 0
     d = ss.donnees  # et non D : un exemple vient peut-être d'être chargé dans ce même passage
-    if mode in PARCOURS_TRAVAUX:  # C2-10 : étapes ouvertes jusqu'à la dernière vue, pas au-delà
-        ss.etape_max = min(int((d.get("travaux") or {}).get("etape_vue") or 0), len(etapes()) - 1)
-    elif d["locaux"] or d["espaces"]:  # saisie reprise
+    if d["locaux"] or d["espaces"] or (mode == "externe" and travaux.externe(d)):  # saisie reprise
         ss.etape_max = len(etapes()) - 1
     aller(0)
 
@@ -726,7 +724,9 @@ def entete():
     with st.container(key="etapes"):
         cols = st.columns(len(etapes()))
         for i, (col, nom) in enumerate(zip(cols, etapes())):
-            fait = "✓ " if i < ss.etape_max and i != ss.etape else ""
+            # C2-10 : dans le passage en travaux, seules les étapes déjà vues sont cochées (elles restent accessibles)
+            vue = int(D["travaux"].get("etape_vue") or 0) if ss.mode in PARCOURS_TRAVAUX else ss.etape_max
+            fait = "✓ " if i < ss.etape_max and i <= vue and i != ss.etape else ""
             if col.button(f"{fait}{i + 1}. {COURTS.get(nom, nom)}", key=f"nav:{i}", width="stretch",
                           disabled=i > ss.etape_max, type="primary" if i == ss.etape else "secondary", help=nom):
                 ss.edition = {"locaux": None, "espaces": None}
@@ -1651,7 +1651,7 @@ def etape_documents():
             if st.button("Préparer le passage en travaux →", type="primary", key="vers_travaux"):
                 enregistrer(silencieux=True)
                 ss.mode = "travaux"
-                ss.etape, ss.etape_max = 0, min(int(D["travaux"].get("etape_vue") or 0), len(MODES["travaux"]["etapes"]) - 1)
+                ss.etape, ss.etape_max = 0, len(MODES["travaux"]["etapes"]) - 1
                 ss.vue, ss.haut = "parcours", True
                 st.rerun()
     schema = plan.svg(D, res)
