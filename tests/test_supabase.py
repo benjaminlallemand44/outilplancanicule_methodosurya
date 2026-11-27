@@ -294,3 +294,11 @@ def test_ouvrir_un_audit_ne_l_ecrase_pas(serveur):
     next(b for b in at2.button if b.key == f"ouvrir:{serveur.audits[0]['id']}").click().run()
     assert not at2.exception and len(serveur.audits) == 1
     assert len(serveur.audits[0]["donnees"]["locaux"]) == n > 0
+
+
+def test_pas_d_audit_vide_enregistre(serveur):
+    """Changer d'étape sans rien avoir saisi ne crée pas de ligne « Audit sans nom » vide dans la base."""
+    at = app_connectee(serveur)
+    next(b for b in at.button if b.label == "Commencer — résultats").click().run()
+    next(b for b in at.button if b.label == "💾 Enregistrer").click().run()  # enregistrement demandé, rien de saisi
+    assert not at.exception and serveur.audits == []

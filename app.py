@@ -200,6 +200,8 @@ def enregistrer(silencieux: bool = False) -> bool:
         # ss.donnees et non D : D est figé au début du passage, et charger() (ouverture d'un audit, exemple, import)
         # a pu le remplacer depuis ; enregistrer D écraserait l'audit avec la saisie précédente.
         d = ss.donnees
+        if ss.audit_id is None and not saisie_commencee():  # rien de saisi : pas de ligne « Audit sans nom » vide
+            return False
         if ss.audit_id is None:  # première fois : créer la ligne pour obtenir l'identifiant du dossier photos
             ss.audit_id = depot.enregistrer(d)["id"]
         SB.synchroniser_photos(SB.DepotPhotos(ss.sb), ss.audit_id, d, ss.photos_bin, ss.photos_supprimees)
@@ -235,7 +237,9 @@ def ouvrir_audit(id_audit: str):
 
 def saisie_commencee() -> bool:
     d = ss.donnees
-    return any(d[k] for k in ("audit", "batiment", "facades", "locaux", "espaces", "questionnaires", "photos",
+    if any(v for k, v in (d.get("audit") or {}).items() if k != "code"):  # le code du questionnaire seul ne compte pas
+        return True
+    return any(d[k] for k in ("batiment", "facades", "locaux", "espaces", "questionnaires", "photos",
                               "travaux", "diagnostic_externe"))
 
 
