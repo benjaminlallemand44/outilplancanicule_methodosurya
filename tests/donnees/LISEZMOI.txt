@@ -1,0 +1,2 @@
+portrait_nasa.jpg : portrait officiel de l'astronaute Eileen Collins (NASA, domaine public),
+tel que fourni par scikit-image (skimage.data.astronaut), réduit à 256 px. Sert à tester la détection des visages.
