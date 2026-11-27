@@ -1,6 +1,6 @@
 # Points à trancher — outil méthode SURYA
 
-Version détaillée du 27/11/2026 (première version du 20/11/2026). Points relevés en portant dans l'outil :
+Version détaillée du 27/11/2026, avec les premiers retours sur les parties B, C, D et F (première version du 20/11/2026). Points relevés en portant dans l'outil :
 
 - toutes les formules de l'Excel `2611111_outil_aide_test_methode-1.xlsx` (règles « version du
   27/10/2026 ») ;
@@ -161,11 +161,11 @@ Dans ces cas, le libellé d'une règle (ce que la méthode veut dire) et sa form
 calculé) ne disent pas la même chose, ou un cas n'est pas prévu. **Ce sont les décisions qui changent des
 statuts.**
 
-### B1. Ventilation traversante : « orientations différentes » n'est pas vérifié (VN-7)
+### B1. Ventilation nocturne : deux murs de même orientation (VN-7)
 
 **Contexte.** La ventilation naturelle nocturne consiste à ouvrir les fenêtres la nuit pour évacuer la
-chaleur accumulée. Elle marche bien quand l'air **traverse** le local : il entre par une façade et sort par
-une autre. Les règles, dans l'ordre :
+chaleur accumulée. Elle est la plus efficace quand l'air **traverse** le local : il entre par une façade et
+sort par une autre, et le renouvellement est rapide. Les règles, dans l'ordre :
 
 | Règle | Cas | Statut |
 |---|---|---|
@@ -174,11 +174,17 @@ une autre. Les règles, dans l'ordre :
 | **VN-7** | baies ouvrantes sur **au moins deux murs d'orientations différentes** | **Recommandé** |
 | VN-8 | baie en façade et ouvrant en toiture | Recommandé |
 | VN-9 | baie ouvrante et porte vers un local voisin lui-même ouvrant | Recommandé |
-| VN-10 | aucun de ces cas : une seule orientation | Sous réserve |
+| VN-10 | aucun de ces cas : ouvrants sur une seule orientation | Sous réserve |
 
 **Le problème.** La formule de VN-7 compte les murs qui ont une baie ouvrante, sans regarder leur
-orientation. Deux murs saisis « Sud » suffisent. Or deux fenêtres au sud ne font pas de courant d'air
-traversant : selon le libellé, le local devrait tomber en VN-10, « Sous réserve ».
+orientation. Deux murs saisis « Sud » suffisent à obtenir « Recommandé », alors que le libellé demande deux
+orientations différentes.
+
+**Ce que font deux ouvrants sur la même façade.** Ils ventilent aussi, mais moins vite : l'air se renouvelle
+par un brassage léger entre le haut et le bas des ouvertures, ou par effet de cheminée quand le bâtiment a
+plusieurs niveaux (escalier, gaine). La solution reste possible, mais son efficacité dépend de la
+configuration et doit être vérifiée : c'est exactement le sens de « Sous réserve » (VN-10), et non de
+« Non recommandé ».
 
 **Exemple.** La grille sert aussi à décrire des baies différentes sur une même façade : une longue façade sud
 est souvent saisie en deux ou trois « murs » orientés S. C'est le cas de la Classe CM1 de l'exemple de
@@ -186,16 +192,18 @@ l'Excel (quatre murs, tous au sud) : « Recommandé » avec la formule, « Sous 
 
 **Options.**
 
-1. **Suivre le libellé** : compter les orientations distinctes. Fidèle à l'intention physique ; certains
-   statuts baissent (la Classe CM1 passe en « Sous réserve »).
-2. **Suivre la formule** et corriger le libellé (« au moins deux murs avec baies ouvrantes ») : on garde les
-   résultats actuels, mais on recommande une ventilation traversante impossible.
+1. **Suivre le libellé** : compter les orientations distinctes ; un local mono-orienté passe en « Sous
+   réserve » (VN-10), sauf ouvrant en toiture (VN-8) ou local voisin ouvrant (VN-9).
+2. **Suivre la formule** et corriger le libellé (« au moins deux murs avec baies ouvrantes ») : on garde
+   « Recommandé » pour un local mono-orienté.
 3. En complément : signaler à la saisie deux murs de même orientation (sans l'interdire, la grille en a
    besoin pour décrire des baies différentes).
 
 **Recommandation :** option 1, avec l'avertissement de l'option 3.
 
 **Dans l'outil :** comme la formule de l'Excel, en attendant la décision (modification d'une ligne).
+
+**Premiers retours (27/11/2026) :** d'accord pour garder « Sous réserve » pour deux ouvrants de même orientation (option 1), avec la formulation ci-dessus : la ventilation reste possible (brassage léger, effet de cheminée en étages), mais moins rapide.
 
 ### B2. Toiture : cas où aucun statut n'est possible
 
@@ -226,6 +234,8 @@ quoi conclure.
 **Dans l'outil :** « Sous réserve » avec le message « configuration non prévue par les règles », distinct
 d'une donnée manquante.
 
+**Premiers retours (27/11/2026) :** option 2 (« Sous réserve » assumé, configuration à examiner au cas par cas).
+
 ### B3. Toiture : terrasse et combles à la fois
 
 **Contexte.** Un bâtiment peut avoir une partie en toiture-terrasse et une partie en combles (extension,
@@ -245,6 +255,8 @@ pas proposée.
 **Recommandation :** option 1 tout de suite ; option 3 si les visites montrent des bâtiments mixtes fréquents.
 
 **Dans l'outil :** priorité à la terrasse, comme l'Excel.
+
+**Premiers retours (27/11/2026) :** option 3 (décrire la toiture par local).
 
 ### B4. Toiture : seuils d'isolant différents selon le type
 
@@ -269,6 +281,8 @@ grille.
 
 **Dans l'outil :** comme l'Excel.
 
+**Premiers retours (27/11/2026) :** rien à ajouter.
+
 ### B5. Fenêtres de toit et verrières partagent les mêmes réponses
 
 **Le problème.** Les questions « ouvrantes » (MEX-16), « protection existante » (MEX-18) et « état » (MEX-19)
@@ -283,6 +297,8 @@ pour la verrière.
 **Recommandation :** garder pour l'instant ; dédoubler si les visites le demandent.
 
 **Dans l'outil :** comme l'Excel.
+
+**Premiers retours (27/11/2026) :** option 2 (dédoubler les questions pour les fenêtres de toit et les verrières).
 
 ### B6. « Aucun » coché avec une autre réponse
 
@@ -302,57 +318,102 @@ un copieur et met « Sous réserve ». Pour E-20, « Aucune » et « Sud » coch
 
 **Dans l'outil :** comme l'Excel (priorité à l'option cochée).
 
-### B7. Une règle indéterminée masque les suivantes
+**Premiers retours (27/11/2026) :** option 1 (« Aucun » exclusif).
 
-**Contexte.** Principe général de l'Excel, repris par l'outil : la première règle **non fausse** l'emporte,
-même si elle est seulement indéterminée faute de donnée.
+### B7. Une donnée manquante peut cacher une conclusion déjà certaine
 
-**Exemple.** Protections horizontales d'un local avec deux murs sud : débord **inconnu** sur l'un, débord
-**faible** sur l'autre. PH-1 (« débord important » → En place) est indéterminée : le statut est « Sous
-réserve », alors que PH-2 (« débord faible » → À optimiser) est certaine.
+**Contexte.** Pour chaque solution, l'outil parcourt les règles **dans l'ordre**, comme une liste de
+contrôle, et s'arrête à la première qui s'applique. Quand une question nécessaire à une règle n'a pas de
+réponse, l'outil ne sait pas si cette règle s'applique : il s'arrête là et met « Sous réserve », sans regarder
+les règles suivantes, même si l'une d'elles permettrait déjà de conclure.
+
+**Exemple, pas à pas.** Protections horizontales (casquettes, avancées) d'une classe qui a deux murs au sud.
+Sur le premier mur, l'auditeur n'a pas renseigné le débord ; sur le second, il a noté un débord « faible ».
+
+1. Règle PH-1 : « débord **important** au-dessus des baies sud → En place ». Le débord du premier mur est
+   inconnu : impossible de dire si PH-1 s'applique. L'outil s'arrête : **« Sous réserve »**, compléter le
+   débord du premier mur.
+2. La règle suivante, PH-2 : « débord **faible** au-dessus des baies sud → À optimiser », s'applique
+   pourtant à coup sûr au second mur. Elle n'est pas lue.
+
+**La question.** Faut-il afficher « Sous réserve » (on ne conclut pas tant qu'il manque une réponse), ou
+« À optimiser » avec la mention « débord du premier mur à compléter » ?
 
 **Options.**
 
-1. **Garder** (prudent) : un statut ne repose jamais sur une hypothèse ; le compte rendu dit quoi compléter.
-2. **Retenir la première règle certaine** et signaler la donnée manquante : plus informatif, mais le statut
-   peut changer quand la donnée arrive, et cela touche toutes les solutions.
+1. **Garder** : on ne conclut jamais sur une hypothèse ; le compte rendu dit quoi compléter. C'est la règle
+   du doute de la méthode (§ I.f).
+2. **Sauter les règles incertaines** et retenir la première règle certaine, en signalant la donnée
+   manquante : plus informatif, mais le statut peut changer quand la réponse arrive (ici, si le débord du
+   premier mur est important, le statut devient « En place »).
 
-**Recommandation :** garder (option 1), conforme à la règle du doute de la méthode (§ I.f).
+**Recommandation :** option 1. Le cas ne se produit que si la saisie est incomplète, et l'étape Vérification
+signale déjà les réponses manquantes.
 
 **Dans l'outil :** option 1.
 
-### B8. Protections verticales : baies au nu extérieur avec débord
+**Premiers retours (27/11/2026) :** point à réexpliquer : réécrit ci-dessus.
 
-**Contexte.** Les protections verticales (stores extérieurs, brise-soleil orientables) se posent devant les
-baies. PV-1 met « Non recommandé » une baie **au nu extérieur sans débord** (rien pour fixer ni abriter le
-store) ; PV-2 met « Sous réserve » une baie en tunnel trop peu profonde (moins de 16 cm).
+### B8. Protections verticales : fenêtres à fleur de façade sous un balcon
 
-**Le problème.** Une baie au nu extérieur **avec** un débord (faible ou important) n'est visée par aucune
-règle et tombe sur la règle par défaut PV-8, « Recommandé », dont le libellé parle pourtant de « tunnel ou nu
-intérieur, distance ≥ 16 cm ».
+**Vocabulaire.** La position d'une fenêtre dans l'épaisseur du mur (question MEX-04) :
 
-**Exemple.** Façade avec fenêtres au nu extérieur sous un balcon : « Recommandé », alors que le libellé de la
-règle retenue décrit une autre situation.
+- **en tunnel** ou **au nu intérieur** : la fenêtre est en retrait de la façade ; côté extérieur, il reste
+  une embrasure (un « tableau ») dont la profondeur est relevée en MEX-05 ;
+- **au nu extérieur** : la fenêtre est **à fleur de la façade**, sans embrasure côté extérieur. C'est
+  fréquent sur les bâtiments récents, les façades isolées par l'extérieur et les murs-rideaux.
 
-**Options.** (1) C'est voulu (le débord permet de fixer le store) : corriger le libellé de PV-8 ; (2) écrire
-une règle dédiée avec son propre statut (par exemple « Sous réserve » : fixation à vérifier).
+Le **débord** (MEX-07) est ce qui avance au-dessus de la fenêtre : balcon, coursive, casquette, débord de
+toiture.
 
-**Recommandation :** à arbitrer par SURYA, qui connaît la mise en œuvre.
+**Contexte.** Une protection verticale (store extérieur, brise-soleil orientable) se loge le plus souvent dans
+l'embrasure, devant le vitrage : il faut au moins 16 cm de profondeur (PV-2). Une fenêtre à fleur de façade
+n'a pas d'embrasure : sans débord au-dessus, rien ne permet de fixer ni d'abriter le store, d'où PV-1, « Non
+recommandé ».
 
-**Dans l'outil :** comme l'Excel.
+**Le problème.** Une fenêtre à fleur de façade **avec** un débord au-dessus n'est visée par aucune règle et
+tombe sur la règle par défaut PV-8, « Recommandé », dont le libellé parle pourtant de « tunnel ou nu
+intérieur, distance ≥ 16 cm », une autre situation.
+
+**Exemple.** Une classe d'un bâtiment des années 2000 : fenêtres à fleur de façade, sous la coursive de
+l'étage. Le store peut se fixer sous la coursive : la pose est plausible, mais elle n'est pas celle que décrit
+la règle retenue.
+
+**Options.** (1) Considérer que le débord permet de fixer le store : garder « Recommandé » et corriger le
+libellé de PV-8 ; (2) écrire une règle dédiée, par exemple « Sous réserve : fixation sous le débord à
+vérifier ».
+
+**Recommandation :** option 2 (prudente), à confirmer par SURYA, qui connaît la mise en œuvre.
+
+**Dans l'outil :** comme l'Excel (PV-8, « Recommandé »).
+
+**Premiers retours (27/11/2026) :** situation difficile à visualiser : réécrite ci-dessus, avec le vocabulaire.
 
 ### B9. Locaux en sous-sol
 
-**Le problème.** « Sous-sol » est traité comme un étage : les règles PV-5, PH-8 (façade sans accès pour une
-nacelle) et PH-6 (façade à l'alignement du domaine public) peuvent s'y appliquer, alors qu'elles visent les
-baies en hauteur.
+**Contexte.** Poser une protection extérieure sur une fenêtre en étage demande d'y accéder depuis
+l'extérieur, avec une nacelle ou un échafaudage. Les règles PV-5 et PH-8 (« local hors RDC, façade sans accès
+pour un moyen d'élévation ») et PH-6 (« local hors RDC, façade à l'alignement de la rue ») mettent donc
+« Sous réserve » les locaux **hors rez-de-chaussée**.
 
-**Exemple.** Une salle en rez-de-jardin d'un bâtiment en pente, saisie « sous-sol » : ses protections
-ressortent « Sous réserve » faute d'accès pour une nacelle, alors que les baies sont au niveau du sol.
+**Le problème.** Le niveau du local (L-09) propose : Sous-sol, RDC, Étage intermédiaire, Dernier niveau, RDC
+et dernier niveau. Pour ces trois règles, tout ce qui n'est pas « RDC » est traité comme un étage, **y compris
+le sous-sol**. Or les fenêtres d'un local en sous-sol sont au niveau du sol, ou en dessous : on y accède sans
+nacelle.
 
-**Recommandation :** assimiler le sous-sol au rez-de-chaussée pour ces trois règles.
+**Exemple.** École construite sur un terrain en pente : la salle de motricité, côté jardin, est au niveau
+inférieur et saisie « Sous-sol ». Ses fenêtres donnent de plain-pied sur le jardin. Pourtant, si la façade
+jardin est notée « sans accès pour une nacelle », ses protections solaires ressortent « Sous réserve » pour
+un problème d'accès en hauteur qui n'existe pas.
+
+**Options.** (1) Traiter le sous-sol comme le rez-de-chaussée pour ces trois règles ; (2) garder (l'auditeur
+peut saisir « RDC » pour un rez-de-jardin).
+
+**Recommandation :** option 1.
 
 **Dans l'outil :** comme l'Excel.
+
+**Premiers retours (27/11/2026) :** point à réexpliquer : réécrit ci-dessus.
 
 ### B10. Façades non décrites
 
@@ -371,6 +432,8 @@ bloquer » est décidé.
 **Dans l'outil :** l'étape Façades vient après les locaux et les espaces ; les façades qu'ils citent sont
 cochées d'office ; l'étape Vérification signale celles qui restent incomplètes.
 
+**Premiers retours (27/11/2026) :** option 2, en ajoutant dans l'outil un texte qui explique pourquoi il faut compléter les façades (sinon les règles qui en dépendent restent « Sous réserve »).
+
 ### B11. Alerte « solution mutualisable » (OA-AL1)
 
 **Contexte.** OA-AL1 signale qu'une même structure d'ombrage (voile, pergola) peut protéger à la fois les
@@ -386,6 +449,8 @@ l'alerte se déclenche quand même.
 (une question de plus par local).
 
 **Recommandation :** option 1 pour l'instant ; option 2 si la saisie est enrichie plus tard.
+
+**Premiers retours (27/11/2026) :** option 1.
 
 ### B12. Occupation : quels locaux et quel effectif
 
@@ -405,6 +470,8 @@ l'alerte se déclenche quand même.
 
 **Recommandation :** (1) au moins pour les dortoirs et la restauration ; (2) sans urgence (écart faible).
 
+**Premiers retours (27/11/2026) :** option 3 (garder) : les deux autres options compliquent trop l'outil.
+
 ### B13. Quelles alertes afficher, et quand
 
 **Le problème.** L'Excel calcule 14 alertes mais ne les affiche que dans les onglets de règles, pas dans
@@ -421,19 +488,28 @@ les brasseurs sont envisagés (Recommandé, À optimiser ou Sous réserve).
 
 ---
 
+**Premiers retours (27/11/2026) :** d'accord avec la recommandation.
+
 ## C. Points mineurs
 
 À valider par écrit, sans débat en réunion. Proposition : envoyer ce tableau à SURYA après la réunion.
 
-| N° | Constat | Proposition |
-|---|---|---|
-| C1 | **B-07** (local de repli plus frais) n'alimente aucune règle et n'est pas marquée « info ». | La marquer « info » (utile au compte rendu), ou l'utiliser dans une règle d'occupation. |
-| C2 | MEX-17 : les réponses annoncées (« Electrique / manuelle / Automatique ») ne sont pas écrites comme dans la liste (« Électrique », « Manuelle », « Automatique (sans action humaine) »). | Aligner le libellé sur la liste. |
-| C3 | CO-1 cite quatre intitulés de L-02 (« Bureaux », « Bureau », « …salle des professeurs… ») ; un seul existe dans la liste. | Citer l'intitulé exact. |
-| C4 | Deux questions portent le code **MEX-25** (lignes 104 et 105 de `Saisie_Locaux`). | Renuméroter (l'outil nomme la seconde MEX-25b). |
-| C5 | Trous de numérotation (B-02, B-17, L-05 à L-08, MEX-02, MEX-03, MEX-09, MEX-11 à MEX-13, MEX-23, MEX-27, MEX-28, MEX-31, PL-04, BA-07, BA-08, BA-10, BA-16, BA-17, E-03, E-05, E-08, E-13, E-18). | Confirmer qu'aucune question du carnet de visite ne manque. |
-| C6 | L'Excel limite à 10 locaux, 5 espaces et 4 murs par local ; l'outil n'a pas de limite de locaux ni d'espaces mais garde 4 murs. | Confirmer 4 murs au maximum. |
-| C7 | « Non évalué » proposé sur F-05 seulement. | L'étendre à F-02, F-03 et F-04. |
+| N° | Constat | Proposition | Premiers retours (27/11/2026) |
+|---|---|---|---|
+| C1 | **B-07** (le bâtiment a-t-il un local de repli plus frais ?) n'alimente aucune règle et n'est pas marquée « info ». | La marquer « info », ou l'utiliser dans une règle. | L'utiliser pour poser la question d'une **pièce refuge** : recommandation éventuelle d'une solution active pour le bâtiment, ou information sur l'enjeu d'un lieu refuge à l'échelle de la commune plutôt que du bâtiment. |
+| C2 | MEX-17 : les réponses annoncées (« Electrique / manuelle / Automatique ») ne sont pas écrites comme dans la liste (« Électrique », « Manuelle », « Automatique (sans action humaine) »). | Aligner le libellé sur la liste. | D'accord (détail). |
+| C3 | Libellé de la condition de CO-1 (voir ci-dessous). | Citer l'intitulé exact. | Point à réexpliquer : détaillé ci-dessous. |
+| C4 | Deux questions portent le code **MEX-25** (lignes 104 et 105 de `Saisie_Locaux`). | Renuméroter. | Pas bloquant ; d'accord pour MEX-25-a et MEX-25-b. |
+| C5 | Trous de numérotation (B-02, B-17, L-05 à L-08, MEX-02, MEX-03, MEX-09, MEX-11 à MEX-13, MEX-23, MEX-27, MEX-28, MEX-31, PL-04, BA-07, BA-08, BA-10, BA-16, BA-17, E-03, E-05, E-08, E-13, E-18). | Confirmer qu'aucune question du carnet de visite ne manque. | Pas d'avis : à demander à SURYA. |
+| C6 | L'Excel limite à 10 locaux, 5 espaces et 4 murs par local ; l'outil n'a pas de limite de locaux ni d'espaces mais garde 4 murs. | Confirmer 4 murs au maximum. | Garder 4 murs, pour ne pas compliquer l'outil. |
+| C7 | « Non évalué » proposé sur F-05 seulement, pas sur F-02, F-03 et F-04. | L'étendre à F-02, F-03 et F-04. | **Pas d'accord** : F-02 à F-04 servent ensuite aux calculs et aux préconisations ; ces champs doivent rester à renseigner (sans « Non évalué »). |
+
+**C3 en détail.** La règle CO-1 vise les bureaux trop occupés. Dans l'Excel, sa condition est écrite :
+« L-02 = Bureaux, Bureau, « Bureau, salle des maîtres, salle de réunion » ou « Bureau, salle des professeurs,
+salle de réunion » ». Or la liste des types de local (L-02) ne propose qu'un seul de ces quatre intitulés :
+« Bureau, salle des maîtres, salle de réunion ». Les trois autres sont des restes d'anciennes versions de la
+liste. **Effet : aucun sur les résultats** (l'outil, comme l'Excel, reconnaît l'intitulé qui existe), mais la
+condition est trompeuse pour qui relit la méthode. **Proposition :** ne citer que l'intitulé de la liste.
 
 ---
 
@@ -480,6 +556,8 @@ réserve » mais ne déclenchent pas d'alerte. Faut-il leur ajouter une alerte A
 
 **Recommandation :** valider le classement et ajouter l'alerte patrimoine.
 
+**Premiers retours (27/11/2026) :** l'écart est normal : l'Excel sert à cadrer la visite, pas à finaliser le rapport ; le typage des alertes relève du compte rendu. À reconfirmer avec SURYA.
+
 ### D2. Photos « normées obligatoires »
 
 **Contexte.** Principe de traçabilité (§ I.c) : « photos normées obligatoires sur les questions décisives ».
@@ -495,6 +573,8 @@ rendre bloquante avant les documents ?
 
 **Recommandation :** valider la liste ; rester non bloquant pour la phase de test.
 
+**Premiers retours (27/11/2026) :** question intéressante. D'accord pour définir une liste exhaustive de photos obligatoires, mais cela demande un travail de LOWIT pour contrôler la qualité de l'audit et harmoniser les pratiques.
+
 ### D3. Occupation : « occupé en continu » n'est pas relevé (CO-1)
 
 **Le problème.** CO-1 vise un bureau « occupé en continu », mais aucune question ne relève la durée
@@ -504,12 +584,16 @@ d'occupation : tout bureau de moins de 6 m² par occupant est concerné, même o
 
 **Recommandation :** option 2 (plus simple ; la surface par occupant suffit à repérer un bureau surchargé).
 
+**Premiers retours (27/11/2026) :** option 2 (retirer « en continu » du libellé).
+
 ### D4. Équipements : les réfrigérateurs ne sont pas dans L-10 (CQ-1)
 
 **Le problème.** CQ-1 cite les réfrigérateurs parmi les équipements à forte dissipation ; L-10 ne propose que
 copieurs, baies informatiques, appareils de cuisson, aucun, autre.
 
 **Recommandation :** ajouter « Réfrigérateurs » à L-10 (fréquents en salle des maîtres et en office).
+
+**Premiers retours (27/11/2026) :** d'accord (détail).
 
 ### D5. Règle du doute et option « Non évalué »
 
@@ -524,6 +608,8 @@ E-27, E-28. L'auditeur qui hésite doit choisir une réponse ou laisser vide.
 vide vaut « Non évalué » (c'est déjà l'effet dans l'outil) et l'écrire dans la méthode.
 
 **Recommandation :** option 1 pour la grille papier ; l'outil fonctionne déjà comme l'option 2.
+
+**Premiers retours (27/11/2026) :** option 2 (une question laissée vide vaut « Non évalué », à écrire dans la méthode).
 
 ---
 
@@ -628,17 +714,23 @@ au lieu de « débit maximal inconnu, à relever ».
 quel cas la ventilation mécanique nocturne doit-elle être « Recommandé » ? (par exemple : installation
 existante, programmable, mais mode nocturne jamais mis en place ?)
 
+**Premiers retours (27/11/2026) :** d'accord sur le principe, à tester ; avis de SURYA à demander.
+
 ### F2. Règles « aucune baie » présentes dans l'Excel seulement
 
 PV-0, PH-0 et FS-0 (« Non concerné » quand le local n'a aucune baie), ainsi que la condition « et MEX-14 = Non »
 de VN-1, n'existent que dans l'Excel. Sans elles, un local aveugle (réserve, sanitaire) serait « Recommandé »
 pour des protections solaires. **À reporter dans le document de la méthode.**
 
+**Premiers retours (27/11/2026) :** d'accord.
+
 ### F3. Toiture : type non renseigné et combles décrits
 
 Si B-18 (type de toiture) n'est pas renseigné mais que des combles perdus sont décrits, le bloc « combles
 perdus » s'applique avec un statut certain, alors qu'une toiture-terrasse, prioritaire (B3), n'est pas exclue.
 **À traiter avec B3** (proposition : « Sous réserve » tant que B-18 n'est pas renseigné).
+
+**Premiers retours (27/11/2026) :** d'accord avec la proposition.
 
 ### F4. Alertes de l'ombrage adossé quand le statut vient d'une donnée manquante
 
@@ -647,27 +739,72 @@ déclenchent pas quand ce « Sous réserve » vient d'une donnée manquante. **E
 voile n'est ni écartée ni confirmée, et rien ne signale la prise au vent ni le risque incendie.
 **Recommandation :** les déclencher aussi, par prudence.
 
+**Premiers retours (27/11/2026) :** d'accord avec la recommandation.
+
 ### F5. Alerte d'ombre de la cour indéterminée (EX-AL)
 
 Quand l'effectif ou la surface d'ombre manque, EX-AL n'est ni déclenchée ni signalée « à vérifier ».
 **Recommandation :** la signaler « à vérifier », comme les autres données manquantes.
 
-### F6. Tenue structurelle et puits de lumière (VV-AL)
+**Premiers retours (27/11/2026) :** d'accord avec la recommandation.
 
-L'alerte de tenue structurelle (VV-AL) ne vise que les vérandas et verrières, pas les « puits de lumière,
-atrium », pourtant traités par le même bloc VV. **Recommandation :** étendre l'alerte.
+### F6. Vérandas et puits de lumière : vérifier la structure avant d'ajouter une protection (VV-AL)
 
-### F7. Matrice usagers : « Sous réserve » compté comme une préconisation
+**Contexte.** Le bloc VV traite la protection solaire des **toitures vitrées** : vérandas, verrières, atriums,
+puits de lumière. On y ajoute le plus souvent une protection extérieure (store, toile, film). L'alerte VV-AL
+(« la tenue structurelle de la véranda ou de la verrière doit être étudiée ») rappelle qu'une structure vitrée
+légère n'est pas forcément faite pour porter un store ou une toile, ni pour résister au vent qui s'y exerce.
+**Il ne s'agit pas de brasseurs d'air.**
 
-Un audit presque vide (tout « Sous réserve » faute de données) est jugé « Cohérent » sur M1 à M5 dès que le
-ressenti est signalé, avec un indicateur à 100 % : conclusion trompeuse. **Recommandation :** exclure du
-croisement les « Sous réserve » dus à une donnée manquante.
+**Le problème.** VV-AL ne vise que les vérandas et verrières. Un atrium ou un puits de lumière, traités par le
+même bloc VV, peuvent recevoir la même protection extérieure sans que l'alerte apparaisse.
 
-### F8. Matrice usagers : M8 sans seuil de 30 %
+**Exemple.** Atrium vitré au centre d'une école, très exposé l'été : la solution « store extérieur sur la
+verrière de l'atrium » est proposée sans rappeler de vérifier que la structure peut le porter.
 
-M8 conclut « À vérifier » dès qu'un seul usager déclare un équipement non relevé (sur au moins 3 réponses).
-**Exemple :** 1 ventilateur personnel déclaré sur 20 réponses suffit. **Recommandation :** appliquer aussi le
-seuil de 30 %.
+**Options.** (1) Étendre VV-AL aux atriums et puits de lumière ; (2) garder (les puits de lumière sont petits,
+la charge ajoutée est faible).
+
+**Recommandation :** option 1 pour les atriums ; option 2 acceptable pour les petits puits de lumière.
+
+**Premiers retours (27/11/2026) :** pas d'accord sur la première version, comprise comme concernant des brasseurs d'air ; le point est réécrit ci-dessus (il s'agit de la structure qui porte une protection solaire) : à réexaminer.
+
+### F7. Matrice usagers : un audit presque vide paraît « cohérent »
+
+**Le problème.** Quand l'audit est très incomplet, la plupart des solutions sont « Sous réserve » faute de
+données. La matrice compte ces « Sous réserve » comme des préconisations : dès que les usagers signalent un
+ressenti (chaleur l'après-midi, soleil gênant…), le croisement est jugé « Cohérent », et l'indicateur peut
+atteindre 100 %. **Exemple :** audit avec seulement les noms des locaux, 15 réponses d'usagers qui se
+plaignent de la chaleur : indicateur à 100 %, alors que rien n'a été vérifié.
+
+**Proposition renforcée (plusieurs garde-fous) :**
+
+1. ne compter comme préconisation que les « Sous réserve » qui ne viennent pas d'une donnée manquante ;
+2. ne pas calculer la matrice tant que l'audit est trop incomplet (par exemple, plus d'un tiers des solutions
+   « Sous réserve » faute de données, ou un local sur deux incomplet à l'étape Vérification) : afficher
+   « Non évaluable : audit incomplet » ;
+3. toujours afficher l'indicateur avec le nombre de croisements réellement évalués (« 6 sur 8 »), jamais seul.
+
+**À décider :** les garde-fous retenus et le seuil d'« audit trop incomplet ».
+
+**Premiers retours (27/11/2026) :** gros sujet ; la première réponse (exclure les « Sous réserve » faute de données) ne suffit pas. Proposition renforcée ci-dessus.
+
+### F8. Matrice usagers : équipements déclarés par les usagers (M8)
+
+**Contexte.** Le croisement M8 compare les équipements de rafraîchissement que les usagers disent avoir (Q20 :
+ventilateur, climatiseur mobile…) avec ceux que l'auditeur a relevés dans les locaux (BA-01 à BA-05). Un
+écart peut signaler un équipement oublié à la visite, ou un équipement personnel apporté par un enseignant.
+
+**Le problème.** Les autres croisements ne retiennent un ressenti que s'il est déclaré par au moins **30 %** des
+répondants. M8, lui, conclut « À vérifier » dès **un seul** usager.
+
+**Exemple.** 20 réponses ; un enseignant indique avoir apporté son ventilateur de bureau ; aucun ventilateur
+n'est relevé : M8 est « À vérifier », et l'indicateur de cohérence baisse pour un cas isolé.
+
+**Recommandation :** appliquer aussi le seuil de 30 % à M8 ; citer les cas isolés dans le compte rendu à titre
+d'information, sans les compter comme une incohérence.
+
+**Premiers retours (27/11/2026) :** point à réexpliquer : réécrit ci-dessus.
 
 ### F9. Combles perdus : la période de construction n'est pas utilisée (CP-6)
 
@@ -675,11 +812,27 @@ La colonne « Questions » de CP-6 cite B-01 (période de construction), que ni 
 la méthode parle de « suspicion d'amiante ». **Recommandation :** déduire la suspicion d'une construction
 d'avant 1997, comme PR-AL3 (voir F11).
 
-### F10. Brasseurs : bornes de l'équation incluses ou non ?
+**Premiers retours (27/11/2026) :** logique de ne pas déduire la suspicion de la seule période de construction : l'isolation des combles est souvent posée bien après la construction. Nuance : la suspicion d'amiante dans des combles porte surtout sur des éléments d'origine (couverture en fibrociment, conduits, flocages), pas sur l'isolant ; à confirmer avec SURYA.
 
-L'Excel lit « 0,2 < diamètre / (√surface / nombre) < 0,4 » avec des bornes exclues ; l'image de l'équation dans
-la méthode (III.a.i-4) ne permet pas de le confirmer. **Exemple :** 2 brasseurs de 1,20 m dans 36 m² donnent
-exactement 0,4 (1,20 / (6 / 2)) : conforme ou pas ? **À confirmer par SURYA.**
+### F10. Brasseurs existants : taille adaptée à la pièce, bornes incluses ou non ?
+
+**Contexte.** Quand des brasseurs d'air sont déjà installés, la règle BP-4 vérifie qu'ils sont bien
+dimensionnés pour la pièce (« équation 1 » de la méthode, § III.a.i-4) : le diamètre des pales doit être
+proportionné à la surface que chaque brasseur doit couvrir. Le calcul : diamètre ÷ (√surface ÷ nombre de
+brasseurs), qui doit être **entre 0,2 et 0,4**. Hors de cet intervalle, les brasseurs sont « À optimiser »
+(trop petits ou trop nombreux pour la pièce).
+
+**Le problème.** Que faire quand le résultat tombe **pile** sur 0,2 ou 0,4 ? L'Excel exclut les bornes (pile sur
+la borne = non conforme) ; l'image de l'équation dans le document de méthode ne permet pas de savoir si elles
+sont incluses.
+
+**Exemple.** 2 brasseurs de 1,20 m dans une classe de 36 m² : √36 = 6 ; 6 ÷ 2 = 3 ; 1,20 ÷ 3 = **0,4**
+exactement. Avec l'Excel, « À optimiser » ; avec des bornes incluses, conforme.
+
+**Enjeu :** faible (cas rare, pile sur la borne). **Proposition :** inclure les bornes (un dimensionnement pile
+à la limite n'est pas un défaut), à confirmer par SURYA.
+
+**Premiers retours (27/11/2026) :** point à réexpliquer : réécrit ci-dessus.
 
 ### F11. Repérage amiante quand la période de construction est inconnue (campagne n° 2)
 
@@ -688,6 +841,8 @@ Quand B-01 n'est pas renseignée, le passage en travaux ne proposait pas le rep�
 obligatoire avant travaux pour un permis antérieur au 1ᵉʳ juillet 1997.
 **Dans l'outil (depuis le 27/11/2026) :** par prudence (règle du doute), le repérage est proposé dès que la
 période n'est pas « Après 1997 ». **À confirmer.**
+
+**Premiers retours (27/11/2026) :** d'accord.
 
 ---
 

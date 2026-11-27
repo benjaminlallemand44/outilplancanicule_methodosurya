@@ -193,6 +193,49 @@ for _genre, _d in SLIDES:
     if _d.get("titre") in DETAILS:
         _d["notes"] = (DETAILS[_d["titre"]] + " " + _d.get("notes", "")).strip()
 
+
+# Premiers retours du 27/11/2026 (colonne « Décision ») et reformulations, repris de docs/points_a_trancher.md
+AVIS = {
+    "B1": "Avis : « Sous réserve » (option 1)", "B2": "Avis : option 2", "B3, F3": "Avis : option 3 (toiture par local)",
+    "B4": "Avis : rien à ajouter", "B5": "Avis : dédoubler", "B6": "Avis : « Aucun » exclusif",
+    "B7": "À réexpliquer (exemple en note)", "B8": "À réexpliquer (exemple en note)", "B9": "À réexpliquer (exemple en note)",
+    "B10": "Avis : avertissement + texte explicatif", "B11": "Avis : suffisant", "B12": "Avis : garder (option 3)",
+    "B13": "Avis : d’accord",
+    "D2": "Avis : liste à définir (contrôle qualité par LOWIT)", "D3": "Avis : option 2", "D4": "Avis : d’accord",
+    "D5": "Avis : option 2", "F1": "Avis : d’accord, à tester ; avis SURYA", "F2": "Avis : d’accord",
+    "F4": "Avis : d’accord", "F5": "Avis : d’accord", "F6": "À réexaminer (réexpliqué)", "F7": "Avis : réponse insuffisante",
+    "F8": "À réexpliquer (exemple en note)", "F9": "Avis : ne pas déduire de la période ; avis SURYA",
+    "F10": "À réexpliquer (exemple en note)", "F11": "Avis : d’accord",
+}
+TEXTES = {
+    "B1": ("Deux murs saisis « Sud » donnent « Recommandé » (VN-7), alors que le libellé demande deux orientations différentes",
+           "« Sous réserve » (VN-10) : la ventilation reste possible (brassage, effet de cheminée) mais moins rapide"),
+    "B7": ("Une réponse manquante arrête la lecture des règles : « Sous réserve », même si une règle suivante conclut déjà (PH-1 inconnue, PH-2 certaine)",
+           "Garder : ne pas conclure tant qu’une réponse manque (règle du doute)"),
+    "B8": ("Fenêtre à fleur de façade (sans embrasure) sous un balcon ou une coursive : « Recommandé » par défaut (PV-8), libellé inadapté",
+           "Règle dédiée « Sous réserve : fixation sous le débord à vérifier », à confirmer par SURYA"),
+    "B9": ("Local en sous-sol traité comme un étage : « Sous réserve » faute d’accès nacelle, alors que ses fenêtres sont au niveau du sol",
+           "Traiter le sous-sol comme le RDC pour PV-5, PH-6, PH-8"),
+    "F6": ("Atrium ou puits de lumière : pas d’alerte « structure à vérifier » avant d’y fixer un store ou une toile (VV-AL)",
+           "Étendre l’alerte aux atriums ; facultatif pour les petits puits de lumière"),
+    "F7": ("Audit presque vide : les « Sous réserve » faute de données comptent comme préconisations, indicateur jusqu’à 100 %",
+           "Exclure ces « Sous réserve », et « Non évaluable » si l’audit est trop incomplet"),
+    "F8": ("M8 : un seul usager qui déclare un ventilateur non relevé suffit à conclure « À vérifier »",
+           "Appliquer le seuil de 30 % ; citer les cas isolés pour information"),
+    "F10": ("Brasseurs existants : rapport diamètre ÷ (√surface ÷ nombre) pile sur 0,2 ou 0,4 (ex. 2 × 1,20 m dans 36 m² = 0,4) : conforme ?",
+            "Inclure les bornes ; à confirmer par SURYA"),
+}
+MINEURS_AVIS = {"C1": "avis : s’en servir pour la question d’une pièce refuge (bâtiment ou commune)", "C2": "avis : d’accord",
+                "C3": "à réexpliquer : un seul des quatre intitulés existe, sans effet sur les résultats",
+                "C4": "avis : MEX-25-a et MEX-25-b", "C5": "avis : à demander à SURYA", "C6": "avis : garder 4 murs",
+                "C7": "avis : pas d’accord, F-02 à F-04 restent à renseigner"}
+for _genre, _d in SLIDES:
+    if _genre == "tableau" and len(_d.get("entete", ENTETE)) == 4:
+        _d["lignes"] = [((l[0],) + TEXTES[l[0]] if l[0] in TEXTES else tuple(l[:3])) + (AVIS.get(l[0], ""),)
+                        for l in _d["lignes"]]
+    if _genre == "colonne" and _d.get("sous") == "Points mineurs":
+        _d["paras"] = [(t + " → " + MINEURS_AVIS[t[:2]], n) if t[:2] in MINEURS_AVIS else (t, n) for t, n in _d["paras"]]
+
 def vider(prs):
     ids = prs.slides._sldIdLst
     for sld in list(ids):
