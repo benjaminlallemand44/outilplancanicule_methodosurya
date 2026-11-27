@@ -175,7 +175,14 @@ def valider(donnees: dict) -> tuple[dict, list[str]]:
     out["facades"] = facades
     for cle, nom in (("locaux", "Local"), ("espaces", "Espace")):
         liste = []
-        for i, x in enumerate(d.get(cle) or [], start=1):
+        brut = d.get(cle) or []
+        if not isinstance(brut, list):  # structure abîmée : bloc ignoré plutôt qu'un plantage
+            notes.append(f"Bloc « {cle} » illisible : ignoré.")
+            brut = []
+        for i, x in enumerate(brut, start=1):
+            if not isinstance(x, dict):
+                notes.append(f"{nom} {i} illisible : ignoré.")
+                continue
             ou = f"{nom} {i}" + (f" « {x.get('L-01') or x.get('E-01')} »" if (x.get("L-01") or x.get("E-01")) else "")
             x2 = _entite(x, QUESTIONS[cle], ou, notes)
             if "murs" in x2:
