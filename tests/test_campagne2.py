@@ -1,7 +1,8 @@
 """Campagne de tests n° 2 (26/11/2026, version de ``main`` 15fd69d) : anomalies nouvelles.
 
-Chaque anomalie ``C2-xx`` de ``docs/rapport_tests_2.md`` a ici un test qui la reproduit (``xfail``
-strict tant qu'elle n'est pas corrigée), plus les vérifications de non-régression propres à la
+Chaque anomalie ``C2-xx`` de ``docs/rapport_tests_2.md`` a ici un test qui la reproduisait (``xfail``
+strict) ; toutes sont corrigées depuis le 27/11/2026 et ces tests protègent contre leur retour,
+plus les vérifications de non-régression propres à la
 campagne (corrections annoncées dans ``docs/suivi_corrections.md``).
 """
 from __future__ import annotations
@@ -33,8 +34,7 @@ def jpeg(l=64, h=48):
 
 
 # ------------------------------------------------------------------ photos
-@pytest.mark.xfail(strict=True, reason="C2-02 : une image de plus de 179 mégapixels lève DecompressionBombError, "
-                                       "que l'interface ne rattrape pas (seule ValueError l'est) : plantage")
+# C2-02 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_image_geante_refusee_proprement():
     img = Image.new("1", (20000, 10000))
     b = io.BytesIO()
@@ -64,9 +64,7 @@ def test_zip_aller_retour_et_archives_invalides():
 
 
 # ------------------------------------------------------------------ import : bloc « audit » non contrôlé
-@pytest.mark.xfail(strict=True, reason="C2-03 : le bloc « audit » d'un JSON importé n'est pas contrôlé : "
-                                       "« audit »: \"texte\" passe l'import puis fait planter le compte rendu "
-                                       "(et l'étape Identification)")
+# C2-03 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_import_bloc_audit_invalide():
     d, notes = importer("x.json", json.dumps({"locaux": [{}], "audit": "École A"}).encode())
     generer_pdf(d)
@@ -80,9 +78,7 @@ def test_repérage_amiante_propose_avant_1997():
     assert any(travaux.est_travaux(o) for o in e["retenues"]) and 10 in e["pieces"]
 
 
-@pytest.mark.xfail(strict=True, reason="C2-04 : période de construction inconnue (B-01 vide ou « Non renseigné ») : "
-                                       "le repérage amiante avant travaux (CCTP 10) n'est pas proposé, alors que PR-AL3 "
-                                       "traite ce cas comme une suspicion d'amiante")
+# C2-04 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 @pytest.mark.parametrize("b01", [SUPPR, "Non renseigné"])
 def test_reperage_amiante_si_periode_inconnue(b01):
     d = copy.deepcopy(ECOLE)
@@ -96,9 +92,7 @@ def test_reperage_amiante_si_periode_inconnue(b01):
 
 
 # ------------------------------------------------------------------ Supabase : ouverture d'un audit
-@pytest.mark.xfail(strict=True, reason="C2-01 : si une photo ne peut pas être téléchargée à l'ouverture d'un audit "
-                                       "(coupure réseau, erreur du stockage), sa description est retirée puis "
-                                       "l'audit est réenregistré aussitôt : la photo disparaît définitivement de l'audit")
+# C2-01 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_ouvrir_un_audit_ne_perd_pas_les_photos_si_le_telechargement_echoue(monkeypatch):
     from faux_supabase import FauxSupabase, Reponse
     from surya import supabase as SB
@@ -123,9 +117,7 @@ def test_ouvrir_un_audit_ne_perd_pas_les_photos_si_le_telechargement_echoue(monk
 
 
 # ------------------------------------------------------------------ lecture par IA
-@pytest.mark.xfail(strict=True, reason="C2-08 : une réponse de l'IA non conforme au schéma (bloc « ecole » ou « locaux » "
-                                       "d'un mauvais type) fait lever une exception à vers_saisie, que l'interface ne "
-                                       "rattrape pas (seule LectureImpossible l'est)")
+# C2-08 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 @pytest.mark.parametrize("proposition", [
     {"ecole": "Groupe scolaire", "operations": []},
     {"operations": [{"solution": "Films solaires", "extrait": "x", "locaux": "Classe A"},
@@ -163,9 +155,7 @@ def _ecarts_d_etape(d):
     return out
 
 
-@pytest.mark.xfail(strict=True, reason="C2-05 : une même action est placée à l'étape 1 « Dès maintenant » dans le "
-                                       "compte rendu et à l'horizon 2 ou 3 dans le pré-programme (ex. brasseurs à "
-                                       "remettre en service sous faux plafond, casquettes à réparer)")
+# C2-05 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_meme_etape_dans_le_compte_rendu_et_le_pre_programme():
     d = donnees(local=dict(**{"BA-05": "Présent, hors service", "BA-06": 1, "BA-09": 120,
                                                  "PL-01": "Faux plafond démontable (dalles sur ossature)", "PL-02": 0.3}))
@@ -173,14 +163,12 @@ def test_meme_etape_dans_le_compte_rendu_et_le_pre_programme():
 
 
 def test_ecarts_d_etape_frequents_sur_tirages():
-    """Mesure (pas un défaut à elle seule) : fréquence des écarts sur 150 saisies aléatoires."""
+    """C2-05 corrigée : plus aucun écart d'étape sur 150 saisies aléatoires (60 avant la correction)."""
     n = sum(bool(_ecarts_d_etape(fuzz_excel.tirage(random.Random(k)))) for k in range(150))
-    assert n > 50
+    assert n == 0
 
 
-@pytest.mark.xfail(strict=True, reason="C2-11 : la surface d'ombre à créer (quantité de l'opération « ombrage de la "
-                                       "cour ») utilise 0,8 m²/enfant, 100 / 150 m² et 6 classes écrits en dur, sans "
-                                       "suivre les seuils modifiés dans les Réglages")
+# C2-11 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_quantite_ombrage_suit_les_seuils():
     from cas_base import ESPACE
     base = donnees(espace={"E-09": "0 %", "E-14": 20, "E-06": 100})
@@ -191,31 +179,26 @@ def test_quantite_ombrage_suit_les_seuils():
 
 
 # ------------------------------------------------------------------ sécurité et maintenance
-@pytest.mark.xfail(strict=True, reason="C2-06 : la fonction de purge (supabase/functions/purge-conservation) ne "
-                                       "vérifie pas l'appelant : n'importe qui muni de la clé publique peut la déclencher")
+# C2-06 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_purge_reservee_a_la_tache_planifiee():
     src = (RACINE / "supabase" / "functions" / "purge-conservation" / "index.ts").read_text(encoding="utf-8")
     assert "req.headers" in src or "request.headers" in src
 
 
-@pytest.mark.xfail(strict=True, reason="C2-07 : l'identifiant d'une photo importée n'est pas contrôlé ; il sert "
-                                       "pourtant de nom de fichier dans le stockage et dans l'archive ZIP")
+# C2-07 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_identifiant_de_photo_controle():
     notes = []
     out = PH.valider([{"id": "../../autre-audit/x", "cible": "batiment"}], notes)
     assert not out or all(c.isalnum() for c in out[0]["id"])
 
 
-@pytest.mark.xfail(strict=True, reason="C2-09 : st.components.v1.html, utilisé par l'app, est annoncé supprimé après "
-                                       "le 01/06/2026 (avertissement de Streamlit à chaque page) : une mise à jour de "
-                                       "Streamlit cassera le retour en haut de page")
+# C2-09 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_pas_d_api_streamlit_obsolete():
     assert "components.html(" not in (RACINE / "app.py").read_text(encoding="utf-8")
 
 
 # ------------------------------------------------------------------ interface
-@pytest.mark.xfail(strict=True, reason="C2-10 : dans « Passer à l'action » à partir de l'audit en cours, les étapes "
-                                       "2 et 3 sont cochées « ✓ » avant d'avoir été vues")
+# C2-10 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 def test_etapes_non_vues_non_cochees():
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(RACINE / "app.py"), default_timeout=120).run()
@@ -245,9 +228,7 @@ def test_visage_detecte_et_floute_sur_un_vrai_portrait():
     assert infos["visages_floutes"] == 1
 
 
-@pytest.mark.xfail(strict=True, reason="C2-12 : la détection des visages est faite après réduction à 1 600 px : un "
-                                       "visage de 90 à 120 px dans une photo de 4 000 px (élève au fond d'une classe) "
-                                       "n'est plus détecté, donc pas flouté, alors qu'il l'est sur l'image d'origine")
+# C2-12 — corrigée le 27/11/2026 (docs/suivi_corrections.md, campagne n° 2)
 @pytest.mark.parametrize("taille", [120, 90])
 def test_petit_visage_floute(taille):
     contenu = _photo_de_classe(taille)

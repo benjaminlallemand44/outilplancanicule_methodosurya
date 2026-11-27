@@ -280,3 +280,17 @@ def test_recherche_dans_les_audits(serveur):
 
 def serveur_nom(serveur, cle_bouton):
     return next(a["nom"] for a in serveur.audits if a["id"] == cle_bouton.split(":", 1)[1])
+
+
+def test_ouvrir_un_audit_ne_l_ecrase_pas(serveur):
+    """Ouvrir un audit le réenregistre (délai de conservation) : avec ses propres données, pas avec la saisie
+    affichée avant l'ouverture (défaut trouvé en corrigeant C2-01 : l'audit était écrasé par une saisie vide)."""
+    at = app_connectee(serveur)
+    next(b for b in at.button if b.key == "depart:ecole_sud").click().run()
+    next(b for b in at.button if b.label == "Commencer — diagnostic complet").click().run()
+    next(b for b in at.button if b.label.startswith("Suivant :")).click().run()
+    n = len(serveur.audits[0]["donnees"]["locaux"])
+    at2 = app_connectee(serveur)  # nouvelle session : saisie vide à l'écran
+    next(b for b in at2.button if b.key == f"ouvrir:{serveur.audits[0]['id']}").click().run()
+    assert not at2.exception and len(serveur.audits) == 1
+    assert len(serveur.audits[0]["donnees"]["locaux"]) == n > 0

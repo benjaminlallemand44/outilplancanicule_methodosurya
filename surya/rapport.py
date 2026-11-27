@@ -815,6 +815,15 @@ def _image(d: dict, ph: dict, largeur: float, hauteur: float):
     except Exception:
         return Spacer(1, 1)
     k = min(largeur / l, hauteur / h)
+    # Observation de la campagne n° 2 : la photo est réduite à sa taille d'affichage (200 dpi environ)
+    # au lieu d'être intégrée à 1 600 px ; le PDF est beaucoup plus léger.
+    cible = (round(l * k / 72 * 200), round(h * k / 72 * 200))
+    if cible[0] < l:
+        im = PILImage.open(io.BytesIO(contenu)).convert("RGB")
+        im.thumbnail(cible)
+        b = io.BytesIO()
+        im.save(b, "JPEG", quality=82, optimize=True)
+        contenu = b.getvalue()
     img = Image(io.BytesIO(contenu), width=l * k, height=h * k)
     img.hAlign = "LEFT"
     return img
@@ -1065,8 +1074,10 @@ def _synthese_decision(d, res, S):
     engager = [b for b in bil if b["engager"]]
     nb_al = sum(1 for x in res["locaux"] + res["espaces"] for s in x["solutions"] for a in s["alertes"]
                 if TYPES_ALERTE.get(a) == "AL")
-    chiffres = [(f"{len(engager)}", "solutions à engager sans étude préalable"),
-                (f"{sum(1 for b in bil if b['valider'])}", "solutions à valider avant de consulter"),
+    # QM2-02 : une même solution peut être à engager dans un local et à valider dans un autre ; les deux
+    # chiffres ne s'additionnent pas, d'où « dans au moins un lieu » (proposition, points à trancher G5).
+    chiffres = [(f"{len(engager)}", "solutions à engager sans étude préalable, dans au moins un lieu"),
+                (f"{sum(1 for b in bil if b['valider'])}", "solutions à valider avant de consulter, dans au moins un lieu"),
                 (f"{nb_al}", "alertes maîtrise d'œuvre")]
     if d.get("questionnaires"):
         from . import questionnaire as QU
