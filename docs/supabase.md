@@ -4,6 +4,9 @@ Sans configuration, l'application reste une **maquette** : rien n'est enregistr�
 et import de fichiers). Dès que la section `[supabase]` est renseignée dans les secrets Streamlit, elle
 devient un outil multi-auditeurs.
 
+Modèle de données (MCD), dictionnaire, règles d'accès, interrogation pour les visualisations et audit de la
+collecte : voir `docs/base_de_donnees.md`.
+
 ## Ce que fait le branchement
 
 | Fonction | Comportement |

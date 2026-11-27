@@ -33,7 +33,9 @@ hors de la méthode (saisie simplifiée, lecture du rapport par IA facultative).
 Facultative : sans la section `[supabase]` dans les secrets Streamlit, l'outil reste une maquette.
 Avec elle : comptes des auditeurs, audits enregistrés automatiquement à chaque étape, questionnaire en
 ligne enregistré dans la base, photos dans un stockage privé. Mise en service, sécurité (RLS) et points
-à décider : `docs/supabase.md` ; schéma : `supabase/migrations/`.
+à décider : `docs/supabase.md` ; schéma : `supabase/migrations/` ; modèle de données (MCD), règles d'accès,
+requêtes d'analyse et audit de la collecte : `docs/base_de_donnees.md` ; export de tous les comptes avec les
+statuts : `scripts/export_analyse.py`.
 
 ## Version, déploiement et gouvernance
 
