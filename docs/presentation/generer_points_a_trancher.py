@@ -113,7 +113,7 @@ SLIDES = [
                           "ajouter l’alerte patrimoine."}),
     ("tableau", {"titre": "Autres écarts entre l’Excel et le document", "lignes": [
         ("D2", "Photos « normées obligatoires » (§ I.c) : l’outil les recueille, avec une liste non bloquante", "Quelles questions exigent une photo ? Proposition : vue d’ensemble, baies, plafond, façade, ombrages"),
-        ("D3", "CO-1 vise un bureau « occupé en continu », ce qui n’est jamais relevé", "Ajouter la question, ou retirer « en continu » du libellé"),
+        ("D3", "CO-1 vise un bureau « occupé en continu », ce qui n’est jamais relevé", "Retirer « en continu » du libellé (ou ajouter la question)"),
         ("D4", "CQ-1 cite les réfrigérateurs, absents de la question L-10", "Ajouter « Réfrigérateurs » à L-10"),
         ("D5", "23 questions à choix sans option « Non évalué », que demande la règle du doute (§ I.f)", "Ajouter « Non évalué » à ces questions de la grille de visite"),
         ("F2", "Règles « aucune baie » (PV-0, PH-0, FS-0) dans l’Excel seulement", "Les reporter dans le document de la méthode SURYA")]}),
@@ -133,7 +133,7 @@ SLIDES = [
         ("E4", "Questions « si vous en avez » (Q12 à Q15, Q17)", "Posées seulement si elles ont un objet : confirmer"),
         ("E5", "Q20 n’admet qu’un seul équipement de rafraîchissement", "Passer en choix multiple"),
         ("E6", "Public : adultes seulement (échelle ISO à 7 points) ?", "Adultes pour l’instant ; version élèves à instruire"),
-        ("E3", "Étage et orientation (Q2, Q3) moins détaillés que la grille", "Garder : sans incidence tant que la synthèse est globale")]}),
+        ("E3", "Étage et orientation (Q2, Q3) moins détaillés que la grille", "Garder (synthèse globale) ; ajouter « Je ne sais pas » à Q3")]}),
     ("partie", {"num": "G.", "titre": "Compte rendu orienté décision", "layout": "Partie 2",
                 "desc": "Des propositions de l’outil, absentes de la méthode SURYA : ordre de mise en œuvre, synthèse en une page, "
                         "plan simplifié."}),
@@ -175,6 +175,23 @@ SLIDES = [
     ("fin", {}),
 ]
 
+
+
+# Notes de l'orateur : contexte et exemples, repris de docs/points_a_trancher.md (version détaillée)
+DETAILS = {
+    "Erreurs de l’Excel corrigées dans l’outil": "Valider A, c’est accepter que l’outil s’écarte de l’Excel actuel et demander à SURYA de le réparer. A1 : la Classe CM1 a 4 murs au sud, seul le premier est lu. A2 : fenêtre de toit à commande manuelle hors d’atteinte : FT-7 met « Sous réserve » (la protection reste utile, son type est à vérifier : motorisée, ou fixe). A3 : 150 m³/h pour 121,5 m³ = 1,2 vol/h, trop peu. A4 : 243 m³/h pour 121,5 m³ = exactement 2 vol/h, doit être « En place ».",
+    "Ventilation et brasseurs d’air": "B1 : une longue façade sud est souvent saisie en plusieurs « murs » S. La Classe CM1 (4 murs au sud) est « Recommandé » avec la formule, « Sous réserve » avec le libellé : deux fenêtres au sud ne font pas de courant d’air traversant. F10 : 2 brasseurs de 1,20 m dans 36 m² donnent exactement 0,4.",
+    "Toiture": "B2 : cas typique, gymnase ou extension sous toiture à deux pentes sans combles ; l’outil affiche « configuration non prévue ». B4 : la différence de statut peut être voulue (isoler des combles perdus est simple, une terrasse ou des rampants demandent des travaux) : à confirmer et écrire dans la méthode.",
+    "Protections solaires et façades": "B8 : fenêtres au nu extérieur sous un balcon : « Recommandé » par la règle par défaut PV-8, dont le libellé décrit une autre situation. B9 : salle en rez-de-jardin saisie « sous-sol » : « Sous réserve » faute d’accès nacelle, alors que les baies sont au sol. B10 : l’étape Façades coche d’office les façades citées.",
+    "Règles générales de calcul et de saisie": "B7 : débord inconnu sur un mur sud, débord faible sur l’autre : PH-1 indéterminée donne « Sous réserve » alors que PH-2 « À optimiser » est certaine ; garder ce principe est conforme à la règle du doute (§ I.f). B12 : un dortoir de 30 m² pour 25 enfants ressort « En place ».",
+    "Alertes : quand les déclencher": "B13 : local à 2,30 m sous plafond, brasseurs « Non recommandé », et l’alerte « faire valider l’électricité des brasseurs » s’affiche quand même. F4 à F6 : éviter qu’une donnée manquante fasse disparaître une alerte.",
+    "Autres écarts entre l’Excel et le document": "D3 : sans question sur la durée d’occupation, tout bureau de moins de 6 m² par occupant est visé, même occupé une heure par jour. D5 : dans l’outil, une question laissée vide vaut déjà « Non évalué ». F2 : sans ces règles, une réserve sans fenêtre serait « Recommandé » pour des protections solaires.",
+    "D1 · Alertes : maîtrise d’œuvre ou validation ponctuelle": "Une alerte AL veut dire un marché d’études avant les travaux : du temps et un coût en plus pour la collectivité. Exemple : ombrage adossé « Recommandé » dans la cour de l’école type du Sud, avec prise au vent (OA-AL2) et sécurité incendie (OA-AL3) : il passe dans « À valider avant de consulter ».",
+    "Contenu du questionnaire": "E5 : un local peut avoir un ventilateur et un climatiseur mobile. E6 : une version élèves demanderait un autre vocabulaire, une échelle plus courte et l’accord des familles.",
+}
+for _genre, _d in SLIDES:
+    if _d.get("titre") in DETAILS:
+        _d["notes"] = (DETAILS[_d["titre"]] + " " + _d.get("notes", "")).strip()
 
 def vider(prs):
     ids = prs.slides._sldIdLst

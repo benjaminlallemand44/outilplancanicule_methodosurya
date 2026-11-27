@@ -79,17 +79,19 @@ les protections horizontales ressortent « Sous réserve » dans l'Excel, « Rec
 
 ### A2. La commande des fenêtres de toit est cassée (MEX-17)
 
-**Contexte.** La règle FT-7 met « Sous réserve » une fenêtre de toit **hors d'atteinte depuis le sol et
-sans commande à distance** : poser une protection solaire n'a d'intérêt que si on peut la manœuvrer et
-ouvrir la fenêtre la nuit. MEX-17 relève le type de commande.
+**Contexte.** La règle FT-7 met « Sous réserve » la protection solaire d'une fenêtre de toit **hors
+d'atteinte depuis le sol et sans commande à distance**. La protection garde son intérêt ; ce qui est à
+vérifier, c'est son type : un store à manœuvrer à la main serait difficile à utiliser au quotidien, il faut
+alors prévoir une commande motorisée ou une protection qui ne se manœuvre pas (store extérieur fixe, film).
+MEX-17 relève le type de commande de la fenêtre.
 
 **Le problème.** MEX-17 est passée de cases à cocher à une liste déroulante, mais les formules n'ont pas
 suivi : la cellule est en `#REF!` (`Calc_Locaux` ligne 15, `Règles_Locaux` ligne 109). Dès qu'un local a des
 fenêtres de toit ouvrantes (MEX-16 = Oui), FT-7 est en erreur et l'Excel passe à la règle suivante.
 
 **Exemple.** La « Salle de classe » de l'exemple a une fenêtre de toit à commande **manuelle**. L'Excel
-donne « Recommandé » (FT-7 ignorée) ; l'outil donne « Sous réserve » par FT-7, car une commande manuelle
-d'une fenêtre en hauteur n'est pas une commande à distance.
+donne « Recommandé » (FT-7 ignorée) ; l'outil donne « Sous réserve » par FT-7 : la fenêtre est en hauteur et sa
+commande est manuelle ; le type de protection est à choisir en conséquence.
 
 **Décision demandée.** Valider que FT-7 teste « MEX-17 n'est ni Électrique ni Automatique ».
 
