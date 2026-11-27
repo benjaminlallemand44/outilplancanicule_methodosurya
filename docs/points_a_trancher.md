@@ -1,6 +1,6 @@
 # Points à trancher — outil méthode SURYA
 
-Mise à jour du 26/11/2026 (première version du 20/11/2026, après la campagne de tests n° 1,
+Mise à jour du 27/11/2026, avec les points issus de la campagne de tests n° 2 (première version du 20/11/2026, après la campagne de tests n° 1,
 `docs/rapport_tests.md`). Relevé établi en portant dans l'outil :
 
 - toutes les formules de l'Excel `2611111_outil_aide_test_methode-1.xlsx` (règles « version du
@@ -10,7 +10,7 @@ Mise à jour du 26/11/2026 (première version du 20/11/2026, après la campagne 
   déposée) ;
 - le « Questionnaire confort estival » (version 01 du 11/11/2026).
 
-Chaque point a été revérifié sur l'outil, et par la campagne de tests. Sept catégories :
+Chaque point a été revérifié sur l'outil, et par les campagnes de tests. Huit catégories :
 
 - **A. Erreurs de l'Excel** : des références cassées. La correction ne fait pas débat, mais elle change
   des résultats ; à valider.
@@ -21,6 +21,7 @@ Chaque point a été revérifié sur l'outil, et par la campagne de tests. Sept 
 - **E. Questionnaire usagers** : matrice de correspondance proposée et points à préciser.
 - **F. Questions sur la méthode SURYA issues de la campagne de tests.**
 - **G. Compte rendu orienté décision** : ordre de mise en œuvre, synthèse, plan simplifié.
+- **H. Passage en travaux** : visa du pré-programme et rappel réglementaire.
 
 Les décisions déjà prises sont regroupées à la fin.
 
@@ -365,6 +366,15 @@ d'avant 1997, comme PR-AL3 ?
 L'Excel lit « 0,2 < diamètre / (√surface / nombre) < 0,4 » avec des bornes exclues ; l'image de
 l'équation dans la méthode SURYA (III.a.i-4) ne permet pas de le confirmer.
 
+### F11. Repérage amiante quand la période de construction est inconnue (campagne n° 2, C2-04)
+
+Quand B-01 (période de construction) n'est pas renseignée, le passage en travaux ne proposait pas le
+repérage amiante avant travaux (CCTP 10), alors que l'alerte PR-AL3 traite ce même cas comme une
+suspicion d'amiante. Le repérage est obligatoire avant travaux pour un permis antérieur au 1ᵉʳ juillet 1997.
+
+**Dans l'outil (depuis le 27/11/2026) :** par prudence (règle du doute, § I.f), le repérage est proposé
+dès que la période n'est pas « Après 1997 ». **À confirmer.** Rejoint F9 (CP-6).
+
 ## G. Compte rendu orienté décision (propositions)
 
 Le compte rendu complet commence par 5 parties courtes pensées pour la décision : synthèse en une page,
@@ -406,6 +416,44 @@ solutions à engager, trait orange sur les côtés qui ont des baies (N en haut,
 O à gauche), disque orange en cas d'alerte maîtrise d'œuvre. Les espaces extérieurs forment la
 dernière ligne. Un plan réel demanderait la position des locaux (aile, voisinage) ou l'import d'un
 plan de l'établissement.
+
+### G4. Même étape dans le compte rendu et dans le pré-programme (campagne n° 2, C2-05)
+
+Une même action était placée à l'étape 1 « Dès maintenant » dans le compte rendu et à l'horizon 2 ou 3
+dans le pré-programme (60 saisies aléatoires sur 150). Exemple : des brasseurs présents mais hors
+service sous un faux plafond (étape 1 « remise en état » dans le compte rendu ; niveau B dans le
+pré-programme, car l'ancrage doit être vérifié). Les deux documents vont aux mêmes élus.
+
+**Dans l'outil (depuis le 27/11/2026, proposition) :** l'étape du compte rendu est bornée par le niveau
+d'accompagnement du passage en travaux : une action qui demande une consultation (niveau B) est au moins
+à l'étape 2, une action qui demande une maîtrise d'œuvre (niveau C) est à l'étape 3. Les deux documents
+donnent la même étape. **À valider**, avec G1 ; l'autre option serait de garder l'étape 1 dans le compte
+rendu et d'expliquer le décalage dans le pré-programme.
+
+### G5. Chiffres de la synthèse (campagne n° 2, QM2-02)
+
+Sur l'école type du Sud, la synthèse annonçait « 7 solutions à engager » et « 8 solutions à valider »,
+mais trois solutions sont dans les deux (à engager dans un local, à valider dans un autre) : un lecteur
+peut additionner 15, alors que 12 solutions existent.
+
+**Dans l'outil (depuis le 27/11/2026, proposition) :** « solutions à engager sans étude préalable, dans
+au moins un lieu » et « solutions à valider avant de consulter, dans au moins un lieu ». **À valider** ;
+autre option : compter des couples « solution × lieu ».
+
+## H. Passage en travaux (campagne n° 2)
+
+### H1. Visa du pré-programme (QM2-01)
+
+Le pré-programme passe au statut « validé » dès que quatre champs texte sont remplis (auditeur, date de
+revue, visa, date du visa). Rien n'empêche l'auditeur de viser son propre travail, ni de saisir une date
+mal formée. **À décider :** qui vise (un chargé de mission ACTEE ?) ; avec les comptes Supabase, le visa
+pourrait être rattaché au compte de la personne qui vise. **Dans l'outil :** inchangé pour la maquette.
+
+### H2. Rappel réglementaire des seuils de procédure (QM2-03)
+
+Le pré-programme et le plan d'action rappellent que les travaux de moins de 100 000 € HT et les études ou
+la maîtrise d'œuvre de moins de 60 000 € HT sont dispensés de procédure (décret n° 2025-1386). Ce rappel
+n'a pas été vérifié par la campagne de tests. **À faire :** relecture par un juriste avant toute diffusion.
 
 ## Décisions déjà prises
 

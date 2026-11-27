@@ -1,5 +1,7 @@
 # Rapport de la campagne de tests n° 2 — outil méthode SURYA
 
+> **Suite donnée (27/11/2026)** : toutes les anomalies C2-01 à C2-12 sont corrigées, voir `docs/suivi_corrections.md` (campagne n° 2). Les questions QM2-01 à QM2-03, et les choix faits pour C2-04 et C2-05, sont ajoutés à `docs/points_a_trancher.md` (F11, G4, G5, H1, H2).
+
 Campagne menée le 26/11/2026 sur la dernière version de `main` (commit `15fd69d`, branche de travail
 `claude/fervent-hopper-qeizm3` repartie de `main`). Aucun fichier de `surya/`, `app.py` ni `supabase/`
 n'a été modifié : les correctifs sont proposés au § 6.

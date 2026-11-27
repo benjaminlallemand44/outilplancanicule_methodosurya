@@ -43,7 +43,7 @@ SLIDES = [
                              "Réunion 2 (points en suspens et suite)",
                              "D. Écarts entre l’Excel et le document de la méthode SURYA",
                              "E. Questionnaire usagers",
-                             "G. Compte rendu orienté décision",
+                             "G. Compte rendu orienté décision · H. Passage en travaux",
                              "L’outil : décisions et suites"]}),
     ("partie", {"num": "A.", "titre": "Corrections de l’Excel", "layout": "Partie 1",
                 "desc": "Des références cassées dans l’Excel, corrigées dans l’outil. Elles ne font pas débat, mais elles "
@@ -71,7 +71,8 @@ SLIDES = [
         ("B2", "Cas sans statut possible : toiture à pentes sans combles, toiture « Autre », isolation « Autre »", "Traiter les pentes sans combles comme les rampants ; sinon « Sous réserve » assumé"),
         ("B3, F3", "Toiture-terrasse et combles à la fois : seul le bloc terrasse est évalué", "Garder la priorité à la terrasse et signaler les combles dans la fiche"),
         ("B4", "Isolant insuffisant : « Recommandé » en combles perdus, « Sous réserve » en rampants et en terrasse", "Harmoniser à « Recommandé » sans obstacle ; utiliser ou retirer B-23, B-25, B-27"),
-        ("F9", "CP-6 cite la période de construction sans l’utiliser (suspicion d’amiante)", "Déduire la suspicion d’une construction d’avant 1997, comme PR-AL3")],
+        ("F9", "CP-6 cite la période de construction sans l’utiliser (suspicion d’amiante)", "Déduire la suspicion d’une construction d’avant 1997, comme PR-AL3"),
+        ("F11", "Période de construction inconnue : le repérage amiante avant travaux n’était pas proposé", "Le proposer par prudence (fait dans l’outil) : confirmer")],
         "notes": "B2 : aujourd’hui l’outil affiche « configuration non prévue par les règles » pour ces cas."}),
     ("tableau", {"titre": "Protections solaires et façades", "lignes": [
         ("B8", "Baies au nu extérieur avec débord : PV-8 donne « Recommandé », mais son libellé parle de tunnel", "À arbitrer par SURYA : règle dédiée, ou libellé corrigé"),
@@ -146,9 +147,11 @@ SLIDES = [
                            ("Classement dans une étape : l’effectif seul, ou aussi le public sensible, l’exposition et le ressenti des usagers ?", 1)],
                  "notes": "Les coûts ne sont pas encore donnés : ils viendront d’une base de coûts, à brancher dans le module de "
                           "passage en travaux."}),
-    ("tableau", {"titre": "Synthèse en une page et plan simplifié", "lignes": [
+    ("tableau", {"titre": "Synthèse, plan simplifié et cohérence des étapes", "lignes": [
         ("G2", "Synthèse en une page : 7 solutions principales par étape, 3 à valider, 3 lieux cités pour chacune", "Valider"),
-        ("G3", "Plan simplifié : schéma par niveau (surface, solutions à engager, côtés exposés)", "Valider ; plan réel plus tard, par import d’un plan")],
+        ("G3", "Plan simplifié : schéma par niveau (surface, solutions à engager, côtés exposés)", "Valider ; plan réel plus tard, par import d’un plan"),
+        ("G4", "Même action à l’étape 1 dans le compte rendu, à l’horizon 2 ou 3 dans le pré-programme", "Borner l’étape par le niveau : B → étape 2, C → étape 3 (fait dans l’outil)"),
+        ("G5", "« 7 à engager » et « 8 à valider » s’additionnent à tort (12 solutions en tout)", "Préciser « dans au moins un lieu » (fait dans l’outil)")],
         "notes": "G2 et G3 sont visibles dans le compte rendu complet de l’école type du Sud, pages 2 et 3."}),
     ("partie", {"num": "", "titre": "L’outil : décisions et suites", "layout": "Partie 3",
                 "desc": "Ce qui est déjà décidé pour la maquette, et qui fait quoi."}),
@@ -159,6 +162,9 @@ SLIDES = [
                            ("Passage en travaux : un 3ᵉ parcours après le diagnostic. Lecture des rapports par IA : février 2027.", 1),
                            ("Avant toute diffusion institutionnelle", 0),
                            ("Un hébergement maîtrisé (Streamlit Cloud ajoute ses propres traceurs d’audience) et une notice RGPD.", 1)]}),
+    ("tableau", {"titre": "Passage en travaux", "lignes": [
+        ("H1", "Visa du pré-programme : quatre champs texte suffisent, l’auditeur peut viser son propre travail", "Désigner qui vise ; plus tard, visa rattaché à un compte"),
+        ("H2", "Rappel des seuils de procédure (100 000 € HT travaux, 60 000 € HT études, décret 2025-1386)", "Relecture par un juriste avant diffusion")]}),
     ("tableau", {"titre": "Qui fait quoi", "entete": ["Action", "Qui", "Quand"], "largeurs": [7.6, 2.9, 1.7], "lignes": [
         ("Mettre à jour le document de la méthode SURYA (décisions B, D et F2)", "SURYA", "[date]"),
         ("Appliquer les décisions dans l’outil et refaire la campagne de tests", "[ACTEE]", "[date]"),

@@ -57,6 +57,13 @@ La purge est **hebdomadaire** (le lundi à 3 h 17 UTC) : tâche `pg_cron` qui ap
 clé de service du projet, qu'elle seule détient, et supprime aussi les fichiers des photos. L'adresse du projet et
 la clé publique qu'utilise la tâche sont rangées dans le coffre de la base (Vault), pas dans le dépôt.
 
+**Appel réservé à la tâche planifiée** (campagne de tests n° 2, C2-06, 27/11/2026) : la fonction refuse
+tout appel qui n'apporte pas le secret partagé `purge_secret` dans l'en-tête `x-purge-secret`. Le secret est
+tiré au hasard dans la base, rangé dans le coffre, et vérifié par la fonction SQL
+`public.verifier_secret_purge`, exécutable par le seul rôle de service (migration
+`20261127000000_purge_secret.sql`). Vérifié le 27/11/2026 : appel sans secret refusé (401), appel de la
+tâche accepté (rien à supprimer).
+
 ## Décisions prises
 
 - **Inscriptions ouvertes à tous** (26/11/2026).
